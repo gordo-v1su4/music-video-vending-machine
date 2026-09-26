@@ -266,7 +266,6 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     )
 }
 
-
 #[utoipa::path(get, path="/api/v1/projects", responses((status=200, body=Vec<Project>)))]
 async fn list_projects(
     State(state): State<AppState>,
