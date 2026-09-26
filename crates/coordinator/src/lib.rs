@@ -141,6 +141,12 @@ async fn authenticate(
     req: Request,
     next: Next,
 ) -> Response {
+    // A DNS-rebound page can send same-origin GETs without Origin. Anonymous
+    // development requests must also address the API through a loopback host.
+    if state.development && !local_request_host(&req) {
+        return ApiError(StatusCode::FORBIDDEN, "Use a loopback API hostname.".into())
+            .into_response();
+    }
     // CORS alone does not prevent simple multipart POSTs from reaching handlers.
     if req
         .headers()
@@ -173,6 +179,23 @@ async fn authenticate(
         .into_response();
     }
     next.run(req).await
+}
+fn local_request_host(req: &Request) -> bool {
+    let header_host = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|v| v.to_str().ok());
+    let uri_host = req.uri().authority().map(|v| v.as_str());
+    if header_host.is_none() && uri_host.is_none() {
+        return false;
+    }
+    [header_host, uri_host].into_iter().flatten().all(|host| {
+        host.parse::<axum::http::uri::Authority>()
+            .is_ok_and(|authority| {
+                matches!(authority.host(), "localhost" | "127.0.0.1" | "[::1]")
+                    && !authority.as_str().contains('@')
+            })
+    })
 }
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
     let healthy = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
@@ -427,25 +450,94 @@ async fn upload_asset(
         created_at: Utc::now(),
     };
     let key = ObjectPath::from(format!("music-vending-machine/{id}/originals/{asset_id}"));
+    // Commit intent before touching object storage. A cancelled request or an
+    // uncertain PUT/commit outcome leaves enough information to reconcile.
+    sqlx::query(
+        "INSERT INTO upload_intents(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)",
+    )
+    .bind(asset_id)
+    .bind(id)
+    .bind(key.to_string())
+    .bind(sqlx::types::Json(&asset))
+    .execute(&state.pool)
+    .await?;
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("SELECT id FROM upload_intents WHERE id=$1 FOR UPDATE")
+        .bind(asset_id)
+        .fetch_one(&mut *tx)
+        .await?;
     state.objects.put(&key, data.into()).await.map_err(|_| {
         ApiError(
             StatusCode::SERVICE_UNAVAILABLE,
-            "Media storage rejected the upload. It has not been saved.".into(),
+            "The upload outcome is uncertain. Refresh the media library while recovery checks it."
+                .into(),
         )
     })?;
-    let saved =
-        sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
-            .bind(asset_id)
-            .bind(id)
-            .bind(key.to_string())
-            .bind(sqlx::types::Json(&asset))
-            .execute(&state.pool)
-            .await;
-    if let Err(error) = saved {
-        let _ = state.objects.delete(&key).await;
-        return Err(error.into());
-    }
+    complete_upload(&mut tx, &asset, key.as_ref()).await?;
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(asset)))
+}
+
+async fn complete_upload(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    asset: &Asset,
+    key: &str,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
+        .bind(asset.id)
+        .bind(asset.project_id)
+        .bind(key)
+        .bind(sqlx::types::Json(asset))
+        .execute(&mut **tx)
+        .await?;
+    sqlx::query("DELETE FROM upload_intents WHERE id=$1")
+        .bind(asset.id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// Reconcile complete media left behind by an interrupted request or process.
+/// Missing/uncertain objects retain their intent; never delete a key while a
+/// timed-out remote PUT might still complete. Active upload rows are skipped.
+pub async fn reconcile_uploads(state: &AppState) -> anyhow::Result<usize> {
+    let mut recovered = 0;
+    let mut tx = state.pool.begin().await?;
+    let rows = sqlx::query(
+        "SELECT id,object_key,metadata FROM upload_intents ORDER BY checked_at,id LIMIT 32 FOR UPDATE SKIP LOCKED",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    for row in rows {
+        let id: Uuid = row.get("id");
+        let key: String = row.get("object_key");
+        let asset: sqlx::types::Json<Asset> = row.get("metadata");
+        sqlx::query("UPDATE upload_intents SET checked_at=clock_timestamp() WHERE id=$1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        let verification = tokio::time::timeout(Duration::from_secs(30), async {
+            let object = state
+                .objects
+                .get(&ObjectPath::from(key.as_str()))
+                .await
+                .ok()?;
+            if object.meta.size != asset.size_bytes || asset.size_bytes > 128 * 1024 * 1024 {
+                return None;
+            }
+            let data = object.bytes().await.ok()?;
+            (format!("{:x}", Sha256::digest(&data)) == asset.sha256).then_some(())
+        })
+        .await;
+        if matches!(verification, Ok(Some(()))) {
+            complete_upload(&mut tx, &asset, &key).await?;
+            recovered += 1;
+        } else {
+            tracing::warn!(%id, "Upload intent retained: object missing, unverified or unavailable");
+        }
+    }
+    tx.commit().await?;
+    Ok(recovered)
 }
 async fn probe_duration(data: &Bytes, media_type: &str) -> ApiResult<Option<u64>> {
     if media_type.starts_with("image/") {

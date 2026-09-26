@@ -26,3 +26,13 @@ RustFS adapter is implemented but not yet live round-trip tested. Coordinator cu
 ## Reproduce
 
 See README development and verification commands. Media fixtures and runtime state live in gitignored .runtime or isolated test storage. No secrets are stored in this evidence file.
+# PR review repair cycle 1
+
+Greptile reviewed commit `7bee772` at 1/5. All four findings were accepted and repaired before requesting another review:
+
+- Local anonymous requests now validate Host/URI authority as loopback as well as Origin. Regression checks reject missing hosts, DNS-rebound names and deceptive localhost names before database access.
+- Uploads commit an intent before writing an object. Metadata publication and intent removal are atomic. Background reconciliation verifies size and SHA-256, skips active row locks and retains uncertain/missing/corrupt intents. PostgreSQL recovery tests cover interrupted publication, repeated recovery, active uploads, corrupt bytes and a delayed object arriving after a missing-object check. This is crash reconciliation, not resumable client uploads; absent/corrupt intents remain available for later recovery/inspection.
+- The preview uses an anchored monotonic clock and explicitly pauses when its document is hidden. It shows a resume notice. Foreground delayed-frame and insertion/cutout tests pass; continuous background playback is not promised.
+- GitHub Actions dependencies are pinned to commit SHAs, and the Rust toolchain is pinned to 1.95.0.
+
+Validation: 9 domain tests, 4 coordinator/auth/schema tests, explicit PostgreSQL integration test, 13 web tests, Svelte check/build/autofixer. Re-review and CI on the repaired commit are still required.

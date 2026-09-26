@@ -1,4 +1,4 @@
-use mvm_coordinator::{ApiDoc, AppState, migrate, router};
+use mvm_coordinator::{ApiDoc, AppState, migrate, reconcile_uploads, router};
 use object_store::{ObjectStore, aws::AmazonS3Builder, local::LocalFileSystem};
 use sha2::{Digest, Sha256};
 use sqlx::postgres::PgPoolOptions;
@@ -62,16 +62,31 @@ async fn main() -> anyhow::Result<()> {
         .split(',')
         .map(|v| v.trim().parse())
         .collect::<Result<Vec<_>, _>>()?;
-    let app = router(
-        AppState {
-            pool,
-            objects,
-            token_hash,
-            development,
-            storage_name,
-        },
-        origins,
-    );
+    let state = AppState {
+        pool,
+        objects,
+        token_hash,
+        development,
+        storage_name,
+    };
+    let recovery_state = state.clone();
+    let recovery = tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            match reconcile_uploads(&recovery_state).await {
+                Ok(recovered) if recovered > 0 => {
+                    tracing::info!(recovered, "Interrupted uploads recovered")
+                }
+                Err(_) => {
+                    tracing::warn!("Upload reconciliation unavailable; durable intents retained")
+                }
+                _ => {}
+            }
+        }
+    });
+    let app = router(state, origins);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, development, "Music Vending Machine coordinator listening");
     axum::serve(listener, app)
@@ -79,5 +94,6 @@ async fn main() -> anyhow::Result<()> {
             let _ = tokio::signal::ctrl_c().await;
         })
         .await?;
+    recovery.abort();
     Ok(())
 }

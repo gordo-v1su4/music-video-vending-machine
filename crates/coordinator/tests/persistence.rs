@@ -3,7 +3,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{AppState, migrate, router};
+use mvm_coordinator::{AppState, Asset, migrate, reconcile_uploads, router};
 use object_store::{ObjectStore, memory::InMemory};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -17,6 +17,7 @@ async fn request(app: axum::Router, method: &str, path: &str, body: Value) -> (S
             Request::builder()
                 .method(method)
                 .uri(path)
+                .header("host", "127.0.0.1:5199")
                 .header("content-type", "application/json")
                 .body(Body::from(body.to_string()))
                 .unwrap(),
@@ -62,6 +63,7 @@ async fn cross_origin_multipart_cannot_mutate_local_development() {
             Request::builder()
                 .method("POST")
                 .uri("/api/v1/projects")
+                .header("host", "127.0.0.1:5199")
                 .header("Origin", "https://untrusted.invalid")
                 .header("Content-Type", "application/json")
                 .body(Body::from(r#"{"name":"Unsolicited"}"#))
@@ -70,6 +72,52 @@ async fn cross_origin_multipart_cannot_mutate_local_development() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn anonymous_local_reads_require_loopback_host_even_without_origin() {
+    let state = AppState {
+        pool: PgPoolOptions::new()
+            .connect_lazy("postgres://localhost/never_connected")
+            .unwrap(),
+        objects: Arc::new(InMemory::new()),
+        token_hash: None,
+        development: true,
+        storage_name: "test".into(),
+    };
+    let app = router(state, vec![]);
+    for host in [
+        None,
+        Some("rebound.invalid:5199"),
+        Some("localhost.evil.invalid"),
+        Some("evil@localhost"),
+    ] {
+        let mut request = Request::builder().uri("/api/v1/projects");
+        if let Some(host) = host {
+            request = request.header("host", host);
+        }
+        let response = app
+            .clone()
+            .oneshot(request.body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN, "host={host:?}");
+    }
+    for host in ["127.0.0.1:5199", "localhost:5199", "[::1]:5199"] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/projects/not-a-uuid")
+                    .header("host", host)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        // Reached the path extractor without connecting to a database.
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST, "host={host}");
+    }
 }
 
 #[test]
@@ -159,7 +207,7 @@ async fn concurrent_writes_restart_and_asset_ownership() {
     let restarted = router(
         AppState {
             pool: restarted_pool,
-            ..state
+            ..state.clone()
         },
         vec![],
     );
@@ -183,6 +231,7 @@ async fn concurrent_writes_restart_and_asset_ownership() {
             Request::builder()
                 .method("POST")
                 .uri(format!("/api/v1/projects/{id}/assets"))
+                .header("host", "127.0.0.1:5199")
                 .header("content-type", "multipart/form-data; boundary=mvm-boundary")
                 .body(Body::from(multipart))
                 .unwrap(),
@@ -212,6 +261,7 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         .oneshot(
             Request::builder()
                 .uri(format!("/api/v1/projects/{id}/events?after=1"))
+                .header("host", "127.0.0.1:5199")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -230,6 +280,7 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         .oneshot(
             Request::builder()
                 .uri(asset["url"].as_str().unwrap())
+                .header("host", "127.0.0.1:5199")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -246,6 +297,83 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         format!("{:x}", Sha256::digest(downloaded)),
         asset["sha256"].as_str().unwrap()
     );
+    // Recreate the durable state at crash points: intent only, object persisted
+    // before metadata commit, and corrupt content. Recovery must be repeatable.
+    let project_id = uuid::Uuid::parse_str(id).unwrap();
+    let original: Asset = serde_json::from_value(asset).unwrap();
+    let mut pending = Vec::new();
+    for _ in 0..3 {
+        let mut candidate = original.clone();
+        candidate.id = uuid::Uuid::new_v4();
+        candidate.url = format!("/api/v1/projects/{id}/assets/{}", candidate.id);
+        let key = format!("recovery-test/{project_id}/{}", candidate.id);
+        sqlx::query(
+            "INSERT INTO upload_intents(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)",
+        )
+        .bind(candidate.id)
+        .bind(project_id)
+        .bind(&key)
+        .bind(sqlx::types::Json(&candidate))
+        .execute(&pool)
+        .await
+        .unwrap();
+        pending.push((candidate, key));
+    }
+    state
+        .objects
+        .put(&pending[0].1.as_str().into(), test_wav().into())
+        .await
+        .unwrap();
+    state
+        .objects
+        .put(
+            &pending[2].1.as_str().into(),
+            vec![0; test_wav().len()].into(),
+        )
+        .await
+        .unwrap();
+    let mut active_upload = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM upload_intents WHERE id=$1 FOR UPDATE")
+        .bind(pending[0].0.id)
+        .fetch_one(&mut *active_upload)
+        .await
+        .unwrap();
+    assert_eq!(
+        reconcile_uploads(&state).await.unwrap(),
+        0,
+        "active upload must be skipped"
+    );
+    active_upload.rollback().await.unwrap();
+    assert_eq!(reconcile_uploads(&state).await.unwrap(), 1);
+    assert_eq!(
+        reconcile_uploads(&state).await.unwrap(),
+        0,
+        "duplicate recovery cannot duplicate assets"
+    );
+    // A timed-out PUT can arrive after a missing-object check. Its intent stays
+    // durable and the next pass discovers it instead of stranding the object.
+    state
+        .objects
+        .put(&pending[1].1.as_str().into(), test_wav().into())
+        .await
+        .unwrap();
+    assert_eq!(reconcile_uploads(&state).await.unwrap(), 1);
+    let (remaining,): (i64,) =
+        sqlx::query_as("SELECT count(*) FROM upload_intents WHERE project_id=$1")
+            .bind(project_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(remaining, 1, "corrupt media must not be promoted");
+    for (candidate, _) in &pending[..2] {
+        let (stored,): (sqlx::types::Json<Asset>,) =
+            sqlx::query_as("SELECT metadata FROM assets WHERE id=$1")
+                .bind(candidate.id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(stored.sha256, original.sha256);
+    }
     pool.close().await;
 }
 
