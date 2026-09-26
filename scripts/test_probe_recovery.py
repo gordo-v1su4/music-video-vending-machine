@@ -7,7 +7,7 @@ import stat
 import tempfile
 import unittest
 import uuid
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 
 def load(name, filename):
@@ -22,6 +22,52 @@ scope = load("scope", "probe-scoped-storage.py")
 
 
 class RecoveryRegressionTests(unittest.TestCase):
+    def test_restore_writes_available_bytes_and_relocates_the_correct_records(self):
+        client = Mock()
+        storage = {}
+        client.put_object.side_effect = lambda **kw: storage.update({kw["Key"]: kw["Body"]})
+        client.get_object.side_effect = lambda **kw: {"Body": io.BytesIO(storage[kw["Key"]])}
+        manifest = {"assets": [], "pendingUploads": []}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for group, state, media in (("assets", "verified", b"complete"),
+                    ("pendingUploads", "verified", b"complete"),
+                    ("pendingUploads", "unverified", b"partial"),
+                    ("pendingUploads", "missing", None)):
+                record = {"id": str(uuid.uuid4()), "sha256": recovery.digest(b"complete"),
+                          "objectState": state}
+                if media is not None:
+                    record["storedSha256"] = recovery.digest(media)
+                    (root / record["storedSha256"]).write_bytes(media)
+                manifest[group].append(record)
+            with patch.object(recovery, "query") as query:
+                recovery.restore_objects(client, manifest, root, "isolated_restore", uuid.uuid4().hex)
+            self.assertEqual(client.put_object.call_count, 3)
+            self.assertEqual(client.get_object.call_count, 3)
+            self.assertEqual(len(storage), 3)
+            for index, record in enumerate(manifest["assets"] + manifest["pendingUploads"]):
+                table = "assets" if index == 0 else "upload_intents"
+                self.assertEqual(query.call_args_list[index].args,
+                    ("isolated_restore", f"UPDATE {table} SET object_key='{record['restoredKey']}' WHERE id='{record['id']}'"))
+                if record["objectState"] == "missing":
+                    self.assertNotIn(record["restoredKey"], storage)
+                else:
+                    self.assertEqual(recovery.digest(storage[record["restoredKey"]]), record["storedSha256"])
+
+    def test_restore_does_not_repoint_record_after_failed_readback(self):
+        client = Mock()
+        client.get_object.return_value = {"Body": io.BytesIO(b"corrupt readback")}
+        record = {"id": str(uuid.uuid4()), "sha256": recovery.digest(b"complete"),
+                  "storedSha256": recovery.digest(b"partial"), "objectState": "unverified"}
+        with tempfile.TemporaryDirectory() as directory, patch.object(recovery, "query") as query:
+            root = Path(directory)
+            (root / record["storedSha256"]).write_bytes(b"partial")
+            with self.assertRaises(ValueError):
+                recovery.restore_objects(client, {"assets": [], "pendingUploads": [record]}, root,
+                                         "isolated_restore", uuid.uuid4().hex)
+            query.assert_not_called()
+            self.assertNotIn("restoredKey", record)
+
     def test_pending_upload_preserves_verified_unverified_and_missing_objects(self):
         expected = b"complete source"
         row = {"id": str(uuid.uuid4()), "object_key": "projects/fixture/pending",

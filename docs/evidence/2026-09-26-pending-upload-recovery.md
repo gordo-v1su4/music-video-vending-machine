@@ -19,3 +19,7 @@ Private receipts and bytes are retained at `.runtime/backups/pending-uploads-202
 Seventeen Python probe tests passed; the POSIX-only permissions test was skipped on Windows. Added coverage distinguishes missing objects from authorization/service failures, preserves verified and incomplete pending bytes, rejects corrupt completed media, and retains distinct identities for identical content. `git diff --check` passed.
 
 This proves cold isolated pending-upload restoration and coordinator reconciliation. It does not prove production scheduling, off-host retention, installed Windows client acceptance, or portable editable archive acceptance. Incomplete uploads remain unresolved rather than being falsely completed. No generation calls or creative approvals were performed.
+
+## Review follow-up
+
+The restore loop is now directly exercised by automated probes: completed and verified pending objects, incomplete pending bytes, missing pending objects, the correct destination table for each identity, and checksum-failed readback that must not repoint the database record. Nineteen tests passed with one POSIX-only skip. The existing live receipt remains evidence for the original restore; this behavior-preserving extraction was checked by the expanded tests rather than repeating the live backup.

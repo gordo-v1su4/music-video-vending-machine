@@ -83,6 +83,22 @@ def backup_object(client, row, objects_dir, *, pending=False):
                 storedSha256=stored_hash, bytes=len(media))
 
 
+def restore_objects(client, manifest, objects_dir, database, restore_id):
+    for table, records in (("assets", manifest["assets"]), ("upload_intents", manifest["pendingUploads"])):
+        for asset in records:
+            key = restored_key(restore_id, asset)
+            if asset["objectState"] != "missing":
+                media = (objects_dir / asset["storedSha256"]).read_bytes()
+                client.put_object(Bucket=BUCKET, Key=key, Body=media)
+                with client.get_object(Bucket=BUCKET, Key=key)["Body"] as body:
+                    if digest(body.read()) != asset["storedSha256"]:
+                        raise ValueError("Restored object checksum mismatch")
+            # Key/hash are generated here; UUID is parsed before interpolation.
+            asset_id = str(uuid.UUID(asset["id"]))
+            query(database, f"UPDATE {table} SET object_key='{key}' WHERE id='{asset_id}'")
+            asset["restoredKey"] = key
+
+
 def main():
     import boto3
     from botocore.config import Config
@@ -134,19 +150,7 @@ def main():
     command(["createdb", "-U", "mvm", database])
     command(["pg_restore", "-U", "mvm", "-d", database, "--exit-on-error", "--no-owner", "--no-acl"],
             (args.directory / "database.dump").read_bytes())
-    for asset in manifest["assets"] + manifest["pendingUploads"]:
-        key = restored_key(restore_id, asset)
-        if asset["objectState"] != "missing":
-            media = (objects_dir / asset["storedSha256"]).read_bytes()
-            client.put_object(Bucket=BUCKET, Key=key, Body=media)
-            with client.get_object(Bucket=BUCKET, Key=key)["Body"] as body:
-                if digest(body.read()) != asset["storedSha256"]:
-                    raise ValueError("Restored object checksum mismatch")
-        # Key/hash are generated here; UUID is parsed before interpolation.
-        asset_id = str(uuid.UUID(asset["id"]))
-        table = "upload_intents" if asset in manifest["pendingUploads"] else "assets"
-        query(database, f"UPDATE {table} SET object_key='{key}' WHERE id='{asset_id}'")
-        asset["restoredKey"] = key
+    restore_objects(client, manifest, objects_dir, database, restore_id)
     for table in ("projects", "project_events"):
         # Compare full logical records with stable ordering, not only row counts.
         sql = f"SELECT COALESCE(json_agg(t ORDER BY row_to_json(t)::text),'[]'::json) FROM {table} t"
