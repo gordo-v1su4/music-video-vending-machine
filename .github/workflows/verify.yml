@@ -31,7 +31,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check:convex
       - run: bunx vitest run scripts/convex-migration.test.ts scripts/convex-persistence.test.ts
-      - run: node --test scripts/migration-payloads.test.mjs scripts/convex-backup.test.mjs
+      - run: node --test scripts/migration-payloads.test.mjs scripts/convex-backup.test.mjs scripts/scheduled-backup.test.mjs
       - run: node scripts/test-convex-http.mjs
       - run: bun install --frozen-lockfile
         working-directory: apps/web
