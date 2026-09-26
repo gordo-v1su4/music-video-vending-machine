@@ -1,13 +1,13 @@
+mod support;
 use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{AppState, Asset, migrate, reconcile_uploads, router};
-use object_store::{ObjectStore, memory::InMemory};
+use mvm_coordinator::{AppState, Asset, reconcile_uploads, router};
+use object_store::memory::InMemory;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tower::ServiceExt;
 
@@ -31,17 +31,15 @@ async fn request(app: axum::Router, method: &str, path: &str, body: Value) -> (S
 
 #[tokio::test]
 async fn missing_auth_is_rejected_before_database_access() {
-    let pool = PgPoolOptions::new()
-        .connect_lazy("postgres://localhost/never_connected")
-        .unwrap();
     let state = AppState {
+        convex: None,
         analysis: None,
         transcription: None,
-        pool,
         objects: Arc::new(InMemory::new()),
         token_hash: Some(Sha256::digest(b"test-only-operator-token-not-for-runtime").into()),
         development: false,
         storage_name: "test".into(),
+        object_bucket: "music-vending-machine".into(),
     };
     let app = router(state, vec![]);
     let (status, _) = request(app, "GET", "/api/v1/projects", Value::Null).await;
@@ -50,17 +48,15 @@ async fn missing_auth_is_rejected_before_database_access() {
 
 #[tokio::test]
 async fn cross_origin_multipart_cannot_mutate_local_development() {
-    let pool = PgPoolOptions::new()
-        .connect_lazy("postgres://localhost/never_connected")
-        .unwrap();
     let state = AppState {
+        convex: None,
         analysis: None,
         transcription: None,
-        pool,
         objects: Arc::new(InMemory::new()),
         token_hash: None,
         development: true,
         storage_name: "test".into(),
+        object_bucket: "music-vending-machine".into(),
     };
     let response = router(state, vec!["http://127.0.0.1:5198".parse().unwrap()])
         .oneshot(
@@ -81,15 +77,14 @@ async fn cross_origin_multipart_cannot_mutate_local_development() {
 #[tokio::test]
 async fn anonymous_local_reads_require_loopback_host_even_without_origin() {
     let state = AppState {
+        convex: None,
         analysis: None,
         transcription: None,
-        pool: PgPoolOptions::new()
-            .connect_lazy("postgres://localhost/never_connected")
-            .unwrap(),
         objects: Arc::new(InMemory::new()),
         token_hash: None,
         development: true,
         storage_name: "test".into(),
+        object_bucket: "music-vending-machine".into(),
     };
     let app = router(state, vec![]);
     for host in [
@@ -158,33 +153,14 @@ fn openapi_matches_camel_case_action_wire_contract() {
 }
 
 #[tokio::test]
-#[ignore = "requires isolated MVM_TEST_DATABASE_URL; CI runs explicitly"]
-async fn concurrent_writes_restart_and_asset_ownership() {
-    let url = std::env::var("MVM_TEST_DATABASE_URL")
-        .expect("Set MVM_TEST_DATABASE_URL to isolated mvm_test database");
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&url)
-        .await
-        .unwrap();
-    let (database,): (String,) = sqlx::query_as("SELECT current_database()")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(
-        database, "mvm_test",
-        "Refusing to run integration tests against another database"
-    );
-    migrate(&pool).await.unwrap();
-    let objects: Arc<dyn ObjectStore> = Arc::new(InMemory::new());
-    let state = AppState {
-        analysis: None,
-        transcription: None,
-        pool: pool.clone(),
-        objects,
-        token_hash: None,
+#[ignore = "requires disposable Convex; run scripts/test-convex-http.mjs"]
+async fn convex_concurrent_writes_restart_and_asset_ownership() {
+    let state = support::state();
+    let client = state.convex.as_ref().unwrap();
+    let auth = mvm_coordinator::convex_sessions::Auth {
+        session_id: None,
+        issuer_hash: None,
         development: true,
-        storage_name: "test-memory-assets".into(),
     };
     let app = router(state.clone(), vec![]);
     let (status, project) = request(
@@ -210,11 +186,10 @@ async fn concurrent_writes_restart_and_asset_ownership() {
             || (b.0 == StatusCode::OK && a.0 == StatusCode::CONFLICT)
     );
     let expected = if a.0 == StatusCode::OK { a.1 } else { b.1 };
-    // A new router and fresh DB connections recover committed state, with no process-local project map.
-    let restarted_pool = PgPoolOptions::new().connect(&url).await.unwrap();
+    // A fresh transport and router recover committed backend state.
     let restarted = router(
         AppState {
-            pool: restarted_pool,
+            convex: support::state().convex,
             ..state.clone()
         },
         vec![],
@@ -309,11 +284,11 @@ async fn concurrent_writes_restart_and_asset_ownership() {
     // Persisted keys are authoritative: an older/restored asset need not use
     // the current writer's prefix. Never reconstruct its key from an ID.
     let asset_id = uuid::Uuid::parse_str(asset["id"].as_str().unwrap()).unwrap();
-    let (new_key,): (String,) = sqlx::query_as("SELECT object_key FROM assets WHERE id=$1")
-        .bind(asset_id)
-        .fetch_one(&pool)
+    let new_key = client
+        .asset_record(&auth, uuid::Uuid::parse_str(id).unwrap(), asset_id)
         .await
-        .unwrap();
+        .unwrap()
+        .object_key;
     assert!(
         new_key.starts_with("projects/"),
         "new keys must fit scoped storage policy"
@@ -324,10 +299,11 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         .put(&legacy_key.as_str().into(), test_wav().into())
         .await
         .unwrap();
-    sqlx::query("UPDATE assets SET object_key=$1 WHERE id=$2")
-        .bind(&legacy_key)
-        .bind(asset_id)
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:relocateAsset",
+            json!({"id":asset_id,"key":legacy_key}),
+        )
         .await
         .unwrap();
     state
@@ -380,17 +356,8 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         let mut candidate = original.clone();
         candidate.id = uuid::Uuid::new_v4();
         candidate.url = format!("/api/v1/projects/{id}/assets/{}", candidate.id);
-        let key = format!("recovery-test/{project_id}/{}", candidate.id);
-        sqlx::query(
-            "INSERT INTO upload_intents(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)",
-        )
-        .bind(candidate.id)
-        .bind(project_id)
-        .bind(&key)
-        .bind(sqlx::types::Json(&candidate))
-        .execute(&pool)
-        .await
-        .unwrap();
+        let key = format!("projects/{project_id}/originals/{}", candidate.id);
+        client.begin_upload(&auth, &candidate, &key).await.unwrap();
         pending.push((candidate, key));
     }
     state
@@ -406,18 +373,6 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         )
         .await
         .unwrap();
-    let mut active_upload = pool.begin().await.unwrap();
-    sqlx::query("SELECT id FROM upload_intents WHERE id=$1 FOR UPDATE")
-        .bind(pending[0].0.id)
-        .fetch_one(&mut *active_upload)
-        .await
-        .unwrap();
-    assert_eq!(
-        reconcile_uploads(&state).await.unwrap(),
-        0,
-        "active upload must be skipped"
-    );
-    active_upload.rollback().await.unwrap();
     assert_eq!(reconcile_uploads(&state).await.unwrap(), 1);
     assert_eq!(
         reconcile_uploads(&state).await.unwrap(),
@@ -432,23 +387,27 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         .await
         .unwrap();
     assert_eq!(reconcile_uploads(&state).await.unwrap(), 1);
-    let (remaining,): (i64,) =
-        sqlx::query_as("SELECT count(*) FROM upload_intents WHERE project_id=$1")
-            .bind(project_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    assert_eq!(remaining, 1, "corrupt media must not be promoted");
+    let remaining: Vec<Value> = client
+        .mutation("assets:pendingUploads", json!({}))
+        .await
+        .unwrap();
+    assert_eq!(
+        remaining
+            .iter()
+            .filter(|row| row["project_id"] == id)
+            .count(),
+        1,
+        "corrupt media must not be promoted"
+    );
     for (candidate, _) in &pending[..2] {
-        let (stored,): (sqlx::types::Json<Asset>,) =
-            sqlx::query_as("SELECT metadata FROM assets WHERE id=$1")
-                .bind(candidate.id)
-                .fetch_one(&pool)
-                .await
-                .unwrap();
+        let stored = client
+            .asset_record(&auth, project_id, candidate.id)
+            .await
+            .unwrap()
+            .asset()
+            .unwrap();
         assert_eq!(stored.sha256, original.sha256);
     }
-    pool.close().await;
 }
 
 fn test_wav() -> Vec<u8> {
@@ -473,4 +432,50 @@ fn test_wav() -> Vec<u8> {
         b.extend(s.to_le_bytes());
     }
     b
+}
+
+#[tokio::test]
+#[ignore = "requires disposable Convex; run scripts/test-convex-http.mjs"]
+async fn convex_health_requires_object_storage() {
+    let state = support::state();
+    assert_eq!(
+        request(
+            router(state.clone(), vec![]),
+            "GET",
+            "/api/v1/health",
+            Value::Null
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let denied = axum::Router::new().fallback(|| async { StatusCode::FORBIDDEN });
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move { axum::serve(listener, denied).await.unwrap() });
+    let objects = object_store::aws::AmazonS3Builder::new()
+        .with_endpoint(endpoint)
+        .with_allow_http(true)
+        .with_bucket_name("mvvm")
+        .with_region("us-east-1")
+        .with_access_key_id("test-access")
+        .with_secret_access_key("test-secret")
+        .build()
+        .unwrap();
+    let (status, health) = request(
+        router(
+            AppState {
+                objects: Arc::new(objects),
+                ..state
+            },
+            vec![],
+        ),
+        "GET",
+        "/api/v1/health",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(health["status"], "unavailable");
+    server.abort();
 }

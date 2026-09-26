@@ -1,5 +1,5 @@
 //! One explicitly requested Deepgram pass per audio asset. No automatic paid retries.
-use crate::{ApiError, ApiResult, AppState, Asset, invalid, read_asset, sessions};
+use crate::{ApiError, ApiResult, AppState, Asset, invalid, sessions};
 use axum::{
     Json,
     extract::{Path, State},
@@ -12,8 +12,6 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
-use sqlx::Row;
 use std::{sync::Arc, time::Duration};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -111,34 +109,28 @@ pub(crate) async fn recover(
     axum::Extension(identity): axum::Extension<sessions::Identity>,
     Json(request): Json<RecoverTranscription>,
 ) -> ApiResult<Json<Option<TranscriptionJob>>> {
-    let asset = read_asset(&state.pool, id, asset_id).await?;
-    let mut tx = state.pool.begin().await?;
-    if !sessions::valid_on(&mut *tx, &state, identity).await? {
-        return Err(sessions::unauthorized());
-    }
-    let row = sqlx::query("SELECT id,status,sha256,updated_at,receipt FROM transcription_jobs WHERE project_id=$1 AND asset_id=$2 ORDER BY created_at DESC LIMIT 1 FOR UPDATE")
-        .bind(id).bind(asset_id).fetch_optional(&mut *tx).await?
-        .ok_or_else(|| invalid("No transcription job to recover."))?;
-    if row.try_get::<Uuid, _>("id")? != request.job_id
-        || row.try_get::<DateTime<Utc>, _>("updated_at")? != request.expected_updated_at
-        || !matches!(
-            row.try_get::<String, _>("status")?.as_str(),
-            "failed" | "reconciliation_required"
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    Ok(Json(
+        crate::convex_transcription::recover(
+            &state,
+            client,
+            &sessions::convex_auth(&state, identity),
+            id,
+            asset_id,
+            &request,
         )
-    {
-        return Err(ApiError(
-            StatusCode::CONFLICT,
-            "The transcription changed. Refresh before recovery.".into(),
-        ));
-    }
-    if request.source_sha256 != asset.sha256 || row.try_get::<String, _>("sha256")? != asset.sha256
-    {
-        return Err(invalid("Recovery source does not match this audio file."));
-    }
-    let mut receipt = row
-        .try_get::<Option<sqlx::types::Json<Value>>, _>("receipt")?
-        .map(|v| v.0)
-        .unwrap_or_else(|| serde_json::json!({}));
+        .await?,
+    ))
+}
+
+pub(crate) fn recover_saved(
+    asset: &Asset,
+    request: &RecoverTranscription,
+    mut receipt: Value,
+) -> ApiResult<(Transcript, Value)> {
     let duration = asset.duration_ms.unwrap_or(0);
     let mut selected = recover_passes(&receipt, duration);
     // Older jobs retained a single provider response rather than a pass envelope.
@@ -156,7 +148,7 @@ pub(crate) async fn recover(
     {
         selected = Some(merge_tail(previous, tail, offset));
     }
-    if let Some(response) = request.provider_response {
+    if let Some(response) = request.provider_response.clone() {
         if !request.confirmed_source {
             return Err(invalid(
                 "Confirm that the provider response belongs to this exact source audio.",
@@ -176,10 +168,7 @@ pub(crate) async fn recover(
     result.sentiment = None;
     result.warnings.push("Recovered without another provider call. Coverage may be incomplete; review the timed words. Original provider receipts are retained.".into());
     receipt["recovery"] = serde_json::json!({"at":Utc::now(),"sourceSha256":asset.sha256,"selected":selected,"paidReplay":false});
-    sqlx::query("UPDATE transcription_jobs SET status='completed',result=$2,receipt=$3,message='Recovered existing provider responses; no new paid request.',updated_at=clock_timestamp() WHERE id=$1")
-        .bind(request.job_id).bind(sqlx::types::Json(result)).bind(sqlx::types::Json(receipt)).execute(&mut *tx).await?;
-    tx.commit().await?;
-    Ok(Json(load(&state, id, asset_id).await?))
+    Ok((result, receipt))
 }
 
 fn labels(value: &Value, kind: &str, label: &str) -> Vec<String> {
@@ -318,45 +307,26 @@ pub fn normalize(value: &Value, expected_ms: u64) -> anyhow::Result<Transcript> 
     })
 }
 
-async fn load(state: &AppState, project: Uuid, asset: Uuid) -> ApiResult<Option<TranscriptionJob>> {
-    let row = sqlx::query("SELECT * FROM transcription_jobs WHERE project_id=$1 AND asset_id=$2 ORDER BY created_at DESC LIMIT 1")
-        .bind(project)
-        .bind(asset)
-        .fetch_optional(&state.pool)
-        .await?;
-    row.map(|r| {
-        let mut result = r
-            .try_get::<Option<sqlx::types::Json<Transcript>>, _>("result")?
-            .map(|v| v.0);
-        // Recover word timing from the retained receipt for older completed jobs, with no paid replay.
-        if let Some(result) = result.as_mut().filter(|v| v.words.is_empty())
-            && let Some(receipt) = r.try_get::<Option<sqlx::types::Json<Value>>, _>("receipt")?
-        {
-            let selected = receipt.0.get("selected").unwrap_or(&receipt.0);
-            if let Ok(recovered) = normalize(selected, result.duration_ms) {
-                result.words = recovered.words;
-            }
-        }
-        Ok(TranscriptionJob {
-            id: r.try_get("id")?,
-            profile: r.try_get("model")?,
-            asset_id: r.try_get("asset_id")?,
-            sha256: r.try_get("sha256")?,
-            status: r.try_get("status")?,
-            message: r.try_get("message")?,
-            result,
-            updated_at: r.try_get("updated_at")?,
-        })
-    })
-    .transpose()
-}
 #[utoipa::path(get, operation_id="get_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
-pub async fn get(
+pub(crate) async fn get(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<Json<Option<TranscriptionJob>>> {
-    read_asset(&state.pool, id, asset_id).await?;
-    Ok(Json(load(&state, id, asset_id).await?))
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    Ok(Json(
+        crate::convex_transcription::load(
+            &state,
+            client,
+            &sessions::convex_auth(&state, identity),
+            id,
+            asset_id,
+        )
+        .await?,
+    ))
 }
 #[utoipa::path(post, operation_id="start_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
 pub(crate) async fn start(
@@ -364,77 +334,32 @@ pub(crate) async fn start(
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
     axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<Json<Option<TranscriptionJob>>> {
-    let asset = read_asset(&state.pool, id, asset_id).await?;
-    if !asset.media_type.starts_with("audio/") || asset.duration_ms.unwrap_or(0) == 0 {
-        return Err(invalid("Choose an audio source with a known duration."));
-    }
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
     if state.transcription.is_none() {
         return Err(ApiError(
             StatusCode::SERVICE_UNAVAILABLE,
-            "Deepgram is not configured on this studio server.".into(),
+            "Transcription is not configured on this studio server.".into(),
         ));
     }
-    let mut tx = state.pool.begin().await?;
-    if !sessions::valid_on(&mut *tx, &state, identity).await? {
-        return Err(sessions::unauthorized());
-    }
-    sqlx::query("INSERT INTO transcription_jobs(id,asset_id,project_id,sha256,status,model) VALUES($1,$2,$3,$4,'queued','stack-structure-v1') ON CONFLICT(asset_id,model) DO NOTHING").bind(Uuid::new_v4()).bind(asset_id).bind(id).bind(asset.sha256).execute(&mut *tx).await?;
-    tx.commit().await?;
-    Ok(Json(load(&state, id, asset_id).await?))
+    let auth = sessions::convex_auth(&state, identity);
+    client.mutation::<()>("transcription:enqueue",serde_json::json!({"auth":auth,"projectId":id,"assetId":asset_id,"jobId":Uuid::new_v4()})).await?;
+    Ok(Json(
+        crate::convex_transcription::load(&state, client, &auth, id, asset_id).await?,
+    ))
 }
 
 pub async fn tick(state: &AppState) -> anyhow::Result<()> {
     let Some(service) = &state.transcription else {
         return Ok(());
     };
-    let mut guard = state.pool.begin().await?;
-    let (locked,): (bool,) = sqlx::query_as("SELECT pg_try_advisory_xact_lock(1297501506)")
-        .fetch_one(&mut *guard)
-        .await?;
-    if !locked {
-        return Ok(());
-    }
-    sqlx::query("UPDATE transcription_jobs SET status='reconciliation_required',message='Transcription was interrupted. Review the retained request before any new paid call.',updated_at=clock_timestamp() WHERE status='running'").execute(&state.pool).await?;
-    let row=sqlx::query("SELECT j.id,a.object_key,a.metadata FROM transcription_jobs j JOIN assets a ON a.id=j.asset_id WHERE j.status='queued' AND j.next_poll_at<=clock_timestamp() ORDER BY j.next_poll_at,j.created_at LIMIT 1").fetch_optional(&state.pool).await?;
-    let Some(row) = row else { return Ok(()) };
-    let id: Uuid = row.try_get("id")?;
-    let asset: Asset = row.try_get::<sqlx::types::Json<Asset>, _>("metadata")?.0;
-    let key: String = row.try_get("object_key")?;
-    let bytes = tokio::time::timeout(Duration::from_secs(30), async {
-        state
-            .objects
-            .get(&object_store::path::Path::from(key))
-            .await?
-            .bytes()
-            .await
-    })
-    .await;
-    let bytes = match bytes {
-        Ok(Ok(bytes)) => bytes,
-        _ => {
-            sqlx::query("UPDATE transcription_jobs SET message='Waiting for stored audio. Other queued files can continue.',next_poll_at=clock_timestamp()+interval '30 seconds',updated_at=clock_timestamp() WHERE id=$1")
-                .bind(id).execute(&state.pool).await?;
-            return Ok(());
-        }
-    };
-    if bytes.len() as u64 != asset.size_bytes
-        || format!("{:x}", Sha256::digest(&bytes)) != asset.sha256
-    {
-        sqlx::query("UPDATE transcription_jobs SET status='failed',message='Stored audio failed its integrity check.',updated_at=clock_timestamp() WHERE id=$1").bind(id).execute(&state.pool).await?;
-        return Ok(());
-    }
-    // Durable marker before the billable request. A timeout/crash never causes replay.
-    sqlx::query("UPDATE transcription_jobs SET status='running',message='Pass 1 of up to 3: Nova-3, sentiment disabled. Checking full-song lyric coverage.',updated_at=clock_timestamp() WHERE id=$1").bind(id).execute(&state.pool).await?;
-    let receipt = run_pipeline(state, service, id, &asset, bytes).await;
-    match receipt {
-        Ok((receipt, result)) => {
-            sqlx::query("UPDATE transcription_jobs SET status='completed',message=NULL,result=$2,receipt=$3,updated_at=clock_timestamp() WHERE id=$1").bind(id).bind(sqlx::types::Json(result)).bind(sqlx::types::Json(receipt)).execute(&state.pool).await?;
-        }
-        Err(_) => {
-            sqlx::query("UPDATE transcription_jobs SET status='reconciliation_required',message='Deepgram did not return a usable response. Check the provider request before retrying; no automatic paid retry was made.',updated_at=clock_timestamp() WHERE id=$1").bind(id).execute(&state.pool).await?;
-        }
-    }
-    Ok(())
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    crate::convex_transcription::tick(state, client, service).await
 }
 
 fn coverage(value: &Value) -> (usize, f64) {
@@ -662,15 +587,7 @@ async fn call(
     }
     Ok(serde_json::from_slice(&bytes)?)
 }
-async fn persist_pass(
-    state: &AppState,
-    id: Uuid,
-    receipt: &Value,
-    message: &str,
-) -> anyhow::Result<()> {
-    sqlx::query("UPDATE transcription_jobs SET receipt=$2,message=$3,updated_at=clock_timestamp() WHERE id=$1").bind(id).bind(sqlx::types::Json(receipt)).bind(message).execute(&state.pool).await?;
-    Ok(())
-}
+
 async fn slice_tail(
     bytes: &bytes::Bytes,
     offset: f64,
@@ -706,12 +623,12 @@ async fn slice_tail(
     );
     Ok(tokio::fs::read(output.path()).await?.into())
 }
-async fn run_pipeline(
+pub(crate) async fn run_pipeline(
     state: &AppState,
     service: &Service,
-    id: Uuid,
     asset: &Asset,
     bytes: bytes::Bytes,
+    pass: &crate::convex_transcription::Pass,
 ) -> anyhow::Result<(Value, Transcript)> {
     // Same thresholds and pass order as project-stack-structure/src/trigger/deepgram.ts.
     let duration = asset.duration_ms.unwrap_or(0) as f64 / 1000.;
@@ -720,9 +637,8 @@ async fn run_pipeline(
         serde_json::json!({"profile":"stack-structure-v1","sentiment":false,"primary":primary});
     let mut best = primary.clone();
     let mut model = "nova-3";
-    persist_pass(
+    pass.persist(
         state,
-        id,
         &receipt,
         "Nova-3 response saved. Checking whether words cover the song.",
     )
@@ -730,9 +646,8 @@ async fn run_pipeline(
     normalize(&primary, asset.duration_ms.unwrap_or(0))?;
     let (count, end) = coverage(&best);
     if duration >= 30. && (count == 0 || end < duration * 0.6) {
-        persist_pass(
+        pass.persist(
             state,
-            id,
             &receipt,
             "Pass 2 of up to 3: Whisper fallback for sparse sung lyrics. Sentiment is disabled.",
         )
@@ -746,9 +661,8 @@ async fn run_pipeline(
         )
         .await?;
         receipt["fallback"] = fallback.clone();
-        persist_pass(
+        pass.persist(
             state,
-            id,
             &receipt,
             "Fallback response saved. Validating recovered timing.",
         )
@@ -761,9 +675,8 @@ async fn run_pipeline(
         if coverage(&best).0 > coverage(&primary).0 && coverage(&best).0 > coverage(&fallback).0 {
             model = "nova-3 / whisper-large";
         }
-        persist_pass(
+        pass.persist(
             state,
-            id,
             &receipt,
             "Fallback response saved. Checking for an uncovered ending.",
         )
@@ -773,13 +686,12 @@ async fn run_pipeline(
     if duration > 45. && end > 0. && end < duration * 0.85 {
         let offset = (end - 2.).max(0.);
         let tail_bytes = slice_tail(&bytes, offset, duration).await?;
-        persist_pass(state,id,&receipt,&format!("Pass 3 of 3: transcribing the remaining audio from {offset:.1}s, including instrumental gaps.")).await?;
+        pass.persist(state,&receipt,&format!("Pass 3 of 3: transcribing the remaining audio from {offset:.1}s, including instrumental gaps.")).await?;
         let tail = call(service, tail_bytes, "audio/wav", "whisper-large", false).await?;
         receipt["tail"] = tail.clone();
         receipt["tailOffsetSeconds"] = serde_json::json!(offset);
-        persist_pass(
+        pass.persist(
             state,
-            id,
             &receipt,
             "Remaining-audio response saved. Validating recovered timing.",
         )

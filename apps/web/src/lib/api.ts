@@ -43,7 +43,7 @@ export class StudioApi {
         try {
           const started = performance.now();
           const grant = await login.request<components["schemas"]["SessionGrant"]>("/sessions", {
-            method: "POST", body: JSON.stringify({ clientLabel: "Music Vending Machine workspace" }),
+            method: "POST", body: JSON.stringify({ clientLabel: "Music Video Vending Machine workspace" }),
           });
           client.token = grant.token;
           client.session = grant.session;

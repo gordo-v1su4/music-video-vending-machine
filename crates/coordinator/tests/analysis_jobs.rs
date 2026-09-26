@@ -1,3 +1,4 @@
+mod support;
 use axum::{
     Json, Router,
     body::Body,
@@ -8,12 +9,11 @@ use http_body_util::BodyExt;
 use mvm_coordinator::{
     AppState, Asset,
     analysis_jobs::{Service, tick},
-    migrate, router,
+    router,
 };
-use object_store::{ObjectStore, memory::InMemory, path::Path};
+use object_store::path::Path;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use sqlx::postgres::PgPoolOptions;
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -40,19 +40,8 @@ async fn request(app: Router, method: &str, path: &str, body: Value) -> (StatusC
 }
 
 #[tokio::test]
-#[ignore = "requires isolated MVM_TEST_DATABASE_URL; CI runs explicitly"]
-async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
-    let pool = PgPoolOptions::new()
-        .max_connections(8)
-        .connect(&std::env::var("MVM_TEST_DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    let (database,): (String,) = sqlx::query_as("SELECT current_database()")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(database, "mvm_test");
-    migrate(&pool).await.unwrap();
+#[ignore = "requires disposable Convex; run scripts/test-convex-http.mjs"]
+async fn convex_analysis_survives_restart_and_never_repeats_uncertain_submissions() {
     let posts = Arc::new(AtomicUsize::new(0));
     let fail = Arc::new(AtomicUsize::new(0));
     let provider_id = Uuid::new_v4().to_string();
@@ -67,13 +56,14 @@ async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
     let origin = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move { axum::serve(listener, provider).await.unwrap() });
     let state = AppState {
-        pool: pool.clone(),
-        objects: Arc::new(InMemory::new()),
-        token_hash: None,
-        development: true,
-        storage_name: "analysis-test".into(),
         analysis: Some(Arc::new(Service::new(&origin, "test-key").unwrap())),
-        transcription: None,
+        ..support::state()
+    };
+    let client = state.convex.as_ref().unwrap();
+    let auth = mvm_coordinator::convex_sessions::Auth {
+        session_id: None,
+        issuer_hash: None,
+        development: true,
     };
     let app = router(state.clone(), vec![]);
     let (_, project) = request(
@@ -106,14 +96,8 @@ async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
             url: format!("/api/v1/projects/{project_id}/assets/{id}"),
             created_at: chrono::Utc::now(),
         };
-        sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
-            .bind(id)
-            .bind(project_id)
-            .bind(key)
-            .bind(sqlx::types::Json(asset))
-            .execute(&pool)
-            .await
-            .unwrap();
+        client.begin_upload(&auth, &asset, &key).await.unwrap();
+        client.complete_upload(&asset, &key, None).await.unwrap();
     }
     let path = format!("/api/v1/projects/{project_id}/assets/{}/analysis", ids[0]);
     let (status, first) = request(app.clone(), "POST", &path, Value::Null).await;
@@ -124,9 +108,11 @@ async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
     a.unwrap();
     b.unwrap();
     assert_eq!(posts.load(Ordering::SeqCst), 1);
-    sqlx::query("UPDATE audio_analysis_jobs SET next_poll_at=clock_timestamp() WHERE asset_id=$1")
-        .bind(ids[0])
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:analysisState",
+            json!({"assetId":ids[0],"submitting":false}),
+        )
         .await
         .unwrap();
     tick(&state).await.unwrap();
@@ -159,9 +145,11 @@ async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
     assert_eq!(posts.load(Ordering::SeqCst), 2);
     let path = format!("/api/v1/projects/{project_id}/assets/{}/analysis", ids[2]);
     request(app.clone(), "POST", &path, Value::Null).await;
-    sqlx::query("UPDATE audio_analysis_jobs SET status='submitting' WHERE asset_id=$1")
-        .bind(ids[2])
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:analysisState",
+            json!({"assetId":ids[2],"submitting":true}),
+        )
         .await
         .unwrap();
     tick(&state).await.unwrap();
@@ -169,9 +157,4 @@ async fn analysis_survives_restart_and_never_repeats_uncertain_submissions() {
     assert_eq!(interrupted["status"], "reconciliation_required");
     assert_eq!(posts.load(Ordering::SeqCst), 2);
     server.abort();
-    sqlx::query("DELETE FROM audio_analysis_jobs WHERE project_id=$1")
-        .bind(project_id)
-        .execute(&pool)
-        .await
-        .unwrap();
 }

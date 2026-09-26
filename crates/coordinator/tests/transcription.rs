@@ -1,3 +1,4 @@
+mod support;
 use axum::{
     Json, Router,
     body::Body,
@@ -6,13 +7,12 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use mvm_coordinator::{
-    AppState, Asset, migrate, router,
+    AppState, Asset, router,
     transcription::{Service, tick},
 };
-use object_store::{ObjectStore, memory::InMemory, path::Path};
+use object_store::path::Path;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use sqlx::postgres::PgPoolOptions;
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -39,19 +39,8 @@ async fn request(app: Router, method: &str, path: &str, body: Value) -> (StatusC
 }
 
 #[tokio::test]
-#[ignore = "requires isolated MVM_TEST_DATABASE_URL; CI runs explicitly"]
-async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
-    let pool = PgPoolOptions::new()
-        .max_connections(8)
-        .connect(&std::env::var("MVM_TEST_DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    let (database,): (String,) = sqlx::query_as("SELECT current_database()")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(database, "mvm_test");
-    migrate(&pool).await.unwrap();
+#[ignore = "requires disposable Convex and ffmpeg; run scripts/test-convex-http.mjs"]
+async fn convex_transcription_survives_restart_and_never_repeats_paid_submissions() {
     let posts = Arc::new(AtomicUsize::new(0));
     let fail = Arc::new(AtomicUsize::new(0));
     let post_count = posts.clone();
@@ -72,13 +61,14 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     let origin = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move { axum::serve(listener, provider).await.unwrap() });
     let state = AppState {
-        pool: pool.clone(),
-        objects: Arc::new(InMemory::new()),
-        token_hash: None,
-        development: true,
-        storage_name: "analysis-test".into(),
-        analysis: None,
         transcription: Some(Arc::new(Service::new(&origin, "test-key").unwrap())),
+        ..support::state()
+    };
+    let client = state.convex.as_ref().unwrap();
+    let auth = mvm_coordinator::convex_sessions::Auth {
+        session_id: None,
+        issuer_hash: None,
+        development: true,
     };
     let app = router(state.clone(), vec![]);
     let (_, project) = request(
@@ -111,14 +101,8 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
             url: format!("/api/v1/projects/{project_id}/assets/{id}"),
             created_at: chrono::Utc::now(),
         };
-        sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
-            .bind(id)
-            .bind(project_id)
-            .bind(key)
-            .bind(sqlx::types::Json(asset))
-            .execute(&pool)
-            .await
-            .unwrap();
+        client.begin_upload(&auth, &asset, &key).await.unwrap();
+        client.complete_upload(&asset, &key, None).await.unwrap();
     }
     state
         .objects
@@ -159,9 +143,11 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     assert_eq!(recovered["status"], "completed");
     assert_eq!(recovered["result"]["chunks"][0]["startMs"], 1_000);
     assert_eq!(recovered["result"]["wordCount"], 2);
-    sqlx::query("UPDATE transcription_jobs SET result=result-'words' WHERE asset_id=$1")
-        .bind(ids[0])
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[0],"mode":"legacy"}),
+        )
         .await
         .unwrap();
     let (_, legacy) = request(app.clone(), "GET", &path, Value::Null).await;
@@ -206,9 +192,11 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
         ids[2]
     );
     request(app.clone(), "POST", &path, Value::Null).await;
-    sqlx::query("UPDATE transcription_jobs SET status='running' WHERE asset_id=$1")
-        .bind(ids[2])
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[2],"mode":"running"}),
+        )
         .await
         .unwrap();
     tick(&state).await.unwrap();
@@ -224,13 +212,17 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     tick(&state).await.unwrap();
     let (_, invalid) = request(app.clone(), "GET", &path, Value::Null).await;
     assert_eq!(invalid["status"], "reconciliation_required");
-    let (receipt,): (sqlx::types::Json<Value>,) =
-        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
-            .bind(ids[4])
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    assert_eq!(receipt.0["primary"]["metadata"]["duration"], 11);
+    let receipt: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[4],"mode":"read"}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        receipt["primary"]["metadata"]["duration"].as_f64(),
+        Some(11.0)
+    );
     tick(&state).await.unwrap();
     assert_eq!(posts.load(Ordering::SeqCst), 3);
     // Recovery never resubmits: use saved valid passes or an explicitly verified
@@ -243,14 +235,15 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
             .0,
         StatusCode::UNPROCESSABLE_ENTITY
     );
-    let (saved,): (sqlx::types::Json<Value>,) =
-        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
-            .bind(ids[0])
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let saved: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[0],"mode":"read"}),
+        )
+        .await
+        .unwrap();
     let mut imported = decision.clone();
-    imported["providerResponse"] = saved.0["primary"].clone();
+    imported["providerResponse"] = saved["primary"].clone();
     assert_eq!(
         request(app.clone(), "POST", &recovery_path, imported.clone())
             .await
@@ -276,19 +269,21 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
             .0,
         StatusCode::CONFLICT
     );
-    let (retained,): (sqlx::types::Json<Value>,) =
-        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
-            .bind(ids[4])
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    assert_eq!(retained.0["primary"], receipt.0["primary"]);
-    assert_eq!(retained.0["recovery"]["paidReplay"], false);
+    let retained: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[4],"mode":"read"}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(retained["primary"], receipt["primary"]);
+    assert_eq!(retained["recovery"]["paidReplay"], false);
     // A interrupted later pass can recover the response already on disk.
-    sqlx::query("UPDATE transcription_jobs SET receipt=$2 WHERE asset_id=$1")
-        .bind(ids[2])
-        .bind(sqlx::types::Json(saved.0))
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:transcriptionState",
+            json!({"assetId":ids[2],"mode":"receipt","receipt":saved}),
+        )
         .await
         .unwrap();
     let saved_path = format!(
@@ -316,27 +311,18 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     tick(&state).await.unwrap();
     assert_eq!(posts.load(Ordering::SeqCst), 3);
     server.abort();
-    sqlx::query("DELETE FROM transcription_jobs WHERE project_id=$1")
-        .bind(project_id)
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:clearTranscription",
+            json!({"projectId":project_id}),
+        )
         .await
         .unwrap();
 }
 
 #[tokio::test]
-#[ignore = "requires isolated MVM_TEST_DATABASE_URL and ffmpeg"]
-async fn sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
-    let pool = PgPoolOptions::new()
-        .max_connections(8)
-        .connect(&std::env::var("MVM_TEST_DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    let (database,): (String,) = sqlx::query_as("SELECT current_database()")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(database, "mvm_test");
-    migrate(&pool).await.unwrap();
+#[ignore = "requires disposable Convex and ffmpeg; run scripts/test-convex-http.mjs"]
+async fn convex_sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
     let posts = Arc::new(AtomicUsize::new(0));
     let counter = posts.clone();
     let provider=Router::new().route("/v1/listen",post(move |axum::extract::Query(query):axum::extract::Query<std::collections::HashMap<String,String>>, _audio: axum::body::Bytes| {
@@ -359,13 +345,14 @@ async fn sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
     let origin = format!("http://{}", listener.local_addr().unwrap());
     let server = tokio::spawn(async move { axum::serve(listener, provider).await.unwrap() });
     let state = AppState {
-        pool: pool.clone(),
-        objects: Arc::new(InMemory::new()),
-        token_hash: None,
-        development: true,
-        storage_name: "transcript-tail-test".into(),
-        analysis: None,
         transcription: Some(Arc::new(Service::new(&origin, "test-key").unwrap())),
+        ..support::state()
+    };
+    let client = state.convex.as_ref().unwrap();
+    let auth = mvm_coordinator::convex_sessions::Auth {
+        session_id: None,
+        issuer_hash: None,
+        development: true,
     };
     let app = router(state.clone(), vec![]);
     let (_, project) = request(
@@ -410,14 +397,8 @@ async fn sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
         .put(&Path::from(key.clone()), bytes.into())
         .await
         .unwrap();
-    sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
-        .bind(id)
-        .bind(project_id)
-        .bind(key)
-        .bind(sqlx::types::Json(asset))
-        .execute(&pool)
-        .await
-        .unwrap();
+    client.begin_upload(&auth, &asset, &key).await.unwrap();
+    client.complete_upload(&asset, &key, None).await.unwrap();
     let path = format!("/api/v1/projects/{project_id}/assets/{id}/transcription");
     request(app.clone(), "POST", &path, Value::Null).await;
     tick(&state).await.unwrap();
@@ -430,9 +411,11 @@ async fn sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
     tick(&state).await.unwrap();
     assert_eq!(posts.load(Ordering::SeqCst), 3);
     server.abort();
-    sqlx::query("DELETE FROM transcription_jobs WHERE project_id=$1")
-        .bind(project_id)
-        .execute(&pool)
+    let _: Value = client
+        .mutation(
+            "testing:clearTranscription",
+            json!({"projectId":project_id}),
+        )
         .await
         .unwrap();
 }

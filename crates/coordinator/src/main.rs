@@ -1,9 +1,7 @@
-use mvm_coordinator::{
-    ApiDoc, AppState, migrate, prune_operator_sessions, reconcile_uploads, router,
-};
-use object_store::{ObjectStore, aws::AmazonS3Builder, local::LocalFileSystem};
+use anyhow::Context;
+use mvm_coordinator::{ApiDoc, AppState, reconcile_uploads, router};
+use object_store::{ObjectStore, aws::AmazonS3Builder};
 use sha2::{Digest, Sha256};
-use sqlx::postgres::PgPoolOptions;
 use std::{env, net::SocketAddr, sync::Arc, time::Duration};
 use utoipa::OpenApi;
 
@@ -30,32 +28,27 @@ async fn main() -> anyhow::Result<()> {
         "Production requires an operator token with at least 32 bytes"
     );
     let token_hash = token.map(|v| Sha256::digest(v.as_bytes()).into());
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .acquire_timeout(Duration::from_secs(5))
-        .connect(&env::var("DATABASE_URL")?)
-        .await?;
-    migrate(&pool).await?;
-    let (objects, storage_name): (Arc<dyn ObjectStore>, String) =
-        if development && env::var("MVM_S3_BUCKET").is_err() {
-            let path = env::var("MVM_LOCAL_ASSETS").unwrap_or_else(|_| ".runtime/assets".into());
-            std::fs::create_dir_all(&path)?;
-            (
-                Arc::new(LocalFileSystem::new_with_prefix(path)?),
-                "local-development".into(),
-            )
-        } else {
-            let endpoint = env::var("MVM_S3_ENDPOINT")?;
-            let store = AmazonS3Builder::new()
-                .with_bucket_name(env::var("MVM_S3_BUCKET")?)
-                .with_region(env::var("MVM_S3_REGION").unwrap_or_else(|_| "us-east-1".into()))
-                .with_endpoint(&endpoint)
-                .with_allow_http(endpoint.starts_with("http://"))
-                .with_access_key_id(env::var("MVM_S3_ACCESS_KEY")?)
-                .with_secret_access_key(env::var("MVM_S3_SECRET_KEY")?)
-                .build()?;
-            (Arc::new(store), "rustfs".into())
-        };
+    let convex_client = mvm_coordinator::convex::Client::new(
+        &env::var("CONVEX_SELF_HOSTED_URL")
+            .context("CONVEX_SELF_HOSTED_URL is required; PostgreSQL fallback is disabled")?,
+        &env::var("MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY")?,
+    )?;
+    let convex = Some(convex_client.clone());
+    anyhow::ensure!(
+        env::var("MVM_S3_BUCKET").is_ok(),
+        "MVVM requires configured RustFS storage"
+    );
+    let endpoint = env::var("MVM_S3_ENDPOINT")?;
+    let objects: Arc<dyn ObjectStore> = Arc::new(
+        AmazonS3Builder::new()
+            .with_bucket_name(env::var("MVM_S3_BUCKET")?)
+            .with_region(env::var("MVM_S3_REGION").unwrap_or_else(|_| "us-east-1".into()))
+            .with_endpoint(&endpoint)
+            .with_allow_http(endpoint.starts_with("http://"))
+            .with_access_key_id(env::var("MVM_S3_ACCESS_KEY")?)
+            .with_secret_access_key(env::var("MVM_S3_SECRET_KEY")?)
+            .build()?,
+    );
     let origins = env::var("MVM_ALLOWED_ORIGINS")
         .unwrap_or_else(|_| {
             "http://localhost:5198,http://127.0.0.1:5198,tauri://localhost,http://tauri.localhost"
@@ -65,13 +58,14 @@ async fn main() -> anyhow::Result<()> {
         .map(|v| v.trim().parse())
         .collect::<Result<Vec<_>, _>>()?;
     let state = AppState {
+        convex,
         transcription: mvm_coordinator::transcription::Service::from_env()?,
         analysis: mvm_coordinator::analysis_jobs::Service::from_env()?,
-        pool,
         objects,
         token_hash,
         development,
-        storage_name,
+        storage_name: "rustfs".into(),
+        object_bucket: env::var("MVM_S3_BUCKET")?,
     };
     let recovery_state = state.clone();
     let recovery = tokio::spawn(async move {
@@ -81,7 +75,14 @@ async fn main() -> anyhow::Result<()> {
         loop {
             interval.tick().await;
             if tokio::time::Instant::now() >= next_session_prune {
-                if prune_operator_sessions(&recovery_state.pool).await.is_err() {
+                let prune_failed = convex_client
+                    .mutation::<serde_json::Value>(
+                        "maintenance:pruneSessions",
+                        serde_json::json!({}),
+                    )
+                    .await
+                    .is_err();
+                if prune_failed {
                     tracing::warn!("Ended session cleanup unavailable; will retry in one hour");
                 }
                 next_session_prune = tokio::time::Instant::now() + Duration::from_secs(3600);
@@ -101,7 +102,7 @@ async fn main() -> anyhow::Result<()> {
     let transcription_worker = tokio::spawn(mvm_coordinator::transcription::run(state.clone()));
     let app = router(state, origins);
     let listener = tokio::net::TcpListener::bind(bind).await?;
-    tracing::info!(%bind, development, "Music Vending Machine coordinator listening");
+    tracing::info!(%bind, development, "Music Video Vending Machine coordinator listening");
     axum::serve(listener, app)
         .with_graceful_shutdown(async {
             let _ = tokio::signal::ctrl_c().await;

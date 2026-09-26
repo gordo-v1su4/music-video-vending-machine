@@ -198,14 +198,14 @@ a {
 }
 .brand-icon {
   width: 43px;
+  flex-shrink: 0;
   min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "DM Sans", sans-serif;
-  letter-spacing: -4px;
-  padding-right: 4px;
-  font-size: 25px;
+  letter-spacing: -0.5px;
+  font-size: 16px;
   font-weight: 650;
   background: #27272a;
   border-radius: 11px;

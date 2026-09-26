@@ -1,0 +1,20 @@
+{
+  "state": "passed",
+  "checkedAt": "2026-09-26T09:51:34.995114+00:00",
+  "endpoint": "https://s3.v1su4.dev",
+  "bucket": "mvvm",
+  "key": "projects/21c0b035-e633-4e11-9326-05ccf72b348e/permission-probe.bin",
+  "sha256": "3e12fc741f39a2a8a054b12ac6ad808049ee8b35d7adae13f3763d63f5f57dcc",
+  "denials": [
+    "delete-own-fixture",
+    "write-outside-projects",
+    "read-outside-projects",
+    "list-other-bucket",
+    "list-outside-projects",
+    "list-bucket-root"
+  ],
+  "bucketEnumeration": "filtered_to_application_bucket",
+  "readbackVerified": true,
+  "rangeVerified": true,
+  "anonymousHttpStatus": 403
+}

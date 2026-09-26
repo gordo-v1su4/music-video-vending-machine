@@ -14,12 +14,12 @@ sha2.workspace = true
 utoipa.workspace = true
 axum = { version = "0.8", features = ["multipart"] }
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "json", "chrono"] }
 tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 object_store = { version = "0.12", features = ["aws"] }
 bytes = "1"
+futures = "0.3"
 anyhow = "1"
 async-stream = "0.3"
 subtle = "2"
