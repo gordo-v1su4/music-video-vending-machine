@@ -60,5 +60,12 @@ remain future operational work.
 - PowerShell installer parses successfully. Installation, actual Task Scheduler
   execution, and BWS access from that context still require live verification
   after review. No scheduled-backup acceptance is claimed yet.
+- PR #9 merged at `b3104ab` after Greptile 5/5 on `69c9a05`, green CI and resolved
+  findings. The first installation failed before task registration: PowerShell
+  `Set-Acl` requested SeSecurityPrivilege on existing archive files. The follow-up
+  uses the .NET access-control API to persist only DACL changes, preserving owner
+  and audit metadata. All paths must already belong to the current user.
+  Repeated fixture checks and the actual existing archive ACL update passed;
+  task installation remains pending that fix's review.
 - The earlier current-backup restore/restart drill is documented in
   [recovery evidence](evidence/2026-09-26-convex-same-bucket-recovery.md).
