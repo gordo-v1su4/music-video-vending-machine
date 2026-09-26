@@ -7,7 +7,8 @@ Status: locally verified; GitHub review/merge gate pending. This is M2 progress,
 - Rust workspace: 13 ordinary tests passed. Both isolated PostgreSQL integration tests passed against `mvm_test`, including migrations, hash persistence, 12-hour expiry, restart, bootstrap rejection on project routes, bad token/origin rejection, individual/all revocation, issuer rotation, and closure of an already-open SSE stream.
 - A streaming JSON request expires after header authentication and before body completion; project creation returns 401.
 - `cargo fmt --all -- --check`, locked Clippy with warnings denied, generated OpenAPI TypeScript `--check`, and `git diff --check` pass.
-- Bun: 40 tests / 124 assertions pass. Coverage includes bootstrap isolation, no redirects/cache, aborted late responses, expired client writes, and retryable failed sign-out.
+- Bun: 41 tests / 127 assertions pass. Coverage includes bootstrap isolation, no redirects/cache, aborted late responses, session-abort messaging, clock-skew-safe sign-out and monotonic expiry scheduling, and retryable failed sign-out.
+- PostgreSQL integration coverage also verifies bounded retention cleanup removes old expired/revoked sessions while preserving active sessions.
 - Svelte check: zero errors/warnings. Svelte autofixer: no issues/suggestions. Impeccable detector: no findings on the changed page/CSS. Production web build passes.
 - Python: 16 tests, 15 pass and one POSIX-only mode check skipped on Windows. Parallel probe callers share one session exchange; failed exchange is not cached.
 - CI now runs all ignored coordinator integration tests explicitly, not only the earlier persistence file.
@@ -17,6 +18,8 @@ Status: locally verified; GitHub review/merge gate pending. This is M2 progress,
 Verification moved to the Codex in-app Browser at the user's request; the temporary external Playwright browser was closed. Production preview on 5198 serves this worktree, API 5199 preserves the original development database/media directory. An isolated local fixture API on 5201 uses `mvm_sessions_ui`, local media, and a synthetic test-only key; it is not private RustFS deployment proof.
 
 - Sign-in opens the existing fixture project; the access-key field clears.
+- A failed connection attempt to an unavailable replacement address preserves the existing session and project access in the in-app Browser.
+- Stopping and restarting the isolated fixture API produces a transient polling error, then clears it automatically after a successful poll without losing the active session.
 - Sign-out keeps the unsaved treatment and old revision, disables Save and Import, and offers reconnection. Reconnection preserves the draft and restores saving.
 - Expiring the fixture session in PostgreSQL causes the production-build browser to show the session-ended error, disable Save/Import, and retain the draft.
 - User requested dark zinc/neutral surfaces. The visible workspace now uses near-black/neutral zinc surfaces and neutral action/focus colors. Semantic error/success colors remain distinct. Thirty-six sampled text elements had contrast >=6.91:1; this is a scoped measurement, not an accessibility certification.

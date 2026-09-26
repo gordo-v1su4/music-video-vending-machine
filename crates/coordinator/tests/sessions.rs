@@ -3,7 +3,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{AppState, migrate, router};
+use mvm_coordinator::{AppState, migrate, prune_operator_sessions, router};
 use object_store::memory::InMemory;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -99,7 +99,7 @@ async fn sessions_are_bounded_revocable_and_durable() {
         .unwrap();
     assert_eq!(rejected.status(), StatusCode::FORBIDDEN);
     let mut grants = Vec::new();
-    for _ in 0..4 {
+    for _ in 0..6 {
         let (status, grant) = call(
             &app,
             "POST",
@@ -115,6 +115,31 @@ async fn sessions_are_bounded_revocable_and_durable() {
     let b = grants[1]["token"].as_str().unwrap();
     let c = grants[2]["token"].as_str().unwrap();
     let d = grants[3]["token"].as_str().unwrap();
+    let old_expired = uuid::Uuid::parse_str(grants[4]["session"]["id"].as_str().unwrap()).unwrap();
+    let old_revoked = uuid::Uuid::parse_str(grants[5]["session"]["id"].as_str().unwrap()).unwrap();
+    sqlx::query("UPDATE operator_sessions SET created_at=clock_timestamp()-interval '9 days', expires_at=clock_timestamp()-interval '8 days' WHERE id=$1")
+        .bind(old_expired).execute(&pool).await.unwrap();
+    sqlx::query(
+        "UPDATE operator_sessions SET revoked_at=clock_timestamp()-interval '8 days' WHERE id=$1",
+    )
+    .bind(old_revoked)
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert!(prune_operator_sessions(&pool).await.unwrap() >= 2);
+    let retained: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM operator_sessions WHERE id=ANY($1)")
+            .bind(vec![old_expired, old_revoked])
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(retained, 0);
+    assert_eq!(
+        call(&app, "GET", "/api/v1/sessions/current", b, Value::Null)
+            .await
+            .0,
+        StatusCode::OK
+    );
     // Authenticate headers first, then expire the session while the JSON body
     // is still arriving. The write must check again after body extraction.
     let (arrived_tx, arrived_rx) = tokio::sync::oneshot::channel();

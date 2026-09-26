@@ -38,6 +38,7 @@
   let name = $state("");
   let busy = $state(false);
   let error = $state("");
+  let sessionError = $state("");
   let notice = $state("");
   let treatment = $state("");
   let sections = $state<Section[]>([]);
@@ -107,6 +108,7 @@
   }
   function disconnect() {
     clearTimeout(expiryTimer);
+    sessionError = "";
     connectionEpoch++;
     api.close();
     session = null;
@@ -127,16 +129,19 @@
   }
   async function checkSession() {
     if (!connected || !session) return;
-    if (Date.now() >= Date.parse(session.expiresAt)) {
-      disconnect();
-      error = "Your session expired. Sign in again to save your work.";
-      return;
-    }
     if (sessionCheck) return;
     const client = api;
     sessionCheck = true;
-    try { await client.currentSession(); }
-    catch (e) { if (client === api && connected) report(e); }
+    try {
+      await client.currentSession();
+      if (client === api) sessionError = "";
+    }
+    catch (e) {
+      if (client === api && connected) {
+        if (e instanceof ApiError && e.status === 401) report(e);
+        else sessionError = e instanceof Error ? e.message : "Session check failed. Retrying shortly.";
+      }
+    }
     finally { sessionCheck = false; }
   }
   async function connect() {
@@ -163,16 +168,20 @@
       api = next;
       session = next.session;
       clearTimeout(expiryTimer);
-      if (session) expiryTimer = setTimeout(() => void checkSession(), Math.max(0, Date.parse(session.expiresAt) - Date.now()));
+      if (session) expiryTimer = setTimeout(() => void checkSession(), next.sessionRemainingMs());
       projects = list;
       connected = true;
+      sessionError = "";
       settingsOpen = false;
       notice = "Connected to your studio.";
       // Preserve the old revision and local draft; stale saves still conflict.
       if (project) await loadMedia(assets);
     } catch (e) {
       next?.close();
-      if (epoch === connectionEpoch) { disconnect(); report(e); }
+      if (epoch === connectionEpoch) {
+        if (!connected || next === api) { disconnect(); report(e); }
+        else error = e instanceof Error ? e.message : "Could not connect to the proposed studio. Your existing connection is still available.";
+      }
     } finally {
       connecting = false;
     }
@@ -438,14 +447,14 @@
           >{/if}<span class="private-badge">Private studio</span>
       </div>
     </header>
-    {#if error}<div class="banner error" role="alert">
-        <span>{error}</span>{#if conflict && project}<button
+    {#if error || sessionError}<div class="banner error" role="alert">
+        <span>{error || sessionError}</span>{#if conflict && project}<button
             onclick={() => openProject(project!.id)}
             >Discard drafts & reload</button
           >{/if}<button
           class="dismiss"
           aria-label="Dismiss error"
-          onclick={() => (error = "")}><Icon name="close" size={18} /></button
+          onclick={() => { error = ""; sessionError = ""; }}><Icon name="close" size={18} /></button
         >
       </div>{/if}
     {#if notice}<div class="banner success" role="status">

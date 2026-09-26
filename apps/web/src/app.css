@@ -1215,8 +1215,8 @@ main {
   border-color: #71717a;
 }
 .timeline > button:nth-child(3n) {
-  background: #505044;
-  border-color: #717264;
+  background: #27272a;
+  border-color: #71717a;
 }
 .timeline > button > span {
   white-space: nowrap;

@@ -235,6 +235,12 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     )
 }
 
+/// Retain ended session metadata for seven days, then prune it in bounded batches.
+pub async fn prune_operator_sessions(pool: &PgPool) -> Result<u64, sqlx::Error> {
+    Ok(sqlx::query("DELETE FROM operator_sessions WHERE id IN (SELECT id FROM operator_sessions WHERE expires_at < clock_timestamp()-interval '7 days' OR revoked_at < clock_timestamp()-interval '7 days' LIMIT 1000)")
+        .execute(pool).await?.rows_affected())
+}
+
 #[utoipa::path(get, path="/api/v1/projects", responses((status=200, body=Vec<Project>)))]
 async fn list_projects(State(state): State<AppState>) -> ApiResult<Json<Vec<Project>>> {
     let rows: Vec<(sqlx::types::Json<Project>,)> =

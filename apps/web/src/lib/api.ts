@@ -22,6 +22,8 @@ export class StudioApi {
   session: SessionInfo | null = null;
   private controller = new AbortController();
   private closed = false;
+  private sessionDeadline = Infinity;
+  sessionRemainingMs() { return Math.max(0, this.sessionDeadline - performance.now()); }
   close() {
     this.token = "";
     this.session = null;
@@ -36,11 +38,13 @@ export class StudioApi {
         // A separate, short-lived client prevents the bootstrap key reaching project routes.
         const login = new StudioApi(origin, bootstrap);
         try {
+          const started = performance.now();
           const grant = await login.request<components["schemas"]["SessionGrant"]>("/sessions", {
             method: "POST", body: JSON.stringify({ clientLabel: "Music Vending Machine workspace" }),
           });
           client.token = grant.token;
           client.session = grant.session;
+          client.sessionDeadline = started + Date.parse(grant.session.expiresAt) - Date.parse(grant.session.createdAt);
         } finally { login.close(); }
       }
       return client;
@@ -63,7 +67,8 @@ export class StudioApi {
     );
   }
   private requireSession() {
-    if (this.session && Date.now() >= Date.parse(this.session.expiresAt)) this.close();
+    // The coordinator's clock owns expiry. A skewed browser clock must never
+    // discard a bearer before sign-out has a chance to revoke it remotely.
     if (this.closed) throw new ApiError(401, "Sign in to continue.");
   }
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -81,6 +86,7 @@ export class StudioApi {
         signal: this.controller.signal,
       });
     } catch {
+      if (this.closed) throw new ApiError(401, "Your session has ended. Sign in to continue.");
       throw new Error(
         "The studio server could not be reached. Check its address and connection.",
       );

@@ -8,7 +8,8 @@ All endpoints under /api/v1. JSON camelCase. The operator bootstrap key authoriz
 - POST /sessions/revoke-all: revoke sessions issued by the current bootstrap key, including the caller.
 - Rotation of the bootstrap key invalidates existing sessions. Reverting that key can re-enable unexpired sessions unless they were explicitly revoked first.
 - SSE checks session validity each second and ends with a session-ended event. Writes recheck after body extraction (and project-lock acquisition); an already-authorized storage operation may finish after sign-out. Its durable receipt remains recoverable.
-- The UI holds credentials only in memory, polls remote revocation every 15 seconds, schedules local expiry, and keeps unsaved drafts in the current window across sign-out/reconnect. Closing or reloading the window loses those drafts. Failed remote sign-out remains visible and can be retried; it does not falsely report successful revocation.
+- The UI holds credentials only in memory, polls remote revocation every 15 seconds, and schedules an authoritative server check using the session duration and a monotonic timer. Client wall-clock skew cannot discard a token before remote sign-out. Unsaved drafts stay in the current window across sign-out/reconnect; closing or reloading loses them. Failed remote sign-out remains visible and retryable. Failed replacement connections preserve the working session, and a successful poll clears a transient session-check error.
+- Hourly cleanup removes at most 1,000 session rows that expired or were revoked more than seven days ago. Active and recently ended sessions remain available; expiry and revocation indexes support bounded cleanup.
 
 - GET /health: {status, storage, version, development, sessionRequired, capabilities}; readiness must fail on unavailable database.
 - GET /projects: Project[] summaries or full projects.

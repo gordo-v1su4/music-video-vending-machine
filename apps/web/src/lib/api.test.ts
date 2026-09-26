@@ -7,14 +7,24 @@ afterEach(() => {
 });
 
 describe("studio API trust boundary", () => {
-  test("expired sessions cannot send writes even before the UI poll runs", async () => {
-    const fetchSpy = mock(async () => Response.json({}));
+  test("sign-out reaches the coordinator even when local time is beyond server expiry", async () => {
+    const fetchSpy = mock(async (_input: string | URL | Request, _options?: RequestInit) => Response.json({ revoked: true }));
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
     const api = new StudioApi("http://127.0.0.1:5199", "session-only");
     api.session = { id: "expired", clientLabel: "test", createdAt: new Date(0).toISOString(), expiresAt: new Date(1).toISOString() };
-    await expect(api.create("Should not be sent")).rejects.toThrow("Sign in");
-    expect(fetchSpy).not.toHaveBeenCalled();
+    await api.signOut();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain("/sessions/current/revoke");
     expect(api.session).toBeNull();
+  });
+  test("a fetch rejected by session abort explains sign-in instead of network failure", async () => {
+    globalThis.fetch = mock((_input: unknown, options?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      options?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
+    })) as unknown as typeof fetch;
+    const api = new StudioApi("http://127.0.0.1:5199", "session-only");
+    const pending = api.projects();
+    api.close();
+    await expect(pending).rejects.toThrow("Your session has ended");
   });
   test("exchanges the bootstrap once and uses only the session on project routes", async () => {
     const sent: { path: string; authorization: string | null }[] = [];
@@ -24,10 +34,12 @@ describe("studio API trust boundary", () => {
       expect(options?.redirect).toBe("error");
       expect(options?.cache).toBe("no-store");
       if (path.endsWith("/health")) return Response.json({ sessionRequired: true });
-      if (path.endsWith("/sessions")) return Response.json({ token: "session-only", session: { id: "one" } });
+      if (path.endsWith("/sessions")) return Response.json({ token: "session-only", session: { id: "one", clientLabel: "test", createdAt: "2000-01-01T00:00:00Z", expiresAt: "2000-01-01T12:00:00Z" } });
       return Response.json([]);
     }) as unknown as typeof fetch;
     const api = await StudioApi.connect("http://127.0.0.1:5199", "bootstrap-only");
+    expect(api.sessionRemainingMs()).toBeGreaterThan(43_190_000);
+    expect(api.sessionRemainingMs()).toBeLessThanOrEqual(43_200_000);
     await api.projects();
     await api.signOut();
     expect(sent).toEqual([
