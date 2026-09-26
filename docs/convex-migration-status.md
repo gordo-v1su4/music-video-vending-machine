@@ -7,8 +7,8 @@ This supersedes PostgreSQL as the application database. The primary local coordi
 ## Current status
 
 - Local cutover verified: original project records and media retained; revision-7 song unchanged across the Convex-only binary restart. Browser lyrics, analysis and playback passed.
-- SQL runtime and dependency removed. CI uses disposable Convex with fake providers; six HTTP acceptance tests and 30 ordinary Rust tests passed locally. Remote CI/review are not yet verified.
-- Local backup and separate-instance restore checks passed. Scheduled/off-host retention and same-bucket restore workflow remain incomplete.
+- SQL runtime and dependency removed. PR #7 merged as `24b96cc` after exact-head Greptile 5/5 on `de64fe3`, green CI and resolved findings. Seven disposable HTTP acceptance tests and 30 ordinary Rust tests passed. The reviewed Convex functions/index and coordinator are running locally; saved revision-7 project comparison and browser reload passed.
+- Local backup and separate-instance restore checks passed. Explicit same-bucket object recovery now passes unit tests and live verification of existing objects; current-backup database restore and scheduled/off-host retention remain incomplete.
 - Durable private deployment, installed Windows client and the remaining PRD milestones are not complete. Implementation PR requires exact-head Greptile 5/5, green CI and resolved findings.
 
 ## Chronological evidence

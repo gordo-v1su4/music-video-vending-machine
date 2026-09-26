@@ -80,9 +80,10 @@ export async function verifyBackup(directory,manifestSha256){
   return {snapshot,manifest};
 }
 
-export async function restoreObjects(directory,manifestSha256,client,targetBucket,now=new Date().toISOString()){
+export async function restoreObjects(directory,manifestSha256,client,targetBucket,now=new Date().toISOString(),{allowSameBucket=false}={}){
   const {snapshot,manifest}=await verifyBackup(directory,manifestSha256);
-  if(!["mvvm","music-vending-machine"].includes(targetBucket)||targetBucket===manifest.bucket)throw Error("Restore requires a separate approved bucket");
+  if(!["mvvm","music-vending-machine"].includes(targetBucket))throw Error("Invalid restore bucket");
+  if(targetBucket===manifest.bucket && allowSameBucket!==true)throw Error("Restore requires a separate bucket or explicit same-bucket recovery");
   for(const item of manifest.objects){
     if(item.state==="missing")continue;
     const bytes=await readFile(join(directory,"objects",item.storedSha256));

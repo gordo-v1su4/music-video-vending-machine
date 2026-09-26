@@ -73,3 +73,60 @@ test("restore refuses conflicting destination bytes",async()=>{
   }};
   await assert.rejects(restoreObjects(f.directory,backup.manifestSha256,target,"mvvm"),/differs/);
 });
+
+test("same-bucket recovery is explicit, fills missing objects and retries without overwriting",async()=>{
+  const f=await fixture();
+  f.snapshot.operator_sessions=[{id:"session",revoked_at:null}];
+  f.snapshot.audio_analysis_jobs=[{id:"job",status:"submitting",receipt:"retained",result:null}];
+  const backup=await createBackup(f.snapshot,"mvvm",f.client,f.directory);
+  const stored=new Map();let calls=0,writes=0;
+  const target={async send(command){
+    calls++;
+    const {Bucket,Key,Body,IfNoneMatch}=command.input;
+    assert.equal(Bucket,"mvvm");
+    if(Body!==undefined){
+      assert.equal(IfNoneMatch,"*");
+      if(stored.has(Key))throw {$metadata:{httpStatusCode:412}};
+      stored.set(Key,Buffer.from(Body));writes++;return {};
+    }
+    const bytes=stored.get(Key);
+    return {ContentLength:bytes.length,Body:{transformToByteArray:async()=>bytes}};
+  }};
+  await assert.rejects(restoreObjects(f.directory,backup.manifestSha256,target,"mvvm"),/explicit/);
+  assert.equal(calls,0);
+  const now="2026-09-26T12:00:00Z";
+  const restored=await restoreObjects(f.directory,backup.manifestSha256,target,"mvvm",now,{allowSameBucket:true});
+  assert.deepEqual(stored.get(f.row.object_key),f.body);
+  assert.equal(restored.operator_sessions[0].revoked_at,now);
+  assert.equal(restored.audio_analysis_jobs[0].status,"reconciliation_required");
+  assert.equal(restored.audio_analysis_jobs[0].receipt,"retained");
+  assert.deepEqual(await restoreObjects(f.directory,backup.manifestSha256,target,"mvvm",now,{allowSameBucket:true}),restored);
+  assert.equal(writes,1);
+  stored.set(f.row.object_key,Buffer.from("newer conflicting bytes"));
+  await assert.rejects(restoreObjects(f.directory,backup.manifestSha256,target,"mvvm",now,{allowSameBucket:true}),/differs/);
+  assert.equal(stored.get(f.row.object_key).toString(),"newer conflicting bytes");
+  assert.equal(writes,1);
+  assert.deepEqual((await verifyBackup(f.directory,backup.manifestSha256)).snapshot,f.snapshot);
+});
+
+test("same-bucket restore retains missing and incomplete upload state without promotion",async()=>{
+  const f=await fixture();
+  const incomplete=Buffer.from("partial");
+  f.snapshot.assets=[];
+  f.snapshot.upload_intents=[f.row,{...f.row,id:"missing",object_key:"projects/project/originals/missing"}];
+  const source={async send(command){
+    if(command.input.Key.endsWith("missing"))throw {$metadata:{httpStatusCode:404}};
+    return {ContentLength:incomplete.length,Body:{transformToByteArray:async()=>incomplete}};
+  }};
+  const backup=await createBackup(f.snapshot,"mvvm",source,f.directory);
+  const written=[];
+  const target={async send(command){
+    assert.equal(command.input.Key,f.row.object_key);
+    if(command.input.Body!==undefined){written.push(Buffer.from(command.input.Body));return {};}
+    return {ContentLength:incomplete.length,Body:{transformToByteArray:async()=>incomplete}};
+  }};
+  const restored=await restoreObjects(f.directory,backup.manifestSha256,target,"mvvm",undefined,{allowSameBucket:true});
+  assert.deepEqual(written,[incomplete]);
+  assert.deepEqual(restored.upload_intents,f.snapshot.upload_intents);
+  assert.deepEqual(restored.assets,[]);
+});
