@@ -1,0 +1,10 @@
+{
+  "state": "passed",
+  "legacyKey": "music-vending-machine/b6e6a6a4-962a-48b8-a7d8-fa7e8b00b193/originals/9a8a0cff-c30c-4aeb-bead-395604dabb22",
+  "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+  "scopedReadVerified": true,
+  "denials": [
+    "legacy-write",
+    "legacy-delete"
+  ]
+}

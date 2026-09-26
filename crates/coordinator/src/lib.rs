@@ -449,7 +449,7 @@ async fn upload_asset(
         url: format!("/api/v1/projects/{id}/assets/{asset_id}"),
         created_at: Utc::now(),
     };
-    let key = ObjectPath::from(format!("music-vending-machine/{id}/originals/{asset_id}"));
+    let key = ObjectPath::from(format!("projects/{id}/originals/{asset_id}"));
     // Commit intent before touching object storage. A cancelled request or an
     // uncertain PUT/commit outcome leaves enough information to reconcile.
     sqlx::query(
@@ -584,8 +584,14 @@ async fn get_asset(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Response> {
-    let asset = read_asset(&state.pool, id, asset_id).await?;
-    let key = ObjectPath::from(format!("music-vending-machine/{id}/originals/{asset_id}"));
+    let row: Option<(sqlx::types::Json<Asset>, String)> =
+        sqlx::query_as("SELECT metadata,object_key FROM assets WHERE id=$1 AND project_id=$2")
+            .bind(asset_id)
+            .bind(id)
+            .fetch_optional(&state.pool)
+            .await?;
+    let (asset, key) = row.ok_or_else(missing)?;
+    let key = ObjectPath::from(key);
     let object = state.objects.get(&key).await.map_err(|_| {
         ApiError(
             StatusCode::SERVICE_UNAVAILABLE,

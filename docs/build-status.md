@@ -6,7 +6,7 @@ Updated: 2026-09-25. Overall: in progress, not a release.
 | --- | --- | --- |
 | M0 | Accepted | PRD/backlog, private GitHub baseline and CI; [PR #1](https://github.com/gordo-v1su4/music-vending-machine/pull/1) merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
 | M1 | Partial | [Live probes](evidence/2026-09-25-capabilities.md): private RustFS round-trip and Essentia fixture passed; Qwen still and H3 clip generated and inspected; Qwen edit preservation failed; vision, WebGPU/WebView2, Jcode and Ableton gates pending |
-| M2 | Partial | Rust/PostgreSQL project/revision/event transactions, immutable uploads, auth/origin gates and conflicts tested locally; live RustFS and backup/restore pending |
+| M2 | Partial | [Private storage/recovery](evidence/2026-09-25-private-recovery.md): scoped RustFS and authenticated coordinator round-trip, conflicts, process restart and cold fixture restore passed; Windows sharing, operator session lifecycle and pending-upload backup acceptance remain |
 | M3 | Pending | Trigger/worker integration not implemented |
 | M4–M5 | Partial | Real Svelte intake, master/story/reference/approval UI and timed audio preview; director, Essentia and installed Tauri verification pending |
 | M6–M8 | Partial primitives only | Domain pin/revision/coverage/time rules tested; generation, musical ranking, QC and export pending |
@@ -15,6 +15,8 @@ Updated: 2026-09-25. Overall: in progress, not a release.
 | M11 | Pending | Requires verified pilot |
 
 ## Known external constraints
+
+- [PR #2](https://github.com/gordo-v1su4/music-vending-machine/pull/2) merged at `e97ed9e` after Greptile 5/5 on `53ec733` and passing CI. Its generation probes do not enable unverified production capabilities.
 
 - Linear connection returned reauthentication required during planning. Repository tracking continues independently.
 - No application existed at implementation start. Research and model-file inventories do not prove successful generation.

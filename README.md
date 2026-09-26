@@ -53,6 +53,8 @@ Dark mode is the user-confirmed default. UI changes use the pinned [Impeccable w
 
 Local service/model feasibility probes live in `scripts/probe-*.py`; these are operator tools, not the production worker. Their receipts distinguish generated output from inspected acceptance and retain uncertain submissions without automatic retries. See [capability evidence](docs/evidence/2026-09-25-capabilities.md) for pinned workflows, measured results and remaining gates.
 
+The [private storage and recovery evidence](docs/evidence/2026-09-25-private-recovery.md) covers scoped RustFS credentials, authenticated API restart checks and a cold fixture restored into a separate database and fresh object keys. `scripts/verify-local-recovery.py` is an isolated local acceptance harness, not a deployed backup scheduler.
+
 Run deterministic probe guard tests without contacting providers:
 
 ```powershell

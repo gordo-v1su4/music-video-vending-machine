@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "state": "restored_and_verified",
+  "sourceDatabase": "mvm_storage_acceptance",
+  "createdAt": "2026-09-26T02:49:49.858306+00:00",
+  "databaseSha256": "a663b80f4606be5b8a6589f1f8445ba118a281399e73acb54dd98759ecd631d5",
+  "assets": [
+    {
+      "id": "9a8a0cff-c30c-4aeb-bead-395604dabb22",
+      "originalKey": "music-vending-machine/b6e6a6a4-962a-48b8-a7d8-fa7e8b00b193/originals/9a8a0cff-c30c-4aeb-bead-395604dabb22",
+      "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+      "bytes": 16044,
+      "restoredKey": "projects/86dc453ae5cd4cbbac4cb2568aeb0627/restored/9a8a0cff-c30c-4aeb-bead-395604dabb22/56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+    },
+    {
+      "id": "f2b87d08-2aba-4e1b-9f84-cdf9c8a50f76",
+      "originalKey": "projects/b6e6a6a4-962a-48b8-a7d8-fa7e8b00b193/originals/f2b87d08-2aba-4e1b-9f84-cdf9c8a50f76",
+      "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+      "bytes": 16044,
+      "restoredKey": "projects/86dc453ae5cd4cbbac4cb2568aeb0627/restored/f2b87d08-2aba-4e1b-9f84-cdf9c8a50f76/56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+    }
+  ],
+  "restoredDatabase": "mvm_storage_restore_86dc453ae5cd4cbbac4cb2568aeb0627",
+  "restoreId": "86dc453ae5cd4cbbac4cb2568aeb0627",
+  "restoredAt": "2026-09-26T02:49:52.619400+00:00",
+  "limits": "Cold isolated fixture; no production scheduling, off-host backup or pending-upload restore acceptance",
+  "restoredApiVerified": true,
+  "projectUnchanged": true,
+  "distinctRestoredKeys": 2,
+  "identicalMediaAssets": 2,
+  "windowsAclInheritanceDisabled": true
+}
