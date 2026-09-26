@@ -1,0 +1,37 @@
+{
+  "observedAt": "2026-09-25T22:39:16.012838-04:00",
+  "scope": "Isolated local acceptance; production not deployed",
+  "projectId": "b6e6a6a4-962a-48b8-a7d8-fa7e8b00b193",
+  "assetId": "9a8a0cff-c30c-4aeb-bead-395604dabb22",
+  "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+  "authenticatedDownloadVerified": true,
+  "unauthenticatedHttpStatus": 401,
+  "untrustedOriginHttpStatus": 403,
+  "concurrentWriteStatuses": [
+    200,
+    409
+  ],
+  "processRestart": "verified_after_operator_restart",
+  "restoredApi": "verified_after_operator_restart",
+  "restoredDownloadVerified": true,
+  "backup": {
+    "schemaVersion": 1,
+    "state": "restored_and_verified",
+    "sourceDatabase": "mvm_storage_acceptance",
+    "createdAt": "2026-09-25T22:38:38.005577-04:00",
+    "databaseSha256": "7a509d449b94a968f350f812b1608d905c5f5d8176f2d7022ad62281f16de75b",
+    "assets": [
+      {
+        "id": "9a8a0cff-c30c-4aeb-bead-395604dabb22",
+        "originalKey": "projects/b6e6a6a4-962a-48b8-a7d8-fa7e8b00b193/originals/9a8a0cff-c30c-4aeb-bead-395604dabb22",
+        "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+        "bytes": 16044,
+        "restoredKey": "projects/d4337770c9354f758149cdb1fa98f8cc/restored/56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9"
+      }
+    ],
+    "restoredDatabase": "mvm_storage_restore_d4337770c9354f758149cdb1fa98f8cc",
+    "restoreId": "d4337770c9354f758149cdb1fa98f8cc",
+    "restoredAt": "2026-09-25T22:38:40.482906-04:00",
+    "limits": "Cold isolated fixture; no production scheduling, off-host backup or pending-upload restore acceptance"
+  }
+}

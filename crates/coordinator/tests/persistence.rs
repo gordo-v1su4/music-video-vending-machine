@@ -277,6 +277,7 @@ async fn concurrent_writes_restart_and_asset_ownership() {
     assert!(event.contains("id: 2"));
     assert!(event.contains("event: project"));
     let asset_response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .uri(asset["url"].as_str().unwrap())
@@ -297,6 +298,71 @@ async fn concurrent_writes_restart_and_asset_ownership() {
         format!("{:x}", Sha256::digest(downloaded)),
         asset["sha256"].as_str().unwrap()
     );
+    // Persisted keys are authoritative: an older/restored asset need not use
+    // the current writer's prefix. Never reconstruct its key from an ID.
+    let asset_id = uuid::Uuid::parse_str(asset["id"].as_str().unwrap()).unwrap();
+    let (new_key,): (String,) = sqlx::query_as("SELECT object_key FROM assets WHERE id=$1")
+        .bind(asset_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert!(
+        new_key.starts_with("projects/"),
+        "new keys must fit scoped storage policy"
+    );
+    let legacy_key = format!("music-vending-machine/{id}/originals/{asset_id}");
+    state
+        .objects
+        .put(&legacy_key.as_str().into(), test_wav().into())
+        .await
+        .unwrap();
+    sqlx::query("UPDATE assets SET object_key=$1 WHERE id=$2")
+        .bind(&legacy_key)
+        .bind(asset_id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    state
+        .objects
+        .delete(&new_key.as_str().into())
+        .await
+        .unwrap();
+    let legacy_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(asset["url"].as_str().unwrap())
+                .header("host", "127.0.0.1:5199")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(legacy_response.status(), StatusCode::OK);
+    assert_eq!(
+        legacy_response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes(),
+        test_wav()
+    );
+    let wrong_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!(
+                    "/api/v1/projects/{}/assets/{asset_id}",
+                    other["id"].as_str().unwrap()
+                ))
+                .header("host", "127.0.0.1:5199")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(wrong_project.status(), StatusCode::NOT_FOUND);
     // Recreate the durable state at crash points: intent only, object persisted
     // before metadata commit, and corrupt content. Recovery must be repeatable.
     let project_id = uuid::Uuid::parse_str(id).unwrap();
