@@ -6,6 +6,12 @@ on:
 permissions:
   contents: read
 jobs:
+  backup-acl:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - shell: pwsh
+        run: ./scripts/test-backup-acl.ps1
   probes:
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +37,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check:convex
       - run: bunx vitest run scripts/convex-migration.test.ts scripts/convex-persistence.test.ts
-      - run: node --test scripts/migration-payloads.test.mjs scripts/convex-backup.test.mjs
+      - run: node --test scripts/migration-payloads.test.mjs scripts/convex-backup.test.mjs scripts/scheduled-backup.test.mjs
       - run: node scripts/test-convex-http.mjs
       - run: bun install --frozen-lockfile
         working-directory: apps/web

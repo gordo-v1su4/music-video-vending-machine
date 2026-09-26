@@ -4,7 +4,7 @@ Updated September 26, 2026. This tracks the approved [product requirements](PRD.
 
 **Where we are:** the current 5:53 master is imported and analyzed. Revision 7 saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
 
-**Current task: Convex migration review, then private deployment and recovery acceptance.** PR #7 replaces PostgreSQL with self-hosted Convex on home app-vm and the scoped RustFS `mvvm` bucket. Local cutover, source preservation, isolated restore and browser playback have passed; exact-head review and CI gates remain pending.
+**Current task: scheduled backups, then private deployment.** PR #7 migrated PostgreSQL to home Convex/RustFS and PR #8 added explicit same-bucket recovery; both merged after exact-head Greptile 5/5, green CI and resolved findings. Local cutover, source preservation, fresh current-backup restore/restart and browser playback passed. Scheduled runner implementation is under review; task execution is not yet verified.
 
 **Song context.** The user confirmed the 5:53 stem package at a locked 137 BPM as the only source for this song. A 5:53.154 stereo 48 kHz / 24-bit master has been built from all 12 aligned stems, preserving relative levels with a uniform -0.5 dB adjustment (measured -1.1 dBTP). The earlier MP3, separate lyrics file, and earlier analysis are superseded and must not be used. Files in the package's reference-only folder may drift and are not timing authorities. The current trimmed master is connected to durable analysis, visible progress and a saved editable timeline.
 
@@ -28,7 +28,9 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 - [x] Verify cold isolated backup restoration with verified, incomplete and missing pending uploads; coordinator completes only verified media. [Evidence](evidence/2026-09-26-pending-upload-recovery.md).
 - [x] Remove SQL runtime dependencies and exercise six disposable Convex acceptance tests.
 - [x] Verify the Convex-only local runtime preserves the revision-7 song, lyrics, analysis and audio playback.
-- [ ] Merge Convex migration PR #7 after exact-head Greptile 5/5, green CI and resolved findings.
+- [x] Merge Convex migration PR #7 after exact-head Greptile 5/5, green CI and resolved findings.
+- [x] Merge PR #8 same-bucket recovery; verify current-backup import and restart in a fresh disposable instance.
+- [ ] Install and verify the scheduled independent backup runner.
 - [ ] Verify one shared project from both web and an installed Windows client.
 
 ## 2. Select a song and break it into editable parts — next priority (M1, M4)
