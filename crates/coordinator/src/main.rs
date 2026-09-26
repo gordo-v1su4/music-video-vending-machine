@@ -65,6 +65,8 @@ async fn main() -> anyhow::Result<()> {
         .map(|v| v.trim().parse())
         .collect::<Result<Vec<_>, _>>()?;
     let state = AppState {
+        transcription: mvm_coordinator::transcription::Service::from_env()?,
+        analysis: mvm_coordinator::analysis_jobs::Service::from_env()?,
         pool,
         objects,
         token_hash,
@@ -95,6 +97,8 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     });
+    let analysis_worker = tokio::spawn(mvm_coordinator::analysis_jobs::run(state.clone()));
+    let transcription_worker = tokio::spawn(mvm_coordinator::transcription::run(state.clone()));
     let app = router(state, origins);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, development, "Music Vending Machine coordinator listening");
@@ -104,5 +108,7 @@ async fn main() -> anyhow::Result<()> {
         })
         .await?;
     recovery.abort();
+    analysis_worker.abort();
+    transcription_worker.abort();
     Ok(())
 }

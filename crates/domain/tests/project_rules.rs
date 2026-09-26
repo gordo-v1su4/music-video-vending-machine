@@ -39,6 +39,35 @@ fn approved() -> Project {
         },
     )
 }
+
+#[test]
+fn lyric_context_is_durable_invalidates_approval_and_loses_alignment_on_master_change() {
+    let original = approved();
+    let mut legacy = serde_json::to_value(&original).unwrap();
+    legacy.as_object_mut().unwrap().remove("lyrics");
+    let restored: Project = serde_json::from_value(legacy).unwrap();
+    assert!(restored.production_approved());
+    let next = step(
+        restored,
+        Action::SetLyrics {
+            lyrics: Some(LyricsContext {
+                text: "User supplied wording".into(),
+                source_name: "words.txt".into(),
+                aligned_asset_id: Some(Uuid::new_v4()),
+            }),
+        },
+    );
+    assert!(!next.production_approved());
+    let next = step(
+        next,
+        Action::SetMaster {
+            asset_id: Uuid::new_v4(),
+            duration_ms: 60_000,
+        },
+    );
+    assert!(next.lyrics.as_ref().unwrap().aligned_asset_id.is_none());
+    assert_eq!(next.lyrics.unwrap().text, "User supplied wording");
+}
 fn shot(p: &Project, start: u64, end: u64) -> Shot {
     Shot {
         id: Uuid::new_v4(),

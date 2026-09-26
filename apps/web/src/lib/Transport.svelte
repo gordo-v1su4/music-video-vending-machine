@@ -56,6 +56,7 @@
     }
     if (document.hidden) return;
     playbackNotice = "";
+    window.dispatchEvent(new CustomEvent('studio-playback', { detail: 'preview' }));
     const generation = ++loop;
     await playback.play(videoMs >= duration ? 0 : videoMs);
     if (playing && generation === loop)
@@ -69,6 +70,8 @@
       frame = requestAnimationFrame(() => tick(generation));
   }
   onMount(() => {
+    const pauseForAudition = (event: Event) => { if ((event as CustomEvent).detail === 'audition') stop(); };
+    window.addEventListener('studio-playback', pauseForAudition);
     const pauseWhenHidden = () => {
       if (document.hidden && playing) {
         stop();
@@ -77,8 +80,10 @@
       }
     };
     document.addEventListener("visibilitychange", pauseWhenHidden);
-    return () =>
+    return () => {
+      window.removeEventListener('studio-playback', pauseForAudition);
       document.removeEventListener("visibilitychange", pauseWhenHidden);
+    };
   });
   onDestroy(() => {
     loop++;
@@ -128,6 +133,10 @@
     {#each project.sections as section (section.id)}
       <button
         style:flex={Math.max(1, section.endMs - section.startMs)}
+        class:short-section={section.endMs-section.startMs < 16000}
+        class:medium-section={section.endMs-section.startMs >= 16000 && section.endMs-section.startMs < 28000}
+        class:long-section={section.endMs-section.startMs >= 28000}
+        aria-current={position.songMs >= section.startMs && position.songMs < section.endMs ? 'true' : undefined}
         onclick={() =>
           seek(
             section.startMs +

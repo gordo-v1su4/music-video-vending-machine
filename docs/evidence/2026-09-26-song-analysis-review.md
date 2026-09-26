@@ -1,0 +1,46 @@
+# Song analysis review fixes — 2026-09-26
+
+Scope: follow-up to PR #5; not private-pilot or full-song production acceptance.
+
+## Changes
+
+- Interrupted transcription can recover valid retained passes or an operator-verified completed provider response. Recovery checks session, source hash, expected job/version and terminal state under a row lock. It retains original receipts and never calls the provider. If no completed response exists, the job remains unresolved; a new paid attempt still requires a separate approved quote.
+- Complementary fallback words in uncovered time ranges survive even below the richer-pass threshold. Preferred-pass wording owns overlapping ranges; original pass receipts remain available.
+- Analysis and transcription OpenAPI operation IDs are distinct. Contract generation rejects duplicate or missing operation IDs before generating TypeScript.
+- Processing polls active jobs every three seconds and settled projects every thirty seconds; empty projects do not keep polling.
+- Waveform rendering waits for completed analysis, uses 8 kHz decoding and a 10-minute/32-MiB eligibility limit, and samples at most 153,600 values. Larger media retain the measured energy display. The display explicitly identifies the sampled waveform.
+
+## Mechanical checks
+
+- Rust workspace: 21 tests passed; clippy with warnings denied passed.
+- Five database integration tests passed against a clean isolated mvm_test database, including real FFmpeg continuation preparation. The earlier rerun encountered queued fixtures retained by a failed test; the isolated test schema was reset, leaving mvm_dev untouched.
+- Recovery tests cover saved/imported responses, explicit source confirmation, wrong hashes, stale recovery, unauthorized access, retained original receipts, and zero additional provider submissions.
+- Web: 45 tests passed, including a fixed-work waveform test over a virtual 200-million-sample recording; Svelte check reported zero errors and warnings; production build passed.
+- Generated API contract matches Rust and operation IDs are unique.
+- Svelte autofixer: no issues; generic asynchronous-effect suggestions were inspected. Impeccable detector: no findings.
+
+## Observed browser behavior
+
+Codex in-app browser, isolated loopback web/API ports 5208/5209, real Rust coordinator, mvm_test and local synthetic 10-second audio. Provider services were disabled.
+
+The interrupted fixture exposed Recover saved responses. Clicking it returned Transcript ready with two timed chunks and the explicit message that no new paid request was made. The recovery controls disappeared after completion. The existing real song/project and its approvals were not changed.
+
+This was desktop browser functional verification. Narrow viewport, Windows WebView2, long-file browser performance and manual provider-file import were not browser-accepted by this pass; imported-response behavior is covered by API integration tests. No paid calls were made. Exact-head Greptile and CI remain required before merge.
+
+## Second review: recovery wording and adjacent words
+
+Greptile's review of `7f7a820` identified two additional defects. Recovery now uses the same richer-pass selection and complementary-word merge as the live pipeline when no selected response was saved. A valid saved selection retains precedence. Gap merging uses actual interval overlap rather than a 50 ms exclusion margin, retaining distinct adjacent words while suppressing overlapping alternatives and identical intervals.
+
+Regression tests cover richer fallback wording during recovery, saved-selection precedence, distinct words immediately adjacent or 20 ms apart, overlapping alternatives, and repeated-merge idempotence. All 23 non-database Rust workspace tests passed; clippy with warnings denied and formatting passed. The five database integration tests are delegated to the fresh CI run for this commit. No UI or API schema changes were made in this follow-up.
+
+## Third review: duplicate detections with timestamp drift
+
+The review of `e45a0c9` scored 4/5 and identified matching words in nearby nonoverlapping intervals. The merge now matches normalized word text within 50 ms only against unmatched preferred detections. Actual overlaps reserve their detection first, preserving a second occurrence present in the fallback; newly added fallback words do not become fuzzy-match targets. This remains a timing/text heuristic, not ground-truth lyric alignment, and recovered lyrics remain drafts for review.
+
+Regression coverage includes punctuation/case normalization, a 20 ms duplicate, repeated sung words in either preferred or fallback input, distinct adjacent words, and idempotent re-merging. All 24 non-database workspace tests and clippy passed. Fresh CI must run database integration coverage and Greptile must review the exact new head before merge.
+
+## Fourth review: retain ambiguous repetitions for review
+
+The review of `fd1262f` demonstrated that identical sparse detections can represent either timestamp drift or two real occurrences. Automatic text/timing matching cannot decide between those interpretations. Nearby matches without a corresponding same-word overlap now retain both word records in `_mvmMergeAmbiguities`; only the preferred detection enters the draft. Normalization exposes each alternative's wording and both timestamp ranges through the existing transcription notes, explicitly requiring listening and correction before approval. Ambiguity evidence survives subsequent merges and recovery. A differently worded overlap no longer counts as an established same-word correspondence.
+
+The regression checks both reported inputs, retained alternative records, human-readable unresolved warnings, existing repeated-word behavior, and idempotence. All 24 non-database Rust tests and clippy passed. This does not claim automatic ground-truth alignment or browser acceptance of the new note text; the UI already renders the warnings field. Database coverage remains a required fresh CI check.

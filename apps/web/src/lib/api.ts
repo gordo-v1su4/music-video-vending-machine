@@ -7,6 +7,9 @@ export type Shot = components["schemas"]["Shot"];
 export type EditRevision = components["schemas"]["EditRevision"];
 export type Project = components["schemas"]["Project"];
 export type Asset = components["schemas"]["Asset"];
+export type AnalysisJob = components["schemas"]["AnalysisJob"];
+export type SongAnalysis = components["schemas"]["SongAnalysis"];
+export type TranscriptionJob = components["schemas"]["TranscriptionJob"];
 export type ProjectAction = components["schemas"]["Action"];
 export class ApiError extends Error {
   constructor(
@@ -124,6 +127,24 @@ export class StudioApi {
   }
   assets(id: string) {
     return this.request<Asset[]>(`/projects/${encodeURIComponent(id)}/assets`);
+  }
+  analysis(id: string, assetId: string, start = false) {
+    return this.request<AnalysisJob | null>(
+      `/projects/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/analysis`,
+      start ? { method: "POST" } : {},
+    );
+  }
+  transcription(id: string, assetId: string, start = false) {
+    return this.request<TranscriptionJob | null>(
+      `/projects/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/transcription`,
+      start ? { method: "POST" } : {},
+    );
+  }
+  recoverTranscription(id: string, assetId: string, recovery: components["schemas"]["RecoverTranscription"]) {
+    return this.request<TranscriptionJob | null>(
+      `/projects/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/transcription/recovery`,
+      { method: "POST", body: JSON.stringify(recovery) },
+    );
   }
   action(project: Project, action: ProjectAction) {
     return this.request<Project>(

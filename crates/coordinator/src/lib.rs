@@ -1,4 +1,7 @@
+pub mod analysis;
+pub mod analysis_jobs;
 mod sessions;
+pub mod transcription;
 
 use axum::{
     Json, Router,
@@ -27,6 +30,8 @@ use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct AppState {
+    pub transcription: Option<Arc<transcription::Service>>,
+    pub analysis: Option<Arc<analysis_jobs::Service>>,
     pub pool: PgPool,
     pub objects: Arc<dyn ObjectStore>,
     pub token_hash: Option<[u8; 32]>,
@@ -125,6 +130,18 @@ pub fn router(state: AppState, origins: Vec<axum::http::HeaderValue>) -> Router 
             get(list_assets).post(upload_asset),
         )
         .route("/api/v1/projects/{id}/assets/{asset_id}", get(get_asset))
+        .route(
+            "/api/v1/projects/{id}/assets/{asset_id}/transcription",
+            get(transcription::get).post(transcription::start),
+        )
+        .route(
+            "/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery",
+            post(transcription::recover),
+        )
+        .route(
+            "/api/v1/projects/{id}/assets/{asset_id}/analysis",
+            get(analysis_jobs::get).post(analysis_jobs::start),
+        )
         .route_layer(middleware::from_fn_with_state(
             (state.clone(), origins.clone()),
             authenticate,
@@ -230,7 +247,7 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
         },
         Json(serde_json::json!({
             "status":if healthy {"ok"} else {"unavailable"},"storage":state.storage_name,"version":env!("CARGO_PKG_VERSION"),
-            "capabilities":{"generation":false,"export":false,"essentia":false},"development":state.development,"sessionRequired":state.token_hash.is_some() || !state.development
+            "capabilities":{"generation":false,"export":false,"essentia":state.analysis.is_some()},"development":state.development,"sessionRequired":state.token_hash.is_some() || !state.development
         })),
     )
 }
@@ -309,6 +326,18 @@ async fn project_action(
     }
     // Trusted metadata and ownership checks are adapter responsibilities, before pure domain rules.
     match &input.action {
+        Action::SetLyrics {
+            lyrics: Some(lyrics),
+        } => {
+            if let Some(asset_id) = lyrics.aligned_asset_id {
+                let a = read_asset(&mut *tx, id, asset_id).await?;
+                if !a.media_type.starts_with("audio/") || a.duration_ms != Some(p.duration_ms()) {
+                    return Err(invalid(
+                        "Aligned lyric audio must share the master's measured duration.",
+                    ));
+                }
+            }
+        }
         Action::SetMaster {
             asset_id,
             duration_ms,
@@ -519,7 +548,7 @@ async fn upload_asset(
                 .into(),
         )
     })?;
-    complete_upload(&mut tx, &asset, key.as_ref()).await?;
+    complete_upload(&mut tx, &asset, key.as_ref(), state.analysis.as_deref()).await?;
     tx.commit().await?;
     Ok((StatusCode::CREATED, Json(asset)))
 }
@@ -528,6 +557,7 @@ async fn complete_upload(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     asset: &Asset,
     key: &str,
+    analysis: Option<&analysis_jobs::Service>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
         .bind(asset.id)
@@ -536,6 +566,7 @@ async fn complete_upload(
         .bind(sqlx::types::Json(asset))
         .execute(&mut **tx)
         .await?;
+    analysis_jobs::enqueue(tx, asset, analysis).await?;
     sqlx::query("DELETE FROM upload_intents WHERE id=$1")
         .bind(asset.id)
         .execute(&mut **tx)
@@ -576,7 +607,7 @@ pub async fn reconcile_uploads(state: &AppState) -> anyhow::Result<usize> {
         })
         .await;
         if matches!(verification, Ok(Some(()))) {
-            complete_upload(&mut tx, &asset, &key).await?;
+            complete_upload(&mut tx, &asset, &key, state.analysis.as_deref()).await?;
             recovered += 1;
         } else {
             tracing::warn!(%id, "Upload intent retained: object missing, unverified or unavailable");
@@ -669,6 +700,11 @@ async fn get_asset(
         get_project,
         project_action,
         list_assets,
+        analysis_jobs::get,
+        analysis_jobs::start,
+        transcription::get,
+        transcription::start,
+        transcription::recover,
         sessions::create,
         sessions::current,
         sessions::revoke,

@@ -68,6 +68,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{id}/assets/{asset_id}/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_analysis"];
+        put?: never;
+        post: operations["start_analysis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/assets/{asset_id}/transcription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_transcription"];
+        put?: never;
+        post: operations["start_transcription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recover_transcription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -141,6 +189,10 @@ export interface components {
             /** @enum {string} */
             type: "setTreatment";
         } | {
+            lyrics?: null | components["schemas"]["LyricsContext"];
+            /** @enum {string} */
+            type: "setLyrics";
+        } | {
             /** Format: uuid */
             assetId: string;
             /** Format: int64 */
@@ -198,6 +250,19 @@ export interface components {
             /** @enum {string} */
             type: "restoreRevision";
         };
+        AnalysisJob: {
+            /** Format: uuid */
+            assetId: string;
+            /** Format: uuid */
+            id: string;
+            message?: string | null;
+            result?: null | components["schemas"]["SongAnalysis"];
+            sha256: string;
+            stage: string;
+            status: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         Approval: {
             fingerprint: string;
             /** Format: int32 */
@@ -248,12 +313,47 @@ export interface components {
             shots: components["schemas"]["Shot"][];
             status: components["schemas"]["RevisionStatus"];
         };
+        EnergyCurve: {
+            /** Format: double */
+            sampleRateHz: number;
+            /** Format: int64 */
+            startMs: number;
+            values: number[];
+        };
+        LyricChunk: {
+            /** Format: double */
+            confidence?: number | null;
+            /** Format: int64 */
+            endMs: number;
+            /** Format: int64 */
+            startMs: number;
+            text: string;
+        };
+        LyricsContext: {
+            /**
+             * Format: uuid
+             * @description Explicit assertion that this audio shares the master's zero point and duration.
+             */
+            alignedAssetId?: string | null;
+            sourceName: string;
+            text: string;
+        };
         Master: {
             approved: boolean;
             /** Format: uuid */
             assetId: string;
             /** Format: int64 */
             durationMs: number;
+        };
+        MusicalSection: {
+            /** Format: int64 */
+            endMs: number;
+            /** Format: double */
+            energy: number;
+            label: string;
+            originalLabel: string;
+            /** Format: int64 */
+            startMs: number;
         };
         Project: {
             /** Format: uuid */
@@ -263,6 +363,7 @@ export interface components {
             createdAt: string;
             /** Format: uuid */
             id: string;
+            lyrics?: null | components["schemas"]["LyricsContext"];
             master?: null | components["schemas"]["Master"];
             name: string;
             productionApproval?: null | components["schemas"]["Approval"];
@@ -280,6 +381,15 @@ export interface components {
             action: components["schemas"]["Action"];
             /** Format: int64 */
             expectedRevision: number;
+        };
+        RecoverTranscription: {
+            confirmedSource?: boolean;
+            /** Format: date-time */
+            expectedUpdatedAt: string;
+            /** Format: uuid */
+            jobId: string;
+            providerResponse?: unknown;
+            sourceSha256: string;
         };
         Reference: {
             /** Format: uuid */
@@ -336,6 +446,50 @@ export interface components {
         };
         /** @enum {string} */
         ShotStatus: "gap" | "candidate" | "accepted";
+        SongAnalysis: {
+            beatsMs: number[];
+            /** Format: double */
+            bpm: number;
+            /** Format: int64 */
+            durationMs: number;
+            energy: components["schemas"]["EnergyCurve"];
+            method: string;
+            /**
+             * Format: double
+             * @description Essentia's native confidence, not a normalized probability.
+             */
+            nativeConfidence: number;
+            onsetsMs: number[];
+            sections: components["schemas"]["MusicalSection"][];
+            warnings: string[];
+        };
+        Transcript: {
+            chunks: components["schemas"]["LyricChunk"][];
+            /** Format: int64 */
+            durationMs: number;
+            intents: string[];
+            model: string;
+            sentiment?: string | null;
+            summary: string;
+            topics: string[];
+            transcript: string;
+            warnings: string[];
+            wordCount: number;
+            words?: components["schemas"]["LyricChunk"][];
+        };
+        TranscriptionJob: {
+            /** Format: uuid */
+            assetId: string;
+            /** Format: uuid */
+            id: string;
+            message?: string | null;
+            profile: string;
+            result?: null | components["schemas"]["Transcript"];
+            sha256: string;
+            status: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -464,6 +618,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Asset"][];
+                };
+            };
+        };
+    };
+    get_analysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | components["schemas"]["AnalysisJob"];
+                };
+            };
+        };
+    };
+    start_analysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisJob"];
+                };
+            };
+        };
+    };
+    get_transcription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | components["schemas"]["TranscriptionJob"];
+                };
+            };
+        };
+    };
+    start_transcription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | components["schemas"]["TranscriptionJob"];
+                };
+            };
+        };
+    };
+    recover_transcription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoverTranscription"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | components["schemas"]["TranscriptionJob"];
                 };
             };
         };

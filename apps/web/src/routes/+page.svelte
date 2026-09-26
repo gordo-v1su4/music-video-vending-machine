@@ -11,8 +11,13 @@
     type Section,
     type Reference,
     type AudioBreak,
+    type TranscriptionJob,
   } from "$lib/api";
   import Transport from "$lib/Transport.svelte";
+  import SongAnalysis from "$lib/SongAnalysis.svelte";
+  import ProcessingStack from "$lib/ProcessingStack.svelte";
+  import LyricsAnalysis from "$lib/LyricsAnalysis.svelte";
+  import { sectionLyrics, extractLyricReference } from "$lib/section-lyrics";
   import { time, videoPosition } from "$lib/timing";
   import { playbackIdentity } from "$lib/playback-identity";
   import "../app.css";
@@ -23,7 +28,7 @@
     import.meta.env.VITE_API_ORIGIN || "http://127.0.0.1:5199";
   let origin = $state(defaultOrigin);
   let token = $state("");
-  let api = new StudioApi(defaultOrigin);
+  let api = $state.raw(new StudioApi(defaultOrigin));
   let connected = $state(false);
   let session = $state<SessionInfo | null>(null);
   let sessionCheck = false;
@@ -39,10 +44,15 @@
   let urls = $state<Record<string, string>>({});
   let name = $state("");
   let busy = $state(false);
+  let upload = $state<{ name: string; index: number; total: number; phase: string; failed: boolean } | null>(null);
+  let transcriptSource = $state('');
+  let transcript = $state<TranscriptionJob['result']>(null);
+  let vocalSourceId = $state('');
   let error = $state("");
   let sessionError = $state("");
   let notice = $state("");
   let treatment = $state("");
+  let lyrics = $state<Project['lyrics']>(null);
   let sections = $state<Section[]>([]);
   let audioBreaks = $state<AudioBreak[]>([]);
   let referenceAsset = $state("");
@@ -69,9 +79,14 @@
   const candidateCount = $derived(
     project?.revisions.filter((r) => r.status === "candidate").length ?? 0,
   );
+  const lyricAsset = $derived(songAssets.find(a => a.id === vocalSourceId) ?? masterAsset);
+  const alignedTranscript = $derived(transcriptSource === lyricAsset?.id &&
+    (transcriptSource === masterAsset?.id || lyrics?.alignedAssetId === transcriptSource) &&
+    transcript?.durationMs === project?.master?.durationMs ? transcript : null);
   const dirty = $derived(
     !!project &&
       (treatment !== project.treatment ||
+        JSON.stringify(lyrics ?? null) !== JSON.stringify(project.lyrics ?? null) ||
         JSON.stringify(sections) !== JSON.stringify(project.sections) ||
         JSON.stringify(audioBreaks) !== JSON.stringify(project.breaks)),
   );
@@ -216,6 +231,7 @@
   function adopt(saved: Project) {
     replaceProject(saved);
     treatment = saved.treatment;
+    lyrics = saved.lyrics ? { ...saved.lyrics } : null;
     sections = saved.sections.map((s) => ({ ...s }));
     audioBreaks = saved.breaks.map((b) => ({ ...b }));
     projects = [...projects.filter((p) => p.id !== saved.id), saved];
@@ -252,8 +268,16 @@
         api.assets(id),
       ]);
       if (project?.id !== saved.id) releaseUrls();
+      transcript = null;
+      transcriptSource = '';
       adopt(saved);
       assets = list;
+      upload = null;
+      // Restore the best persisted lyric result without changing the production master.
+      const transcripts = await Promise.allSettled(list.filter(a => a.mediaType.startsWith('audio/')).map(a => api.transcription(id, a.id)));
+      const recovered = transcripts.flatMap(r => r.status === 'fulfilled' && r.value ? [r.value] : []).sort((a,b) => (b.result?.wordCount ?? 0) - (a.result?.wordCount ?? 0) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+      vocalSourceId = saved.lyrics?.alignedAssetId ?? recovered[0]?.assetId ?? '';
+      for (const result of transcripts) if (result.status === 'rejected' && result.reason instanceof ApiError && result.reason.status === 401) report(result.reason);
       await loadMedia(list);
     });
   }
@@ -283,6 +307,10 @@
       if (!project) return;
       // Keep local drafts through sequential revision-aware saves and partial failures.
       let saved = project;
+      if (JSON.stringify(lyrics ?? null) !== JSON.stringify(saved.lyrics ?? null)) {
+        saved = await api.action(saved, { type: 'setLyrics', lyrics: lyrics ?? null });
+        replaceProject(saved);
+      }
       if (treatment !== saved.treatment) {
         saved = await api.action(saved, {
           type: "setTreatment",
@@ -305,15 +333,36 @@
       notice = "Story saved. Production approval reflects the saved inputs.";
     });
   }
+  async function importLyricReference(file?: File) {
+    if (!file || !project || busy) return;
+    const projectId = project.id;
+    try {
+      if (file.size > 1_000_000) throw new Error('Choose a lyric text file smaller than 1 MB.');
+      const text = extractLyricReference(await file.text());
+      if (new TextEncoder().encode(text).length > 100_000) throw new Error('Lyric wording must be under 100 KB.');
+      if (project?.id !== projectId) return;
+      lyrics = { text, sourceName: file.name, alignedAssetId: lyrics?.alignedAssetId ?? null };
+      notice = 'Wording added to your draft. Its export timestamps are not used. Save story to retain it.';
+    } catch (e) { report(e); }
+  }
   async function importFiles(files: FileList | null) {
     if (!files || !project) return;
+    const selected = Array.from(files);
     await perform(async () => {
-      for (const file of Array.from(files)) {
-        const asset = await api.upload(project!.id, file);
-        assets = [...assets, asset];
-        await loadMedia([asset]);
+      try {
+        for (const [index, file] of selected.entries()) {
+          upload = { name: file.name, index: index + 1, total: selected.length, phase: 'Uploading and validating audio / media', failed: false };
+          const asset = await api.upload(project!.id, file);
+          assets = [...assets, asset];
+          upload = { ...upload, phase: 'Saved · preparing playback' };
+          await loadMedia([asset]);
+        }
+        upload = null;
+        notice = 'Files saved. Follow each audio file in Processing for analysis progress.';
+      } catch (e) {
+        if (upload) upload = { ...upload, failed: true };
+        throw e;
       }
-      notice = "Original files imported and preserved.";
     });
   }
   function addSection() {
@@ -627,7 +676,7 @@
                   >{/if}<button
                   class="primary"
                   disabled={!serverAvailable || connecting || busy || !dirty || conflict}
-                  onclick={saveStory}>{busy ? "Saving…" : "Save story"}</button
+                  onclick={saveStory}>{busy && !upload ? "Saving…" : "Save story"}</button
                 >
               </div>{/if}
           </div>
@@ -658,6 +707,42 @@
                   >
                 </div>
               </article>
+              {#if masterAsset}
+                {#key `${project.id}:${masterAsset.id}`}
+                  <SongAnalysis client={api} projectId={project.id} asset={masterAsset} source={urls[masterAsset.id]} lyrics={alignedTranscript?.chunks ?? []} available={serverAvailable && !connecting} locked={dirty || busy || sectionLocked} hasSections={sections.length > 0}
+                    onError={(e) => { if (e instanceof ApiError && e.status === 401) report(e); }}
+                    onUse={(result) => {
+                      if (dirty || busy || sectionLocked || !serverAvailable) return;
+                      sections = result.sections.map((s) => ({ id: crypto.randomUUID(), name: s.originalLabel, startMs: s.startMs, endMs: s.endMs, intent: "" }));
+                      notice = "Detected sections added to your draft. Listen, adjust, and save when ready.";
+                    }} />
+                  <label for="lyric-source">Lyrics audio source</label>
+                  <select id="lyric-source" value={lyricAsset?.id ?? ''} disabled={!serverAvailable || busy} onchange={(e) => { vocalSourceId = e.currentTarget.value; transcript = null; }}>
+                    {#each songAssets as audio (audio.id)}<option value={audio.id}>{audio.name}</option>{/each}
+                  </select>
+                  <p class="small-note">For sung lyrics, import an aligned vocal stem and select it here. This keeps the song master unchanged.</p>
+                  {#if lyricAsset && lyricAsset.id !== masterAsset.id}
+                    <label class="lyric-alignment"><input type="checkbox"
+                      checked={lyrics?.alignedAssetId === lyricAsset.id}
+                      disabled={busy || lyricAsset.durationMs !== masterAsset.durationMs}
+                      onchange={(e) => { lyrics = { text: lyrics?.text ?? '', sourceName: lyrics?.sourceName ?? '', alignedAssetId: e.currentTarget.checked ? lyricAsset.id : null }; }} />
+                      This vocal starts at song time 0 and stays aligned with the master</label>
+                    <p class="small-note">Confirm alignment to place words on the cards. Matching duration alone does not prove synchronization.</p>
+                  {/if}
+                  {#if lyricAsset}{#key lyricAsset.id}<LyricsAnalysis client={api} projectId={project.id} asset={lyricAsset} available={serverAvailable && !connecting}
+                    onResult={(result) => { transcriptSource = lyricAsset.id; transcript = result; }}
+                    onError={(e) => { if (e instanceof ApiError && e.status === 401) report(e); }} />{/key}{/if}
+                {/key}
+              {/if}
+              <details class="lyric-reference">
+                <summary>Lyric wording reference{lyrics?.sourceName ? ` · ${lyrics.sourceName}` : ''}</summary>
+                <p class="small-note">Your source wording is kept separately from recovered timing. Unlocated lines remain here; they are not assigned an invented timestamp.</p>
+                <label for="lyric-file">Import lyric text</label>
+                <input id="lyric-file" type="file" accept=".txt,text/plain" disabled={busy} onchange={(e) => { void importLyricReference(e.currentTarget.files?.[0]); e.currentTarget.value = ''; }} />
+                <label for="lyric-wording">Reference lyrics</label>
+                <textarea id="lyric-wording" rows="10" value={lyrics?.text ?? ''} disabled={busy}
+                  oninput={(e) => { lyrics = { text: e.currentTarget.value, sourceName: lyrics?.sourceName ?? 'Entered wording', alignedAssetId: lyrics?.alignedAssetId ?? null }; }}></textarea>
+              </details>
               <div class="section-heading">
                 <h2>Story sections</h2>
                 <button
@@ -672,7 +757,7 @@
                   this release.
                 </p>{/if}
               <div class="section-grid">
-                {#each sections as section, i (section.id)}<article
+                {#each sections as section, i (section.id)}{@const cue = sectionLyrics(section, alignedTranscript)}<article
                     class="section-card"
                   >
                     <div class="section-card-top">
@@ -722,8 +807,15 @@
                         /></label
                       >
                     </div>
-                    <label class="sr-only" for={`intent-${section.id}`}
-                      >Section story intention</label
+                    <div class="section-lyrics">
+                      <strong>Lyrics in this section</strong>
+                      {#if cue.text}
+                        <p>{cue.text}</p>
+                        <small>{time(cue.startMs ?? 0)}–{time(cue.endMs ?? 0)} · Recovered timing{cue.needsReview ? ' · Check wording' : ''}</small>
+                      {:else}<p class="small-note">{alignedTranscript ? 'No timed words detected here. This may be an instrumental passage or a transcription gap.' : 'Select aligned lyric audio to place recovered words here.'}</p>{/if}
+                    </div>
+                    <label for={`intent-${section.id}`}
+                      >Story beat · editable draft</label
                     ><textarea
                       id={`intent-${section.id}`}
                       rows="3"
@@ -1141,11 +1233,12 @@
                   )}>Approve this master</button
               >{/if}
             <p class="small-note">
-              Beat analysis and automatic section detection are not connected
-              yet.
+              Analysis appears in Story after you select a master. Detected sections remain suggestions until you edit and save them.
             </p>
           </section>
           <section class="asset-panel">
+            {#key project.id}<ProcessingStack client={api} projectId={project.id} {assets} available={serverAvailable && !connecting} {upload}
+              onError={(e) => { if (e instanceof ApiError && e.status === 401) report(e); }} />{/key}
             <div class="section-heading">
               <h2>Source files</h2>
               <span class="subtle">{assets.length}</span>
@@ -1161,7 +1254,7 @@
                   e.currentTarget.value = "";
                 }}
               /><span aria-hidden="true"><Icon name="upload" /></span><strong
-                >{busy ? "Working…" : "Import files"}</strong
+                >{upload && !upload.failed ? "Uploading…" : "Import files"}</strong
               ><small>Audio, images, or clips · 128 MiB per file</small></label
             >
             <div class="asset-list">
@@ -1185,7 +1278,7 @@
             </div>
             <small class="small-note"
               >Audio stems remain source files until alignment is verified. MIDI
-              and lyrics intake are not available yet.</small
+              intake is not available yet. Lyrics can be extracted from the selected master in Story.</small
             >
           </section>
         </aside>
