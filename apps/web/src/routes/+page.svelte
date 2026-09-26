@@ -27,6 +27,8 @@
   let connected = $state(false);
   let session = $state<SessionInfo | null>(null);
   let sessionCheck = false;
+  let sessionUnverified = $state(false);
+  const serverAvailable = $derived(connected && !sessionUnverified);
   let expiryTimer: ReturnType<typeof setTimeout> | undefined;
   let connectionEpoch = 0;
   let connecting = $state(false);
@@ -94,7 +96,7 @@
   }
   async function perform(work: () => Promise<void>) {
     if (busy || connecting) return;
-    if (!connected) { error = "Sign in before saving. Your unsaved story stays in this window."; return; }
+    if (!serverAvailable) { error = "Sign in before saving. Your unsaved story stays in this window."; return; }
     busy = true;
     error = "";
     notice = "";
@@ -109,6 +111,7 @@
   function disconnect() {
     clearTimeout(expiryTimer);
     sessionError = "";
+    sessionUnverified = false;
     connectionEpoch++;
     api.close();
     session = null;
@@ -129,17 +132,22 @@
   }
   async function checkSession() {
     if (!connected || !session) return;
+    if (api.sessionRemainingMs() <= 0) {
+      sessionUnverified = true;
+      settingsOpen = true;
+      sessionError = "Your session needs verification. Reconnect to sign in again; unsaved work stays in this window.";
+    }
     if (sessionCheck) return;
     const client = api;
     sessionCheck = true;
     try {
       await client.currentSession();
-      if (client === api) sessionError = "";
+      if (client === api) { sessionError = ""; sessionUnverified = false; }
     }
     catch (e) {
       if (client === api && connected) {
         if (e instanceof ApiError && e.status === 401) report(e);
-        else sessionError = e instanceof Error ? e.message : "Session check failed. Retrying shortly.";
+        else if (!sessionUnverified) sessionError = e instanceof Error ? e.message : "Session check failed. Retrying shortly.";
       }
     }
     finally { sessionCheck = false; }
@@ -171,6 +179,7 @@
       if (session) expiryTimer = setTimeout(() => void checkSession(), next.sessionRemainingMs());
       projects = list;
       connected = true;
+      sessionUnverified = false;
       sessionError = "";
       settingsOpen = false;
       notice = "Connected to your studio.";
@@ -379,7 +388,7 @@
       <select
         id="project-select"
         value={project?.id ?? ""}
-        disabled={!connected || busy || dirty}
+        disabled={!serverAvailable || busy || dirty}
         onchange={(e) => {
           if (e.currentTarget.value) void openProject(e.currentTarget.value);
         }}
@@ -423,7 +432,9 @@
       aria-expanded={settingsOpen || !connected}
       aria-controls="connection-settings"
       onclick={() => (settingsOpen = !settingsOpen)}
-      ><span class:connected class="dot"></span>{connected
+      ><span class:connected={serverAvailable} class="dot"></span>{sessionUnverified
+        ? "Verify your session"
+        : connected
         ? "Studio connected"
         : "Connect your studio"}<span aria-hidden="true"
         ><Icon name="settings" /></span
@@ -442,7 +453,7 @@
         {#if project}<span class="revision">Revision {project.revision}</span
           ><button
             class="quiet"
-            disabled={!connected || connecting || busy || dirty}
+            disabled={!serverAvailable || connecting || busy || dirty}
             onclick={() => openProject(project!.id)}>Reload saved</button
           >{/if}<span class="private-badge">Private studio</span>
       </div>
@@ -528,10 +539,10 @@
                 placeholder="Give your project a name"
                 required
                 maxlength="160"
-                disabled={!connected || busy}
+                disabled={!serverAvailable || busy}
               /><button
                 class="primary"
-                disabled={!connected || busy || !name.trim()}
+                disabled={!serverAvailable || busy || !name.trim()}
                 >Create project</button
               >
             </div>
@@ -606,7 +617,7 @@
                     }}>Discard drafts</button
                   >{/if}<button
                   class="primary"
-                  disabled={!connected || connecting || busy || !dirty || conflict}
+                  disabled={!serverAvailable || connecting || busy || !dirty || conflict}
                   onclick={saveStory}>{busy ? "Saving…" : "Save story"}</button
                 >
               </div>{/if}
@@ -861,7 +872,7 @@
                 ></textarea></label
               ><button
                 class="primary"
-                disabled={!connected || connecting || busy ||
+                disabled={!serverAvailable || connecting || busy ||
                   dirty ||
                   !referenceAsset ||
                   !referenceName.trim()}>Add reference</button
@@ -917,7 +928,7 @@
               </dl>
               <button
                 class="primary"
-                disabled={!connected || connecting || busy ||
+                disabled={!serverAvailable || connecting || busy ||
                   dirty ||
                   approved ||
                   !project.master?.approved ||
@@ -964,7 +975,7 @@
                     </div>
                     <span class="tag">{shot.status}</span><button
                       class="quiet"
-                      disabled={!connected || connecting || busy || dirty}
+                      disabled={!serverAvailable || connecting || busy || dirty}
                       onclick={() =>
                         action({
                           type: "pinShot",
@@ -1008,7 +1019,7 @@
                 {#if revision.status === "candidate"}<div class="button-row">
                     <button
                       class="primary"
-                      disabled={!connected || connecting || busy || dirty}
+                      disabled={!serverAvailable || connecting || busy || dirty}
                       onclick={() =>
                         action(
                           { type: "keepRevision", revisionId: revision.id },
@@ -1016,7 +1027,7 @@
                         )}>Keep candidate</button
                     ><button
                       class="quiet"
-                      disabled={!connected || connecting || busy || dirty}
+                      disabled={!serverAvailable || connecting || busy || dirty}
                       onclick={() =>
                         action({
                           type: "rejectRevision",
@@ -1025,7 +1036,7 @@
                     >
                   </div>{:else if revision.status === "archived"}<button
                     class="quiet"
-                    disabled={!connected || connecting || busy || dirty}
+                    disabled={!serverAvailable || connecting || busy || dirty}
                     onclick={() =>
                       action(
                         { type: "restoreRevision", revisionId: revision.id },
@@ -1091,7 +1102,7 @@
             ><select
               id="master-select"
               value={project.master?.assetId ?? ""}
-              disabled={!connected || connecting || busy || dirty || project.revisions.length > 0}
+              disabled={!serverAvailable || connecting || busy || dirty || project.revisions.length > 0}
               onchange={(e) => {
                 const asset = assets.find(
                   (a) => a.id === e.currentTarget.value,
@@ -1113,7 +1124,7 @@
                 >{/each}</select
             >{#if project.master && !project.master.approved}<button
                 class="primary full"
-                disabled={!connected || connecting || busy || dirty}
+                disabled={!serverAvailable || connecting || busy || dirty}
                 onclick={() =>
                   action(
                     { type: "approveMaster" },
@@ -1130,12 +1141,12 @@
               <h2>Source files</h2>
               <span class="subtle">{assets.length}</span>
             </div>
-            <label class="import-zone" class:disabled={!connected || connecting || busy}
+            <label class="import-zone" class:disabled={!serverAvailable || connecting || busy}
               ><input
                 type="file"
                 accept=".png,.jpg,.jpeg,.webp,.wav,.mp3,.flac,.ogg,.mp4,.webm,.mov"
                 multiple
-                disabled={!connected || connecting || busy}
+                disabled={!serverAvailable || connecting || busy}
                 onchange={(e) => {
                   void importFiles(e.currentTarget.files);
                   e.currentTarget.value = "";
