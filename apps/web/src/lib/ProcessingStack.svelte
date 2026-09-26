@@ -41,6 +41,7 @@
 
 <section class="processing-stack" aria-labelledby="processing-title">
   <div class="stack-heading"><h2 id="processing-title">Processing</h2><span class="subtle">{!available ? 'Connection paused' : upload && !upload.failed || active ? 'In progress' : loading ? 'Checking…' : 'Up to date'}</span></div>
+  <p class="small-note">Each file has its own analysis and transcription results.</p>
   {#if upload}
     <div class="upload-status" role="status" aria-live="polite">
       <strong>{upload.failed ? 'Upload needs attention' : upload.phase} · file {upload.index} of {upload.total}</strong>
@@ -60,7 +61,7 @@
           <span class="step-mark" aria-hidden="true"></span><span>{!available ? 'Status paused — reconnect to refresh' : loading ? 'Checking analysis…' : job ? labels[job.status] ?? job.status : 'Analysis not started'}</span>
         </li>
         {#if job?.status === 'completed' && job.result}<li class="done"><span class="step-mark" aria-hidden="true"></span><span>{job.result.sections.length} sections · {job.result.beatsMs.length} beats ready to review</span></li>{/if}
-        {#if transcript}<li class:done={transcript.status === 'completed' && (transcript.result?.wordCount ?? 0) > 0} class:working={['queued','running'].includes(transcript.status)}><span class="step-mark" aria-hidden="true"></span><span>{transcript.status === 'queued' ? 'Lyrics queued for Deepgram' : transcript.status === 'running' ? 'Extracting lyrics & story context' : transcript.status === 'completed' ? transcript.result?.wordCount ? `${transcript.result.wordCount} words ready to review` : 'No lyrics detected — use a vocal stem' : 'Lyrics extraction needs attention'}</span></li>{/if}
+        {#if transcript}<li class:done={transcript.status === 'completed' && (transcript.result?.wordCount ?? 0) > 0} class:working={['queued','running'].includes(transcript.status)}><span class="step-mark" aria-hidden="true"></span><span>{transcript.status === 'queued' ? 'Lyrics queued for Deepgram' : transcript.status === 'running' ? 'Extracting lyrics & story context' : transcript.status === 'completed' ? transcript.result?.wordCount ? `${transcript.result.wordCount} words ready to review` : 'No words recovered from this file' : 'Lyrics extraction needs attention'}</span></li>{/if}
       </ol>
       {#if job && ['queued','submitting','running'].includes(job.status)}<progress aria-label={`Analyzing ${asset.name}`}></progress><p class="small-note">{job.stage.replaceAll('_',' ')} · Progress is saved on the server.</p>{/if}
       {#if job?.message}<p class="small-note">{job.message}</p>{/if}
