@@ -5,6 +5,15 @@ $nested = Join-Path $root 'archive'
 New-Item -ItemType Directory -Path $nested -Force | Out-Null
 $file = Join-Path $nested 'snapshot.json'
 'synthetic fixture' | Set-Content -LiteralPath $file
+$operator = [Security.Principal.WindowsIdentity]::GetCurrent().User
+# Hosted Windows runners may default new files to Administrators ownership.
+# Prepare operator-owned inputs, matching the installer's explicit contract.
+foreach ($path in @($root,$nested,$file)) {
+  $entry = Get-Item -LiteralPath $path
+  $acl = Get-Acl -LiteralPath $path
+  $acl.SetOwner($operator)
+  [IO.FileSystemAclExtensions]::SetAccessControl($entry,$acl)
+}
 $everyone = [Security.Principal.SecurityIdentifier]::new('S-1-1-0')
 foreach ($path in @($root,$file)) {
   $acl = Get-Acl -LiteralPath $path
