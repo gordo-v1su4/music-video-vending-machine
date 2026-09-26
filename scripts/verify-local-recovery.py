@@ -10,6 +10,7 @@ new restore database and fresh object keys, retaining the source and backup.
 This is a verification harness, not a deployed backup scheduler.
 """
 import argparse
+import csv
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -18,9 +19,6 @@ from pathlib import Path
 import socket
 import subprocess
 import uuid
-
-import boto3
-from botocore.config import Config
 
 CONTAINER = "mvm-dev-postgres"
 SOURCE = "mvm_storage_acceptance"
@@ -42,7 +40,30 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def private_directory(path):
+    path.mkdir(parents=True, exist_ok=False, mode=0o700)
+    if os.name == "nt":
+        # Restrict the empty directory before any private bytes are written.
+        identity = subprocess.run(["whoami", "/user", "/fo", "csv", "/nh"], capture_output=True, text=True, check=True)
+        sid = next(csv.reader(identity.stdout.strip().splitlines()))[1]
+        if not sid.startswith("S-1-"):
+            raise ValueError("Cannot determine the current Windows user SID")
+        subprocess.run(["icacls", str(path.resolve()), "/inheritance:r", "/grant:r", f"*{sid}:(OI)(CI)F"],
+                       capture_output=True, check=True)
+    else:
+        path.chmod(0o700)
+
+
+def restored_key(restore_id, asset):
+    # Identical bytes can belong to different assets; object_key is unique.
+    return f'projects/{uuid.UUID(restore_id).hex}/restored/{uuid.UUID(asset["id"])}/{asset["sha256"]}'
+
+
 def main():
+    import boto3
+    from botocore.config import Config
+
+    os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, required=True)
     args = parser.parse_args()
@@ -51,7 +72,7 @@ def main():
             raise ValueError("Stop the isolated acceptance coordinator before taking a cold backup")
     if query(SOURCE, "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()") != "0":
         raise ValueError("Acceptance database still has active clients")
-    args.directory.mkdir(parents=True, exist_ok=False)
+    private_directory(args.directory)
     objects_dir = args.directory / "objects"
     objects_dir.mkdir()
     client = boto3.client("s3", endpoint_url="https://s3.v1su4.dev", region_name="us-east-1",
@@ -94,7 +115,7 @@ def main():
     command(["pg_restore", "-U", "mvm", "-d", database, "--exit-on-error", "--no-owner", "--no-acl"],
             (args.directory / "database.dump").read_bytes())
     for asset in manifest["assets"]:
-        key = f'projects/{restore_id}/restored/{asset["sha256"]}'
+        key = restored_key(restore_id, asset)
         media = (objects_dir / asset["sha256"]).read_bytes()
         client.put_object(Bucket=BUCKET, Key=key, Body=media)
         with client.get_object(Bucket=BUCKET, Key=key)["Body"] as body:

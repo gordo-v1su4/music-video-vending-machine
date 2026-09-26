@@ -17,12 +17,15 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 
-import boto3
-from botocore.config import Config
-from botocore.exceptions import ClientError
+def validate_bucket_discovery(visible, bucket):
+    if [item["Name"] for item in visible] != [bucket]:
+        raise ValueError("Bucket discovery must contain exactly the application bucket")
 
 
 def main():
+    import boto3
+    from botocore.config import Config
+    from botocore.exceptions import ClientError
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -58,6 +61,8 @@ def main():
         ("write-outside-projects", lambda: client.put_object(Bucket=bucket, Key=f"denied-probes/{uuid.uuid4()}", Body=b"permission probe")),
         ("read-outside-projects", lambda: client.get_object(Bucket=bucket, Key="capability-probes/bfded12d-ee06-4802-ab1c-91eed0e0573c/roundtrip.bin")),
         ("list-other-bucket", lambda: client.list_objects_v2(Bucket="pindeck", MaxKeys=1)),
+        ("list-outside-projects", lambda: client.list_objects_v2(Bucket=bucket, Prefix="capability-probes/", MaxKeys=1)),
+        ("list-bucket-root", lambda: client.list_objects_v2(Bucket=bucket, MaxKeys=1)),
     ]
     for name, operation in checks:
         try:
@@ -74,8 +79,7 @@ def main():
     # A filtered enumeration is safe; discovering any other bucket is not.
     try:
         visible = client.list_buckets()["Buckets"]
-        if any(item["Name"] != bucket for item in visible):
-            raise ValueError("Scope violation: other bucket names were disclosed")
+        validate_bucket_discovery(visible, bucket)
         record["bucketEnumeration"] = "filtered_to_application_bucket"
     except ClientError as error:
         if error.response["ResponseMetadata"]["HTTPStatusCode"] != 403:
