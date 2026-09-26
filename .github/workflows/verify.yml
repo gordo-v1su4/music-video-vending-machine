@@ -6,6 +6,24 @@ on:
 permissions:
   contents: read
 jobs:
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker build -f deploy/Dockerfile --target coordinator -t mvvm-coordinator:ci .
+      - run: docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges mvvm-coordinator:ci --openapi > /tmp/mvvm-openapi.json
+      - run: python3 -c 'import json; assert "/api/v1/projects" in json.load(open("/tmp/mvvm-openapi.json"))["paths"]'
+      - run: docker build -f deploy/Dockerfile --target web --build-arg VITE_API_ORIGIN=https://app-vm.tail7fdbe2.ts.net:8443 -t mvvm-web:ci .
+      - name: Smoke test restricted web container
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f mvvm-web-ci >/dev/null 2>&1 || true' EXIT
+          docker run -d --name mvvm-web-ci --read-only --cap-drop ALL --security-opt no-new-privileges --tmpfs /data --tmpfs /config -p 127.0.0.1::8080 mvvm-web:ci
+          address=$(docker port mvvm-web-ci 8080/tcp)
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "http://$address/" > /tmp/mvvm-web.html
+          test "$(docker exec mvvm-web-ci id -u)" = 10001
+          grep -q '<html' /tmp/mvvm-web.html
   backup-acl:
     runs-on: windows-latest
     steps:

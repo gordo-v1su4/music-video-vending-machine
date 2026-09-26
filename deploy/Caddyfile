@@ -1,0 +1,22 @@
+{
+  admin off
+  auto_https off
+}
+:8080 {
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy no-referrer
+    X-Frame-Options DENY
+  }
+  handle /api/* {
+    reverse_proxy coordinator:5199 {
+      flush_interval -1
+    }
+  }
+  handle {
+    root * /srv
+    try_files {path} /index.html
+    header Cache-Control "no-cache"
+    file_server
+  }
+}
