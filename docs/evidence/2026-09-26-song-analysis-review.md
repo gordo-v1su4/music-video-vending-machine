@@ -26,3 +26,9 @@ Codex in-app browser, isolated loopback web/API ports 5208/5209, real Rust coord
 The interrupted fixture exposed Recover saved responses. Clicking it returned Transcript ready with two timed chunks and the explicit message that no new paid request was made. The recovery controls disappeared after completion. The existing real song/project and its approvals were not changed.
 
 This was desktop browser functional verification. Narrow viewport, Windows WebView2, long-file browser performance and manual provider-file import were not browser-accepted by this pass; imported-response behavior is covered by API integration tests. No paid calls were made. Exact-head Greptile and CI remain required before merge.
+
+## Second review: recovery wording and adjacent words
+
+Greptile's review of `7f7a820` identified two additional defects. Recovery now uses the same richer-pass selection and complementary-word merge as the live pipeline when no selected response was saved. A valid saved selection retains precedence. Gap merging uses actual interval overlap rather than a 50 ms exclusion margin, retaining distinct adjacent words while suppressing overlapping alternatives and identical intervals.
+
+Regression tests cover richer fallback wording during recovery, saved-selection precedence, distinct words immediately adjacent or 20 ms apart, overlapping alternatives, and repeated-merge idempotence. All 23 non-database Rust workspace tests passed; clippy with warnings denied and formatting passed. The five database integration tests are delegated to the fresh CI run for this commit. No UI or API schema changes were made in this follow-up.

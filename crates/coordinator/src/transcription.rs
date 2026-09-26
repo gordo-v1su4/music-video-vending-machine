@@ -140,18 +140,7 @@ pub(crate) async fn recover(
         .map(|v| v.0)
         .unwrap_or_else(|| serde_json::json!({}));
     let duration = asset.duration_ms.unwrap_or(0);
-    let mut selected: Option<Value> = None;
-    for name in ["selected", "primary", "fallback"] {
-        if let Some(pass) = receipt
-            .get(name)
-            .filter(|pass| normalize(pass, duration).is_ok())
-        {
-            selected = Some(match selected {
-                Some(previous) => merge_gaps(&previous, pass),
-                None => pass.clone(),
-            });
-        }
-    }
+    let mut selected = recover_passes(&receipt, duration);
     // Older jobs retained a single provider response rather than a pass envelope.
     if selected.is_none() && normalize(&receipt, duration).is_ok() {
         selected = Some(receipt.clone());
@@ -453,6 +442,31 @@ fn richer(primary: &Value, fallback: &Value) -> bool {
     next_count > 0
         && (count == 0 || next_end > end * 1.15 || next_count as f64 > count as f64 * 1.3)
 }
+// Recovery and the live pipeline must make the same wording decision.
+fn merge_passes(primary: &Value, fallback: &Value) -> Value {
+    if richer(primary, fallback) {
+        merge_gaps(fallback, primary)
+    } else {
+        merge_gaps(primary, fallback)
+    }
+}
+fn recover_passes(receipt: &Value, duration: u64) -> Option<Value> {
+    let valid = |name| {
+        receipt
+            .get(name)
+            .filter(|pass| normalize(pass, duration).is_ok())
+    };
+    let combined = match (valid("primary"), valid("fallback")) {
+        (Some(primary), Some(fallback)) => Some(merge_passes(primary, fallback)),
+        (Some(pass), None) | (None, Some(pass)) => Some(pass.clone()),
+        (None, None) => None,
+    };
+    match (valid("selected"), combined) {
+        (Some(selected), Some(combined)) => Some(merge_gaps(selected, &combined)),
+        (Some(selected), None) => Some(selected.clone()),
+        (None, combined) => combined,
+    }
+}
 // Retain complementary words in uncovered time ranges. The preferred pass owns
 // overlapping timing; combining alternative spellings there would duplicate lyrics.
 fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
@@ -474,7 +488,7 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
         if words.iter().any(|existing| {
             let left = existing["start"].as_f64().unwrap_or(0.);
             let right = existing["end"].as_f64().unwrap_or(left);
-            start <= right + 0.05 && end >= left - 0.05
+            (start < right && end > left) || (start == left && end == right)
         }) {
             continue;
         }
@@ -669,11 +683,9 @@ async fn run_pipeline(
         .await?;
         normalize(&fallback, asset.duration_ms.unwrap_or(0))?;
         if richer(&best, &fallback) {
-            best = merge_gaps(&fallback, &best);
             model = "whisper-large";
-        } else {
-            best = merge_gaps(&best, &fallback);
         }
+        best = merge_passes(&best, &fallback);
         if coverage(&best).0 > coverage(&primary).0 && coverage(&best).0 > coverage(&fallback).0 {
             model = "nova-3 / whisper-large";
         }
@@ -767,6 +779,48 @@ mod tests {
             .unwrap();
         assert_eq!(words[1]["word"], "middle");
         assert_eq!(words[2]["word"], "last");
+        assert_eq!(merge_gaps(&merged, &fallback), merged);
+    }
+    #[test]
+    fn recovery_preserves_pipeline_wording_and_saved_selection() {
+        let primary = response(json!([
+            {"word":"wrong","start":1.,"end":2.}
+        ]));
+        let fallback = response(json!([
+            {"word":"right","start":1.,"end":2.},
+            {"word":"later","start":3.,"end":4.}
+        ]));
+        let mut receipt = json!({"primary":primary,"fallback":fallback});
+        let recovered = recover_passes(&receipt, 158600).unwrap();
+        assert_eq!(recovered, merge_passes(&primary, &fallback));
+        assert_eq!(
+            recovered["results"]["channels"][0]["alternatives"][0]["words"][0]["word"],
+            "right"
+        );
+        receipt["selected"] = primary.clone();
+        let selected = recover_passes(&receipt, 158600).unwrap();
+        assert_eq!(
+            selected["results"]["channels"][0]["alternatives"][0]["words"][0]["word"],
+            "wrong"
+        );
+        assert_eq!(coverage(&selected).0, 2);
+    }
+    #[test]
+    fn gap_merge_keeps_adjacent_and_nearby_distinct_words() {
+        let primary = response(json!([
+            {"word":"first","start":1.,"end":2.}
+        ]));
+        let fallback = response(json!([
+            {"word":"before","start":0.5,"end":0.98},
+            {"word":"alternate","start":1.01,"end":2.01},
+            {"word":"adjacent","start":2.,"end":2.2},
+            {"word":"nearby","start":2.22,"end":2.4}
+        ]));
+        let merged = merge_gaps(&primary, &fallback);
+        assert_eq!(
+            merged["results"]["channels"][0]["alternatives"][0]["transcript"],
+            "before first adjacent nearby"
+        );
         assert_eq!(merge_gaps(&merged, &fallback), merged);
     }
     #[test]
