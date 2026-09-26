@@ -115,7 +115,14 @@ def main():
                       inspectedAt=datetime.now(timezone.utc).isoformat())
         save(args.receipt, record)
     print(json.dumps({key: record.get(key) for key in ("state", "providerId", "masterSha256")}))
-    if record["state"] in ("failed", "reconciliation_required"):
+    if record["state"] in ("queued", "running"):
+        # A successful start acknowledges submission; inspection has not passed.
+        if args.action == "inspect":
+            raise SystemExit(2)
+    elif record["state"] != "completed" or not (
+        isinstance(record.get("response", {}).get("result"), dict)
+        and record["response"]["result"]
+    ):
         raise SystemExit(1)
 
 

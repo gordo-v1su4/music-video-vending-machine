@@ -139,7 +139,10 @@ def main():
     record = start(args.workflow, args.receipt) if args.action == "start" else inspect(args.receipt)
     print(json.dumps({key: record.get(key) for key in
                       ("probeId", "providerId", "state", "workflowSha256", "httpStatus")}))
-    if record["state"] in ("rejected", "failed", "reconciliation_required", "ambiguous_provider_receipt"):
+    if args.action == "inspect" and record["state"] in ("running", "queued"):
+        raise SystemExit(2)
+    expected = "submitted" if args.action == "start" else "generated_unverified"
+    if record["state"] != expected:
         raise SystemExit(1)
 
 

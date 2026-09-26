@@ -43,6 +43,8 @@ For the edit and H3 workflows, first copy the accepted source still to the isola
 
 Storage and Essentia probes use existing BWS-injected credentials; never include their values in command arguments, receipts or Git. Run `probe-storage.py --output <new-evidence-path>` under that injected environment. `--create-bucket` is an explicit operator option, not the normal round-trip requirement. Run `probe-essentia.py start --audio <new-fixture.wav> --receipt <new-receipt.json>` and then `inspect --receipt <same-receipt.json>` under the injected `ESSENTIA_API_KEY` environment.
 
+Essentia inspection exits **2** for queued/running work, **1** for failed/unknown states or completion without results, and **0** only for a completed job with a nonempty result object. A successful `start` acknowledges submission, not analysis completion. ComfyUI likewise exits **2** for pending inspection and **0** only for `generated_unverified` output, which still needs quality review. Regression tests exercise pending, missing/malformed results, completed results and failed/cancelled/unknown states; all eleven probe tests pass. These CLI checks establish response completeness, not musical or visual accuracy.
+
 The first public-ingress Essentia submission returned an HTTP error without a provider ID. A live inspection of the configured service job directory and access logs found no submitted job; that receipt was retained as `reconciled_not_submitted` before a separate private-endpoint attempt. The public ingress cause remains undiagnosed. This operator reconciliation is not a completed automated recovery gate.
 
 ## Next gates

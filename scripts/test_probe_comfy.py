@@ -1,5 +1,7 @@
 """Deterministic submission/reconciliation guards; no real generation in CI."""
 import importlib.util
+from contextlib import redirect_stdout
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -88,6 +90,32 @@ class ProbeReceiptTests(unittest.TestCase):
             record = probe.inspect(self.path)
         self.assertEqual(record["state"], "ambiguous_provider_receipt")
         self.assertIsNone(record["providerId"])
+
+    def test_cli_pending_inspection_has_distinct_exit_status(self):
+        self.initial("provider-job")
+        for queue_name in ("queue_running", "queue_pending"):
+            with self.subTest(queue=queue_name):
+                queue = {"queue_running": [], "queue_pending": []}
+                queue[queue_name] = [[0, "provider-job", {}, {"mvm_probe_id": "test-probe"}]]
+                with patch("sys.argv", ["probe", "inspect", "--receipt", str(self.path)]), \
+                        patch.object(probe, "request", side_effect=[{}, queue]) as remote, \
+                        redirect_stdout(io.StringIO()), self.assertRaises(SystemExit) as exit_result:
+                    probe.main()
+                self.assertEqual(exit_result.exception.code, 2)
+                self.assertNotIn("/prompt", [call.args[0] for call in remote.call_args_list])
+
+    def test_cli_completed_output_is_generated_not_quality_accepted(self):
+        self.initial("provider-job")
+        history = {"provider-job": {
+            "prompt": [0, "provider-job", {}, {"mvm_probe_id": "test-probe"}],
+            "status": {"completed": True, "status_str": "success"},
+            "outputs": {"1": {"images": [{"filename": "result.png"}]}},
+        }}
+        with patch("sys.argv", ["probe", "inspect", "--receipt", str(self.path)]), \
+                patch.object(probe, "request", side_effect=[history, {"queue_running": [], "queue_pending": []}]), \
+                redirect_stdout(io.StringIO()):
+            probe.main()
+        self.assertEqual(json.loads(self.path.read_text())["state"], "generated_unverified")
 
 
 if __name__ == "__main__":
