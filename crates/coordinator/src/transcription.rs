@@ -280,8 +280,8 @@ pub fn normalize(value: &Value, expected_ms: u64) -> anyhow::Result<Transcript> 
             ) {
                 warnings.push(format!(
                     "Unresolved lyric alternative: {:?} at {:.3}–{:.3}s may repeat or duplicate {:?} at {:.3}–{:.3}s. The alternative is retained but not inserted into the draft. Listen to this range and correct the lyric wording before approval.",
-                    alternative["alternative"]["word"].as_str().or(alternative["alternative"]["punctuated_word"].as_str()).unwrap_or(""), start, end,
-                    alternative["preferred"]["word"].as_str().or(alternative["preferred"]["punctuated_word"].as_str()).unwrap_or(""), left, right,
+                    alternative["alternative"]["punctuated_word"].as_str().or(alternative["alternative"]["word"].as_str()).unwrap_or(""), start, end,
+                    alternative["preferred"]["punctuated_word"].as_str().or(alternative["preferred"]["word"].as_str()).unwrap_or(""), left, right,
                 ));
             }
         }
