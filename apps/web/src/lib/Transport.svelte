@@ -117,7 +117,7 @@
     type="range"
     min="0"
     max={duration || 1}
-    step="41.6667"
+    step="1"
     value={videoMs}
     oninput={(e) => seek(Number(e.currentTarget.value))}
     disabled={!duration}

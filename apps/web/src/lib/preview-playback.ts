@@ -129,6 +129,9 @@ export class PreviewPlayback {
       0,
       Math.min(positionMs, this.input().durationMs),
     );
+    // The supplied seek/play target is authoritative until enter() establishes
+    // its new segment. pause() must not sample the previous segment boundary.
+    this.pending = true;
     this.state.playing = true;
     this.state.error = "";
     const generation = this.generation;

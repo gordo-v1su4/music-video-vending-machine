@@ -28,6 +28,12 @@ RustFS adapter is implemented but not yet live round-trip tested. Coordinator cu
 See README development and verification commands. Media fixtures and runtime state live in gitignored .runtime or isolated test storage. No secrets are stored in this evidence file.
 # PR review repairs
 
+## Repair cycle 3
+
+Greptile reviewed `c79181b` at 4/5. Ordinary saves unnecessarily disposed the transport, and an end seek could reuse an earlier break boundary. Playback identity now includes only the project and its master/break audio mapping; same-project reload retains media URLs. A new play/seek target remains authoritative until its segment is established. The slider reaches the exact final millisecond.
+
+Verification: 36 web tests cover unrelated metadata saves versus audio identity changes and end seeks after insertion/cutout boundaries. Live browser story save and same-project reload preserve active playback and its insertion offset. Svelte check, autofixers and production build pass. Fresh review remains required.
+
 ## Repair cycle 2
 
 Greptile reviewed `e87b2bd` at 4/5 and found that asynchronous audio startup could let the preview advance before sound began. Audible spans now derive position from media playback time; silence uses the monotonic clock. Pending starts/buffering preserve position. Distinct media sessions and cancellation guards prevent stale asynchronous completions from reviving old playback. Replacing a saved project destroys the previous transport.

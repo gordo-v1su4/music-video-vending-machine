@@ -316,6 +316,56 @@ describe("preview playback with delayed real media operations", () => {
     expect(h.media.length).toBe(1);
   });
 
+  for (const kind of ["insertion", "cutout"] as const) {
+    test(`playing seek to end after a prior ${kind} boundary stays at the exact final frame`, async () => {
+      const breaks: AudioBreak[] = [
+        {
+          id: "break",
+          kind,
+          songStartMs: 5000,
+          durationMs: 3000,
+          assetId: null,
+        },
+      ];
+      const h = harness(breaks);
+      const start = h.playback.play(0);
+      h.media[0].ready();
+      await start;
+      h.media[0].advance(1000);
+      h.elapsed(1000);
+      await h.playback.tick();
+      // The old segment ends at 5000, well before the requested final frame.
+      const end = videoDuration(30000, breaks);
+      await h.playback.seek(end);
+      expect(h.state()).toMatchObject({
+        positionMs: end,
+        playing: false,
+        waiting: false,
+      });
+      expect(h.media[0].paused).toBe(true);
+      h.elapsed(10000);
+      await h.playback.tick();
+      expect(h.state().positionMs).toBe(end);
+      expect(h.media.length).toBe(1);
+    });
+  }
+
+  test("playing seek to end from inside a silent break ignores its earlier boundary", async () => {
+    const h = harness([
+      {
+        id: "break",
+        kind: "insertion",
+        songStartMs: 5000,
+        durationMs: 3000,
+        assetId: null,
+      },
+    ]);
+    await h.playback.play(6000);
+    await h.playback.seek(33000);
+    expect(h.state()).toMatchObject({ positionMs: 33000, playing: false });
+    expect(h.media.length).toBe(0);
+  });
+
   test("natural end stops at the final frame without resetting the playhead", async () => {
     const h = harness();
     const start = h.playback.play(29000);

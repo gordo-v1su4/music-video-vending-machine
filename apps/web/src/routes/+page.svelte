@@ -12,6 +12,7 @@
   } from "$lib/api";
   import Transport from "$lib/Transport.svelte";
   import { time, videoPosition } from "$lib/timing";
+  import { playbackIdentity } from "$lib/playback-identity";
   import "../app.css";
 
   type View = "Story" | "References" | "Production" | "Review";
@@ -123,8 +124,13 @@
     Object.values(urls).forEach((url) => URL.revokeObjectURL(url));
     urls = {};
   }
-  function adopt(saved: Project) {
+  function replaceProject(saved: Project) {
+    if (!project || playbackIdentity(project) !== playbackIdentity(saved))
+      videoMs = 0;
     project = saved;
+  }
+  function adopt(saved: Project) {
+    replaceProject(saved);
     treatment = saved.treatment;
     sections = saved.sections.map((s) => ({ ...s }));
     audioBreaks = saved.breaks.map((b) => ({ ...b }));
@@ -136,8 +142,9 @@
       list
         .filter(
           (a) =>
-            a.mediaType.startsWith("audio/") ||
-            a.mediaType.startsWith("image/"),
+            !urls[a.id] &&
+            (a.mediaType.startsWith("audio/") ||
+              a.mediaType.startsWith("image/")),
         )
         .map(async (a) => ({ id: a.id, url: await api.blob(a) })),
     );
@@ -155,10 +162,9 @@
         api.project(id),
         api.assets(id),
       ]);
-      releaseUrls();
+      if (project?.id !== saved.id) releaseUrls();
       adopt(saved);
       assets = list;
-      videoMs = 0;
       await loadMedia(list);
     });
   }
@@ -193,18 +199,18 @@
           type: "setTreatment",
           text: treatment,
         });
-        project = saved;
+        replaceProject(saved);
       }
       if (JSON.stringify(sections) !== JSON.stringify(saved.sections)) {
         saved = await api.action(saved, { type: "setSections", sections });
-        project = saved;
+        replaceProject(saved);
       }
       if (JSON.stringify(audioBreaks) !== JSON.stringify(saved.breaks)) {
         saved = await api.action(saved, {
           type: "setBreaks",
           breaks: audioBreaks,
         });
-        project = saved;
+        replaceProject(saved);
       }
       adopt(saved);
       notice = "Story saved. Production approval reflects the saved inputs.";
@@ -1066,9 +1072,13 @@
           </section>
         </aside>
       </div>
-      <!-- Replacing saved project state tears down media, including pending play
-           promises, before a new master/break/revision mapping can be used. -->
-      {#key project}<Transport {project} {urls} bind:videoMs />{/key}
+      <!-- Only project/audio mapping changes replace playback. Story, reference,
+           approval and pin saves keep the active media session and playhead. -->
+      {#key playbackIdentity(project)}<Transport
+          {project}
+          {urls}
+          bind:videoMs
+        />{/key}
     {/if}
   </main>
 </div>
