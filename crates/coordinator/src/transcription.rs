@@ -272,6 +272,20 @@ pub fn normalize(value: &Value, expected_ms: u64) -> anyhow::Result<Transcript> 
         }
     }
     let mut warnings = vec!["Machine-transcribed lyrics and emotional labels are suggestions. Review them against the recording before story approval.".into()];
+    if let Some(alternatives) = value["_mvmMergeAmbiguities"].as_array() {
+        for alternative in alternatives {
+            if let (Some((start, end)), Some((left, right))) = (
+                word_interval(&alternative["alternative"]),
+                word_interval(&alternative["preferred"]),
+            ) {
+                warnings.push(format!(
+                    "Unresolved lyric alternative: {:?} at {:.3}–{:.3}s may repeat or duplicate {:?} at {:.3}–{:.3}s. The alternative is retained but not inserted into the draft. Listen to this range and correct the lyric wording before approval.",
+                    alternative["alternative"]["word"].as_str().or(alternative["alternative"]["punctuated_word"].as_str()).unwrap_or(""), start, end,
+                    alternative["preferred"]["word"].as_str().or(alternative["preferred"]["punctuated_word"].as_str()).unwrap_or(""), left, right,
+                ));
+            }
+        }
+    }
     if words.len() < 20 {
         warnings.push(
             "Very few words were detected. An isolated vocal stem may improve coverage.".into(),
@@ -486,6 +500,18 @@ fn word_identity(word: &Value) -> String {
 }
 fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
     let mut merged = primary.clone();
+    let mut ambiguities = Vec::new();
+    for pass in [primary, secondary] {
+        for alternative in pass["_mvmMergeAmbiguities"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            if !ambiguities.contains(alternative) {
+                ambiguities.push(alternative.clone());
+            }
+        }
+    }
     let path = "/results/channels/0/alternatives/0/words";
     let Some(extra) = secondary.pointer(path).and_then(Value::as_array) else {
         return merged;
@@ -493,17 +519,17 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
     let Some(words) = merged.pointer_mut(path).and_then(Value::as_array_mut) else {
         return merged;
     };
-    // Match each preferred detection at most once. Reserve real overlaps first
-    // so a second sung occurrence in the fallback is not mistaken for drift.
-    let mut preferred: Vec<_> = words
+    // A matching overlap supplies evidence of an occurrence in both passes.
+    // Different overlapping wording cannot establish that correspondence.
+    let preferred: Vec<_> = words
         .iter()
         .filter_map(|word| {
             let interval = word_interval(word)?;
-            let matched = extra
-                .iter()
-                .filter_map(word_interval)
-                .any(|other| overlaps(interval, other));
-            Some((interval, word_identity(word), matched))
+            let matched = extra.iter().any(|other| {
+                word_identity(other) == word_identity(word)
+                    && word_interval(other).is_some_and(|other| overlaps(interval, other))
+            });
+            Some((interval, word_identity(word), matched, word.clone()))
         })
         .collect();
     for word in extra {
@@ -518,8 +544,8 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
             continue;
         }
         let identity = word_identity(word);
-        if let Some((_, _, matched)) =
-            preferred.iter_mut().find(|((left, right), text, matched)| {
+        if let Some((_, _, _, preferred_word)) =
+            preferred.iter().find(|((left, right), text, matched, _)| {
                 !*matched
                     && !identity.is_empty()
                     && *text == identity
@@ -527,7 +553,12 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
                     && end >= *left - 0.05
             })
         {
-            *matched = true;
+            // Timing/text alone cannot distinguish drift from a real repetition.
+            // Preserve the candidate as unresolved evidence, never silently decide.
+            let alternative = serde_json::json!({"preferred":preferred_word,"alternative":word});
+            if !ambiguities.contains(&alternative) {
+                ambiguities.push(alternative);
+            }
             continue;
         }
         words.push(word.clone());
@@ -544,6 +575,9 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
         .collect::<Vec<_>>()
         .join(" ");
     merged["results"]["channels"][0]["alternatives"][0]["transcript"] = Value::String(text);
+    if !ambiguities.is_empty() {
+        merged["_mvmMergeAmbiguities"] = Value::Array(ambiguities);
+    }
     merged
 }
 fn merge_tail(primary: &Value, tail: &Value, offset: f64) -> Value {
@@ -867,6 +901,19 @@ mod tests {
         let drifted = response(json!([{"word":"go!","start":2.22,"end":2.4}]));
         let merged = merge_gaps(&primary, &drifted);
         assert_eq!(coverage(&merged).0, 1);
+        assert_eq!(
+            merged["_mvmMergeAmbiguities"][0]["alternative"],
+            drifted["results"]["channels"][0]["alternatives"][0]["words"][0]
+        );
+        let normalized = normalize(&merged, 158600).unwrap();
+        assert!(
+            normalized
+                .warnings
+                .iter()
+                .any(|w| w.contains("Unresolved lyric alternative")
+                    && w.contains("2.220")
+                    && w.contains("not inserted"))
+        );
         assert_eq!(merge_gaps(&merged, &drifted), merged);
         let repeated = response(json!([
             {"word":"go","start":2.,"end":2.2},
@@ -876,6 +923,14 @@ mod tests {
         assert_eq!(coverage(&merged).0, 2);
         assert_eq!(merge_gaps(&merged, &repeated), merged);
         assert_eq!(coverage(&merge_gaps(&repeated, &primary)).0, 2);
+        let different_overlap = response(json!([
+            {"word":"other","start":2.,"end":2.2},
+            {"word":"go!","start":2.22,"end":2.4}
+        ]));
+        let merged = merge_gaps(&primary, &different_overlap);
+        assert_eq!(coverage(&merged).0, 1);
+        assert_eq!(merged["_mvmMergeAmbiguities"].as_array().unwrap().len(), 1);
+        assert_eq!(merge_gaps(&merged, &different_overlap), merged);
     }
     #[test]
     fn timed_lyrics_preserve_gaps_and_metadata() {
