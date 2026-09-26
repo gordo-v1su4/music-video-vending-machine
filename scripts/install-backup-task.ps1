@@ -7,18 +7,17 @@ $ErrorActionPreference = 'Stop'
 $sourceRoot = Split-Path -Parent $PSScriptRoot
 $node = (Get-Command node -ErrorAction Stop).Source
 $bun = (Get-Command bun -ErrorAction Stop).Source
+$nodeMajor = & $node -p 'process.versions.node.split(".")[0]'
+if ($LASTEXITCODE -ne 0 -or [int]$nodeMajor -lt 24) { throw 'Node 24 or newer is required' }
+. (Join-Path $PSScriptRoot 'private-backup-directory.ps1')
 foreach ($path in @($RunnerRoot,$BackupRoot,$SecretsRunner)) {
   if (-not [IO.Path]::IsPathFullyQualified($path)) { throw 'Absolute paths required' }
 }
 if (-not (Test-Path -LiteralPath $SecretsRunner -PathType Leaf)) { throw 'Secret runner is absent' }
 if (Get-ScheduledTask -TaskPath '\MVVM\' -TaskName 'Verified backup' -ErrorAction SilentlyContinue) { throw 'Inspect the existing task before replacing it' }
 if (Test-Path -LiteralPath $RunnerRoot) { throw 'Use an empty runner destination' }
-$sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 foreach ($path in @($RunnerRoot,$BackupRoot)) {
-  New-Item -ItemType Directory -Force -Path $path | Out-Null
-  if ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked destinations are not allowed' }
-  & icacls $path /inheritance:r /grant:r "*${sid}:(OI)(CI)F" | Out-Null
-  if ($LASTEXITCODE -ne 0) { throw 'Private directory ACL failed' }
+  Set-PrivateBackupDirectory $path
 }
 New-Item -ItemType Directory -Path (Join-Path $RunnerRoot 'scripts') | Out-Null
 foreach ($name in @('backup-convex-live.mjs','convex-backup.mjs','run-scheduled-backup.mjs')) {

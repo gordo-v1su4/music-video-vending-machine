@@ -30,6 +30,7 @@ test('installed runner re-verifies archives, preserves last success on failure a
     for(const name of ['MVVM_S3_ACCESS_KEY','MVVM_S3_SECRET_KEY','MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY'])if(!process.argv.includes('--secret='+name))throw Error('Missing live credential request');
     const root=process.cwd(), mode=await readFile(join(root,'mode'),'utf8');
     if(mode==='fail'){console.error('PRIVATE_TEST_SENTINEL');process.exit(1);}
+    if(mode==='hang'){await new Promise(()=>{setInterval(()=>{},1000);});}
     const directory=join(root,'backups','convex-'+randomUUID());
     const snapshot={projects:[],project_events:[],operator_sessions:[],assets:[],upload_intents:[],audio_analysis_jobs:[],transcription_jobs:[]};
     const receipt=await createBackup(snapshot,'mvvm',{},directory);
@@ -53,4 +54,10 @@ test('installed runner re-verifies archives, preserves last success on failure a
     assert.equal(await readFile(join(root,'last-success.json'),'utf8'),success);
     assert.equal(JSON.parse(await readFile(join(root,'last-failure.json'),'utf8')).state,'failed');
   }
+  await writeFile(join(root,'mode'),'hang');
+  await writeFile(join(root,'backup-config.json'),JSON.stringify({secretsRunner,backupRoot:join(root,'backups'),timeoutMs:500}));
+  await assert.rejects(run(),error=>error.code===1);
+  assert.equal(JSON.parse(await readFile(join(root,'last-failure.json'),'utf8')).stage,'timeout');
+  assert.equal(JSON.parse(await readFile(join(root,'last-attempt.json'),'utf8')).state,'failed');
+  assert.equal(await readFile(join(root,'last-success.json'),'utf8'),success);
 });
