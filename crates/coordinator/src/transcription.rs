@@ -292,7 +292,7 @@ pub async fn tick(state: &AppState) -> anyhow::Result<()> {
         return Ok(());
     }
     sqlx::query("UPDATE transcription_jobs SET status='reconciliation_required',message='Transcription was interrupted. Review the retained request before any new paid call.',updated_at=clock_timestamp() WHERE status='running'").execute(&state.pool).await?;
-    let row=sqlx::query("SELECT j.id,a.object_key,a.metadata FROM transcription_jobs j JOIN assets a ON a.id=j.asset_id WHERE j.status='queued' ORDER BY j.created_at LIMIT 1").fetch_optional(&state.pool).await?;
+    let row=sqlx::query("SELECT j.id,a.object_key,a.metadata FROM transcription_jobs j JOIN assets a ON a.id=j.asset_id WHERE j.status='queued' AND j.next_poll_at<=clock_timestamp() ORDER BY j.next_poll_at,j.created_at LIMIT 1").fetch_optional(&state.pool).await?;
     let Some(row) = row else { return Ok(()) };
     let id: Uuid = row.try_get("id")?;
     let asset: Asset = row.try_get::<sqlx::types::Json<Asset>, _>("metadata")?.0;
@@ -305,7 +305,15 @@ pub async fn tick(state: &AppState) -> anyhow::Result<()> {
             .bytes()
             .await
     })
-    .await??;
+    .await;
+    let bytes = match bytes {
+        Ok(Ok(bytes)) => bytes,
+        _ => {
+            sqlx::query("UPDATE transcription_jobs SET message='Waiting for stored audio. Other queued files can continue.',next_poll_at=clock_timestamp()+interval '30 seconds',updated_at=clock_timestamp() WHERE id=$1")
+                .bind(id).execute(&state.pool).await?;
+            return Ok(());
+        }
+    };
     if bytes.len() as u64 != asset.size_bytes
         || format!("{:x}", Sha256::digest(&bytes)) != asset.sha256
     {
@@ -317,18 +325,7 @@ pub async fn tick(state: &AppState) -> anyhow::Result<()> {
     let receipt = run_pipeline(state, service, id, &asset, bytes).await;
     match receipt {
         Ok((receipt, result)) => {
-            let result = Ok::<_, anyhow::Error>(result);
-            let (status, message, result) = match result {
-                Ok(v) => ("completed", None, Some(sqlx::types::Json(v))),
-                Err(_) => (
-                    "failed",
-                    Some(
-                        "The response could not be validated against this recording. The receipt is retained.",
-                    ),
-                    None,
-                ),
-            };
-            sqlx::query("UPDATE transcription_jobs SET status=$2,message=$3,result=$4,receipt=$5,updated_at=clock_timestamp() WHERE id=$1").bind(id).bind(status).bind(message).bind(result).bind(sqlx::types::Json(receipt)).execute(&state.pool).await?;
+            sqlx::query("UPDATE transcription_jobs SET status='completed',message=NULL,result=$2,receipt=$3,updated_at=clock_timestamp() WHERE id=$1").bind(id).bind(sqlx::types::Json(result)).bind(sqlx::types::Json(receipt)).execute(&state.pool).await?;
         }
         Err(_) => {
             sqlx::query("UPDATE transcription_jobs SET status='reconciliation_required',message='Deepgram did not return a usable response. Check the provider request before retrying; no automatic paid retry was made.',updated_at=clock_timestamp() WHERE id=$1").bind(id).execute(&state.pool).await?;
@@ -492,7 +489,6 @@ async fn run_pipeline(
     // Same thresholds and pass order as project-stack-structure/src/trigger/deepgram.ts.
     let duration = asset.duration_ms.unwrap_or(0) as f64 / 1000.;
     let primary = call(service, bytes.clone(), &asset.media_type, "nova-3", true).await?;
-    normalize(&primary, asset.duration_ms.unwrap_or(0))?;
     let mut receipt =
         serde_json::json!({"profile":"stack-structure-v1","sentiment":false,"primary":primary});
     let mut best = primary.clone();
@@ -504,6 +500,7 @@ async fn run_pipeline(
         "Nova-3 response saved. Checking whether words cover the song.",
     )
     .await?;
+    normalize(&primary, asset.duration_ms.unwrap_or(0))?;
     let (count, end) = coverage(&best);
     if duration >= 30. && (count == 0 || end < duration * 0.6) {
         persist_pass(
@@ -521,12 +518,19 @@ async fn run_pipeline(
             false,
         )
         .await?;
+        receipt["fallback"] = fallback.clone();
+        persist_pass(
+            state,
+            id,
+            &receipt,
+            "Fallback response saved. Validating recovered timing.",
+        )
+        .await?;
         normalize(&fallback, asset.duration_ms.unwrap_or(0))?;
         if richer(&best, &fallback) {
             best = fallback.clone();
             model = "whisper-large";
         }
-        receipt["fallback"] = fallback;
         persist_pass(
             state,
             id,
@@ -541,10 +545,17 @@ async fn run_pipeline(
         let tail_bytes = slice_tail(&bytes, offset, duration).await?;
         persist_pass(state,id,&receipt,&format!("Pass 3 of 3: transcribing the remaining audio from {offset:.1}s, including instrumental gaps.")).await?;
         let tail = call(service, tail_bytes, "audio/wav", "whisper-large", false).await?;
+        receipt["tail"] = tail.clone();
+        receipt["tailOffsetSeconds"] = serde_json::json!(offset);
+        persist_pass(
+            state,
+            id,
+            &receipt,
+            "Remaining-audio response saved. Validating recovered timing.",
+        )
+        .await?;
         normalize(&tail, ((duration - offset) * 1000.).round() as u64)?;
         best = merge_tail(&best, &tail, offset);
-        receipt["tail"] = tail;
-        receipt["tailOffsetSeconds"] = serde_json::json!(offset);
         model = "nova-3 / whisper-large";
     }
     let mut result = normalize(&best, asset.duration_ms.unwrap_or(0))?;

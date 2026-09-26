@@ -63,8 +63,8 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
             assert_eq!(query.get("model").map(String::as_str),Some("nova-3"));
             assert_eq!(headers["authorization"],"Token test-key");
             count.fetch_add(1,Ordering::SeqCst);
-            if fail.load(Ordering::SeqCst)>0 { (StatusCode::BAD_GATEWAY,Json(json!({"error":"lost response"}))) }
-            else { (StatusCode::OK,Json(json!({"metadata":{"duration":10},"results":{"channels":[{"alternatives":[{"transcript":"Test phrase", "words":[{"word":"test","start":1,"end":2,"confidence":0.9},{"word":"phrase","start":2,"end":3,"confidence":0.9}]}]}]}}))) }
+            if fail.load(Ordering::SeqCst)==1 { (StatusCode::BAD_GATEWAY,Json(json!({"error":"lost response"}))) }
+            else { (StatusCode::OK,Json(json!({"metadata":{"duration":if fail.load(Ordering::SeqCst)==2 {11} else {10}},"results":{"channels":[{"alternatives":[{"transcript":"Test phrase", "words":[{"word":"test","start":1,"end":2,"confidence":0.9},{"word":"phrase","start":2,"end":3,"confidence":0.9}]}]}]}}))) }
         }
     }));
     let provider = provider.layer(axum::extract::DefaultBodyLimit::max(8 * 1024 * 1024));
@@ -90,7 +90,7 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     .await;
     let project_id: Uuid = project["id"].as_str().unwrap().parse().unwrap();
     let mut ids = Vec::new();
-    for n in 0..3 {
+    for n in 0..5 {
         let id = Uuid::new_v4();
         ids.push(id);
         let bytes = bytes::Bytes::from_static(b"private analysis fixture");
@@ -120,6 +120,29 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
             .await
             .unwrap();
     }
+    state
+        .objects
+        .delete(&Path::from(format!(
+            "projects/{project_id}/originals/{}",
+            ids[3]
+        )))
+        .await
+        .unwrap();
+    let unavailable_path = format!(
+        "/api/v1/projects/{project_id}/assets/{}/transcription",
+        ids[3]
+    );
+    request(app.clone(), "POST", &unavailable_path, Value::Null).await;
+    tick(&state).await.unwrap();
+    assert_eq!(posts.load(Ordering::SeqCst), 0);
+    let (_, waiting) = request(app.clone(), "GET", &unavailable_path, Value::Null).await;
+    assert_eq!(waiting["status"], "queued");
+    assert!(
+        waiting["message"]
+            .as_str()
+            .unwrap()
+            .contains("Other queued files can continue")
+    );
     let path = format!(
         "/api/v1/projects/{project_id}/assets/{}/transcription",
         ids[0]
@@ -189,9 +212,27 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
         .await
         .unwrap();
     tick(&state).await.unwrap();
-    let (_, interrupted) = request(app, "GET", &path, Value::Null).await;
+    let (_, interrupted) = request(app.clone(), "GET", &path, Value::Null).await;
     assert_eq!(interrupted["status"], "reconciliation_required");
     assert_eq!(posts.load(Ordering::SeqCst), 2);
+    fail.store(2, Ordering::SeqCst);
+    let path = format!(
+        "/api/v1/projects/{project_id}/assets/{}/transcription",
+        ids[4]
+    );
+    request(app.clone(), "POST", &path, Value::Null).await;
+    tick(&state).await.unwrap();
+    let (_, invalid) = request(app.clone(), "GET", &path, Value::Null).await;
+    assert_eq!(invalid["status"], "reconciliation_required");
+    let (receipt,): (sqlx::types::Json<Value>,) =
+        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
+            .bind(ids[4])
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(receipt.0["primary"]["metadata"]["duration"], 11);
+    tick(&state).await.unwrap();
+    assert_eq!(posts.load(Ordering::SeqCst), 3);
     server.abort();
     sqlx::query("DELETE FROM transcription_jobs WHERE project_id=$1")
         .bind(project_id)

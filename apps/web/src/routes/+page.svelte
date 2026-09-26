@@ -268,6 +268,8 @@
         api.assets(id),
       ]);
       if (project?.id !== saved.id) releaseUrls();
+      transcript = null;
+      transcriptSource = '';
       adopt(saved);
       assets = list;
       upload = null;
@@ -275,7 +277,6 @@
       const transcripts = await Promise.allSettled(list.filter(a => a.mediaType.startsWith('audio/')).map(a => api.transcription(id, a.id)));
       const recovered = transcripts.flatMap(r => r.status === 'fulfilled' && r.value ? [r.value] : []).sort((a,b) => (b.result?.wordCount ?? 0) - (a.result?.wordCount ?? 0) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
       vocalSourceId = saved.lyrics?.alignedAssetId ?? recovered[0]?.assetId ?? '';
-      transcript = null;
       for (const result of transcripts) if (result.status === 'rejected' && result.reason instanceof ApiError && result.reason.status === 401) report(result.reason);
       await loadMedia(list);
     });

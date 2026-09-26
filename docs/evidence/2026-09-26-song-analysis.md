@@ -1,8 +1,9 @@
 # Song analysis — work in progress
 
-The sole song source is the user-supplied 137 BPM export package. Earlier MP3,
-separate lyrics, and analysis are superseded. The reference-only folder is not a
-timing authority. No lyrics have been imported from outside the package.
+The sole audio timing source is the user-supplied 137 BPM export package. Earlier
+MP3 and analysis are superseded. The reference-only folder is not a timing
+authority. The subsequently supplied lyric text is imported as wording only;
+its old audio metadata and URLs are not used.
 
 ## Media and real service evidence
 
@@ -29,7 +30,7 @@ timing authority. No lyrics have been imported from outside the package.
 
 ## Application work and checks
 
-Uncommitted application changes add atomic upload/analysis enqueue, persisted
+Application changes add atomic upload/analysis enqueue, persisted
 provider identity and source checksum, bounded polling, retained raw receipts,
 validated measurements, and a Svelte analysis/audition/editor panel. A committed
 submission intent with an unknown outcome is quarantined for reconciliation;
@@ -54,8 +55,9 @@ it is never automatically sent again. The adapter does not grant approvals.
   auditioned the first chorus, and saved 22 detected sections at project revision 3.
   Reload retained those sections. The master approval was performed by the user.
 - Imported a 353s/192kbps MP3 derived only from the trimmed lead-vocal WAV.
-  Observed filename-specific upload/validation, queued/rhythm/structure processing
-  and completion states in the sidebar. No fabricated upload percentage.
+  Observed filename-specific upload/validation and queued/rhythm/structure
+  processing in the sidebar. The vocal's separate analysis ultimately failed;
+  the master analysis completed. No fabricated upload percentage.
 - Waveform is computed from the decoded imported audio. Playing-section status,
   a thin playhead, compact square buttons and rectangular seek handles were observed.
 - User-directed styling: zinc base, saturated blue/indigo/purple at low opacity,
@@ -85,10 +87,10 @@ buttons measured 32px and solid timing blocks had 0px borders/no background imag
 The narrow timeline now scrolls horizontally so section labels remain readable.
 Keyboard focus is retained on interactive controls. Project reopening selects
 the richest retained transcript without changing the production master. Optional
-vocal alignment confirmation and Windows acceptance remain. Musical sections are saved, but
-story intentions remain blank. No director proposals, finished video or Windows
-WebView2 acceptance is claimed. No implementation PR created or merged yet;
-exact-head Greptile 5/5 and green CI remain required.
+lyric timing correction and Windows acceptance remain. Revision 6 saves vocal
+alignment and director proposals as described below. No finished video or Windows
+WebView2 acceptance is claimed. Exact-head Greptile 5/5 and green CI are required
+before merging this implementation.
 # Lyric cards and director draft follow-up
 
 - Added durable lyric wording/source and explicit zero-offset audio alignment. Asset ownership and matching measured duration are enforced server-side; a master change removes the alignment. Changed lyric context invalidates production approval; legacy projects without context retain their existing fingerprint.
@@ -100,3 +102,10 @@ exact-head Greptile 5/5 and green CI remain required.
 - The lead vocal's separate Essentia job is shown as failed; the approved master retains its valid analysis. This does not prevent the completed vocal transcript from supplying draft timing.
 - Automatic director generation, exact lyric correction/alignment, character/location choices, creative approval and rendered footage remain unfinished. No new provider or image/video generation request was made for this follow-up.
 - Responsive follow-up: DOM measurements at an effective 525 CSS pixels reported no page overflow and single-column cards. Both narrow screenshot capture APIs returned blank images, so narrow visual acceptance is not claimed. Temporary viewport override was reset. Desktop cards, wording, draft text and focus were visually observed; this is not physical-device or WebView2 acceptance.
+
+## Pre-PR review fixes
+
+- Independent Standards review found unavailable-source queue starvation, a parent/child transcript-loading race, and receipt persistence after validation. Spec review independently confirmed the receipt defect. All three were addressed.
+- Unavailable transcription objects now wait 30 seconds between reads while other eligible jobs proceed. A fake-provider integration test verifies the unavailable earlier job makes no paid request and does not block a later valid source.
+- Successful JSON responses are saved before duration/word validation in every pass. An invalid-duration response remains privately inspectable, stays quarantined and is never automatically resubmitted.
+- Project reopening clears old transcript state before mounting result readers, avoiding a late clear after a completed child fetch.
