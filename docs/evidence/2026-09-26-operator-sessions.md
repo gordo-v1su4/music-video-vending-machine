@@ -1,0 +1,38 @@
+# Operator sessions and neutral dark workspace
+
+Status: locally verified; GitHub review/merge gate pending. This is M2 progress, not private-pilot or complete-song acceptance.
+
+## Mechanical verification
+
+- Rust workspace: 13 ordinary tests passed. Both isolated PostgreSQL integration tests passed against `mvm_test`, including migrations, hash persistence, 12-hour expiry, restart, bootstrap rejection on project routes, bad token/origin rejection, individual/all revocation, issuer rotation, and closure of an already-open SSE stream.
+- A streaming JSON request expires after header authentication and before body completion; project creation returns 401.
+- `cargo fmt --all -- --check`, locked Clippy with warnings denied, generated OpenAPI TypeScript `--check`, and `git diff --check` pass.
+- Bun: 41 tests / 127 assertions pass. Coverage includes bootstrap isolation, no redirects/cache, aborted late responses, session-abort messaging, clock-skew-safe sign-out and monotonic expiry scheduling, and retryable failed sign-out.
+- PostgreSQL integration coverage also verifies bounded retention cleanup removes old expired/revoked sessions while preserving active sessions.
+- Svelte check: zero errors/warnings. Svelte autofixer: no issues/suggestions. Impeccable detector: no findings on the changed page/CSS. Production web build passes.
+- Python: 16 tests, 15 pass and one POSIX-only mode check skipped on Windows. Parallel probe callers share one session exchange; failed exchange is not cached.
+- CI now runs all ignored coordinator integration tests explicitly, not only the earlier persistence file.
+
+## Observed browser behavior
+
+Verification moved to the Codex in-app Browser at the user's request; the temporary external Playwright browser was closed. Production preview on 5198 serves this worktree, API 5199 preserves the original development database/media directory. An isolated local fixture API on 5201 uses `mvm_sessions_ui`, local media, and a synthetic test-only key; it is not private RustFS deployment proof.
+
+- Sign-in opens the existing fixture project; the access-key field clears.
+- A failed connection attempt to an unavailable replacement address preserves the existing session and project access in the in-app Browser.
+- Stopping and restarting the isolated fixture API produces a transient polling error, then clears it automatically after a successful poll without losing the active session.
+- A separate synthetic HTTP fixture on loopback 5202 issued a 20-second session and returned 503 for session checks. In the production-build in-app Browser, expiry opened reconnection controls, changed the status to "Verify your session", disabled Save/Import, and retained an unsaved treatment. Sign-out remained enabled and completed afterward. This is UI outage-state evidence, separate from the real PostgreSQL 12-hour expiry tests; the fixture was stopped after verification.
+- A follow-up fixture delayed the first successful session response by 25 seconds across that 20-second deadline, then returned 503 to the fresh check. Save/Import remained disabled and the draft survived. A response crossing the deadline now triggers a fresh verification instead of re-enabling actions.
+- At the user's request, visible in-app Browser checks against the real local coordinator created "Visible browser acceptance — September 26", saved revision 1, reloaded the page and recovered the treatment, signed out with a new unsaved edit, reconnected without losing it, then saved revision 2. This is local development persistence evidence, not production authentication acceptance.
+- Sign-out keeps the unsaved treatment and old revision, disables Save and Import, and offers reconnection. Reconnection preserves the draft and restores saving.
+- Expiring the fixture session in PostgreSQL causes the production-build browser to show the session-ended error, disable Save/Import, and retain the draft.
+- User requested dark zinc/neutral surfaces. The visible workspace now uses near-black/neutral zinc surfaces and neutral action/focus colors. Semantic error/success colors remain distinct. Thirty-six sampled text elements had contrast >=6.91:1; this is a scoped measurement, not an accessibility certification.
+- Narrow viewport inspection showed wrapped draft text and no horizontal overflow. A requested 390x844 in-app override reported actual `innerWidth=487`, `scrollWidth=468`; this is browser sizing evidence, not physical-device acceptance. Override was reset.
+- Keyboard Tab moved from the treatment to the audio-break disclosure. Disabled and focused controls remain distinguishable. The initial external browser logged only a missing favicon 404; it is not a session failure.
+
+## Live private storage follow-up
+
+The new session-aware private probe ran against actual RustFS using the existing scoped BWS identity, `development:false`, and isolated `mvm_storage_acceptance`. Bootstrap exchange, authenticated synthetic WAV upload/download, 401 anonymous denial, 403 untrusted-origin denial and simultaneous 200/409 revision writes passed. The coordinator was stopped and restarted, and the retained project plus downloaded media checksum matched. [Redacted receipt](2026-09-26-session-private-storage.json). The temporary private API was stopped afterward; ordinary local studio ports 5198/5199 remain available. This does not replace cold-backup or pending-upload acceptance.
+
+## Remaining acceptance
+
+No Windows installer/WebView2 acceptance, production deployment, production backup scheduling, complete media-generation path, pilot passage, full song, export, or archive acceptance is established here. Creative approvals remain required. No paid calls were made. M2 remains partial until its remaining Windows-sharing and pending-upload recovery gates pass.

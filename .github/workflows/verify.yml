@@ -35,7 +35,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: cargo fmt --all -- --check
       - run: cargo test --workspace --locked
-      - run: cargo test -p mvm-coordinator --locked --test persistence -- --ignored
+      - run: cargo test -p mvm-coordinator --locked --tests -- --ignored --test-threads=1
         env:
           MVM_TEST_DATABASE_URL: postgres://mvm@localhost:5432/mvm_test
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings

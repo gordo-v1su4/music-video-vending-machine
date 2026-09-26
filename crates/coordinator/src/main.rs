@@ -1,4 +1,6 @@
-use mvm_coordinator::{ApiDoc, AppState, migrate, reconcile_uploads, router};
+use mvm_coordinator::{
+    ApiDoc, AppState, migrate, prune_operator_sessions, reconcile_uploads, router,
+};
 use object_store::{ObjectStore, aws::AmazonS3Builder, local::LocalFileSystem};
 use sha2::{Digest, Sha256};
 use sqlx::postgres::PgPoolOptions;
@@ -73,8 +75,15 @@ async fn main() -> anyhow::Result<()> {
     let recovery = tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(30));
         interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut next_session_prune = tokio::time::Instant::now();
         loop {
             interval.tick().await;
+            if tokio::time::Instant::now() >= next_session_prune {
+                if prune_operator_sessions(&recovery_state.pool).await.is_err() {
+                    tracing::warn!("Ended session cleanup unavailable; will retry in one hour");
+                }
+                next_session_prune = tokio::time::Instant::now() + Duration::from_secs(3600);
+            }
             match reconcile_uploads(&recovery_state).await {
                 Ok(recovered) if recovered > 0 => {
                     tracing::info!(recovered, "Interrupted uploads recovered")

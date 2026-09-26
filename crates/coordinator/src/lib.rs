@@ -1,3 +1,5 @@
+mod sessions;
+
 use axum::{
     Json, Router,
     body::Body,
@@ -107,6 +109,13 @@ pub async fn migrate(pool: &PgPool) -> anyhow::Result<()> {
 }
 pub fn router(state: AppState, origins: Vec<axum::http::HeaderValue>) -> Router {
     let protected = Router::new()
+        .route(
+            "/api/v1/sessions",
+            post(sessions::create).layer(DefaultBodyLimit::max(4096)),
+        )
+        .route("/api/v1/sessions/current", get(sessions::current))
+        .route("/api/v1/sessions/current/revoke", post(sessions::revoke))
+        .route("/api/v1/sessions/revoke-all", post(sessions::revoke_all))
         .route("/api/v1/projects", get(list_projects).post(create_project))
         .route("/api/v1/projects/{id}", get(get_project))
         .route("/api/v1/projects/{id}/actions", post(project_action))
@@ -138,7 +147,7 @@ pub fn router(state: AppState, origins: Vec<axum::http::HeaderValue>) -> Router 
 }
 async fn authenticate(
     State((state, origins)): State<(AppState, Vec<axum::http::HeaderValue>)>,
-    req: Request,
+    mut req: Request,
     next: Next,
 ) -> Response {
     // A DNS-rebound page can send same-origin GETs without Origin. Anonymous
@@ -159,26 +168,40 @@ async fn authenticate(
         )
         .into_response();
     }
-    let allowed = if let Some(expected) = state.token_hash {
-        req.headers()
-            .get(header::AUTHORIZATION)
-            .and_then(|v| v.to_str().ok())
-            .and_then(|v| v.strip_prefix("Bearer "))
-            .is_some_and(|value| {
-                let actual: [u8; 32] = Sha256::digest(value.as_bytes()).into();
-                bool::from(actual.ct_eq(&expected))
-            })
+    let bearer = req
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.strip_prefix("Bearer "));
+    let login = req.uri().path() == "/api/v1/sessions" && req.method() == axum::http::Method::POST;
+    let identity = if login {
+        match (state.token_hash, bearer) {
+            (Some(expected), Some(value))
+                if bool::from(
+                    <[u8; 32]>::from(Sha256::digest(value.as_bytes())).ct_eq(&expected),
+                ) =>
+            {
+                sessions::Identity(None)
+            }
+            _ => return sessions::unauthorized().into_response(),
+        }
+    } else if state.development && state.token_hash.is_none() {
+        sessions::Identity(None)
     } else {
-        state.development
+        let Some(value) = bearer else {
+            return sessions::unauthorized().into_response();
+        };
+        match sessions::identify(&state, value).await {
+            Ok(identity) => identity,
+            Err(error) => return error.into_response(),
+        }
     };
-    if !allowed {
-        return ApiError(
-            StatusCode::UNAUTHORIZED,
-            "Sign in to access the studio.".into(),
-        )
-        .into_response();
-    }
-    next.run(req).await
+    req.extensions_mut().insert(identity);
+    let mut response = next.run(req).await;
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, "no-store".parse().unwrap());
+    response
 }
 fn local_request_host(req: &Request) -> bool {
     let header_host = req
@@ -207,9 +230,15 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
         },
         Json(serde_json::json!({
             "status":if healthy {"ok"} else {"unavailable"},"storage":state.storage_name,"version":env!("CARGO_PKG_VERSION"),
-            "capabilities":{"generation":false,"export":false,"essentia":false},"development":state.development
+            "capabilities":{"generation":false,"export":false,"essentia":false},"development":state.development,"sessionRequired":state.token_hash.is_some() || !state.development
         })),
     )
+}
+
+/// Retain ended session metadata for seven days, then prune it in bounded batches.
+pub async fn prune_operator_sessions(pool: &PgPool) -> Result<u64, sqlx::Error> {
+    Ok(sqlx::query("DELETE FROM operator_sessions WHERE id IN (SELECT id FROM operator_sessions WHERE expires_at < clock_timestamp()-interval '7 days' OR revoked_at < clock_timestamp()-interval '7 days' LIMIT 1000)")
+        .execute(pool).await?.rows_affected())
 }
 
 #[utoipa::path(get, path="/api/v1/projects", responses((status=200, body=Vec<Project>)))]
@@ -223,10 +252,14 @@ async fn list_projects(State(state): State<AppState>) -> ApiResult<Json<Vec<Proj
 #[utoipa::path(post, path="/api/v1/projects", request_body=CreateProject, responses((status=201, body=Project)))]
 async fn create_project(
     State(state): State<AppState>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
     Json(input): Json<CreateProject>,
 ) -> ApiResult<impl IntoResponse> {
     let p = Project::new(input.name)?;
     let mut tx = state.pool.begin().await?;
+    if !sessions::valid_on(&mut *tx, &state, identity).await? {
+        return Err(sessions::unauthorized());
+    }
     sqlx::query("INSERT INTO projects(id,revision,document) VALUES($1,$2,$3)")
         .bind(p.id)
         .bind(p.revision as i64)
@@ -261,6 +294,7 @@ pub async fn read_project(pool: &PgPool, id: Uuid) -> ApiResult<Project> {
 async fn project_action(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
     Json(input): Json<ProjectAction>,
 ) -> ApiResult<Json<Project>> {
     let mut tx = state.pool.begin().await?;
@@ -270,6 +304,9 @@ async fn project_action(
             .fetch_optional(&mut *tx)
             .await?;
     let p = row.ok_or_else(missing)?.0.0;
+    if !sessions::valid_on(&mut *tx, &state, identity).await? {
+        return Err(sessions::unauthorized());
+    }
     // Trusted metadata and ownership checks are adapter responsibilities, before pure domain rules.
     match &input.action {
         Action::SetMaster {
@@ -342,11 +379,16 @@ async fn project_events(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Query(query): Query<EventCursor>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<impl IntoResponse> {
     read_project(&state.pool, id).await?;
     let stream = async_stream::stream! {
         let mut after = query.after;
         loop {
+            if !sessions::valid(&state, identity).await.unwrap_or(false) {
+                yield Ok::<Event, Infallible>(Event::default().event("session-ended").data("Sign in to resume saved events."));
+                break;
+            }
             let rows = sqlx::query("SELECT revision,document FROM project_events WHERE project_id=$1 AND revision>$2 ORDER BY revision LIMIT 100")
                 .bind(id).bind(after).fetch_all(&state.pool).await;
             match rows {
@@ -393,6 +435,7 @@ async fn list_assets(
 async fn upload_asset(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
     mut multipart: Multipart,
 ) -> ApiResult<impl IntoResponse> {
     read_project(&state.pool, id).await?;
@@ -436,6 +479,9 @@ async fn upload_asset(
         ));
     }
     let duration_ms = probe_duration(&data, &media_type).await?;
+    if !sessions::valid(&state, identity).await? {
+        return Err(sessions::unauthorized());
+    }
     let asset_id = Uuid::new_v4();
     let sha256 = format!("{:x}", Sha256::digest(&data));
     let asset = Asset {
@@ -622,7 +668,11 @@ async fn get_asset(
         create_project,
         get_project,
         project_action,
-        list_assets
+        list_assets,
+        sessions::create,
+        sessions::current,
+        sessions::revoke,
+        sessions::revoke_all
     ),
     components(schemas(Project, Action, ProjectAction, CreateProject, Asset))
 )]
