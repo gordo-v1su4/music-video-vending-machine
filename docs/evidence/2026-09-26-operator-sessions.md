@@ -23,6 +23,10 @@ Verification moved to the Codex in-app Browser at the user's request; the tempor
 - Narrow viewport inspection showed wrapped draft text and no horizontal overflow. A requested 390x844 in-app override reported actual `innerWidth=487`, `scrollWidth=468`; this is browser sizing evidence, not physical-device acceptance. Override was reset.
 - Keyboard Tab moved from the treatment to the audio-break disclosure. Disabled and focused controls remain distinguishable. The initial external browser logged only a missing favicon 404; it is not a session failure.
 
-## Limits
+## Live private storage follow-up
 
-No Windows installer/WebView2 acceptance, production deployment, production backup scheduling, complete media-generation path, pilot passage, full song, export, or archive acceptance is established here. Creative approvals remain required. No paid calls were made. Existing storage recovery evidence predates sessions; the private RustFS session probe must be rerun before M2 is accepted in full.
+The new session-aware private probe ran against actual RustFS using the existing scoped BWS identity, `development:false`, and isolated `mvm_storage_acceptance`. Bootstrap exchange, authenticated synthetic WAV upload/download, 401 anonymous denial, 403 untrusted-origin denial and simultaneous 200/409 revision writes passed. The coordinator was stopped and restarted, and the retained project plus downloaded media checksum matched. [Redacted receipt](2026-09-26-session-private-storage.json). The temporary private API was stopped afterward; ordinary local studio ports 5198/5199 remain available. This does not replace cold-backup or pending-upload acceptance.
+
+## Remaining acceptance
+
+No Windows installer/WebView2 acceptance, production deployment, production backup scheduling, complete media-generation path, pilot passage, full song, export, or archive acceptance is established here. Creative approvals remain required. No paid calls were made. M2 remains partial until its remaining Windows-sharing and pending-upload recovery gates pass.

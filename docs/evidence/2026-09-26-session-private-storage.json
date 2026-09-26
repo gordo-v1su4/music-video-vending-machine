@@ -1,0 +1,15 @@
+{
+  "state": "verified_after_operator_restart",
+  "endpoint": "http://127.0.0.1:5201",
+  "projectId": "28b4a3ad-c3c2-4c21-84e2-a979478f3759",
+  "assetId": "40da6be5-600e-4219-aa73-f6e56cd24f21",
+  "sha256": "56d4af65701c26df20bd4021eda95b6e830348ce3a746086079fe89285548dc9",
+  "simultaneousWrites": [
+    200,
+    409
+  ],
+  "unauthorizedHttpStatus": 401,
+  "untrustedOriginHttpStatus": 403,
+  "downloadChecksumVerified": true,
+  "verifiedAt": "2026-09-25T23:25:33.145934-04:00"
+}
