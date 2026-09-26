@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon, { type IconName } from "$lib/Icon.svelte";
   import { onMount, onDestroy } from "svelte";
   import {
     StudioApi,
@@ -289,6 +290,7 @@
   /></svelte:head
 >
 
+<a class="skip-link" href="#studio-content">Skip to workspace</a>
 <div class="studio-shell">
   <aside class="sidebar">
     <button
@@ -326,9 +328,14 @@
       {#each ["Story", "References", "Production", "Review"] as item, i (item)}
         <button
           class:active={view === item}
+          aria-current={view === item ? "page" : undefined}
           onclick={() => (view = item as View)}
           ><span class="nav-glyph" aria-hidden="true"
-            >{["▤", "▧", "◈", "◉"][i]}</span
+            ><Icon
+              name={(["story", "image", "production", "review"] as IconName[])[
+                i
+              ]}
+            /></span
           >{item}{#if item === "Review" && candidateCount}<span
               class="nav-count">{candidateCount}</span
             >{/if}</button
@@ -339,14 +346,20 @@
       <span class="little-orbit" aria-hidden="true"></span>
       <p>A song is the beginning.<br />The story is yours.</p>
     </div>
-    <button class="connection" onclick={() => (settingsOpen = !settingsOpen)}
+    <button
+      class="connection"
+      aria-expanded={settingsOpen || !connected}
+      aria-controls="connection-settings"
+      onclick={() => (settingsOpen = !settingsOpen)}
       ><span class:connected class="dot"></span>{connected
         ? "Studio connected"
-        : "Connect your studio"}<span aria-hidden="true">⚙</span></button
+        : "Connect your studio"}<span aria-hidden="true"
+        ><Icon name="settings" /></span
+      ></button
     >
   </aside>
 
-  <main>
+  <main id="studio-content" tabindex="-1">
     <header class="topbar">
       <div>
         <span class="breadcrumb"
@@ -369,19 +382,19 @@
           >{/if}<button
           class="dismiss"
           aria-label="Dismiss error"
-          onclick={() => (error = "")}>×</button
+          onclick={() => (error = "")}><Icon name="close" size={18} /></button
         >
       </div>{/if}
     {#if notice}<div class="banner success" role="status">
         {notice}<button
           class="dismiss"
           aria-label="Dismiss notification"
-          onclick={() => (notice = "")}>×</button
+          onclick={() => (notice = "")}><Icon name="close" size={18} /></button
         >
       </div>{/if}
 
     {#if settingsOpen || !connected}
-      <section class="connection-panel">
+      <section class="connection-panel" id="connection-settings">
         <div>
           <h2>Connect to your studio</h2>
           <p>Use the address of your private music-video server.</p>
@@ -418,7 +431,6 @@
     {#if !project}
       <div class="welcome">
         <div class="welcome-copy">
-          <div class="opening-mark" aria-hidden="true">◖ ◗</div>
           <h1>Let your song<br />become a story.</h1>
           <p>
             Bring in a track. Find its characters, places, and moments. Shape a
@@ -476,11 +488,11 @@
             {#each projects as item (item.id)}<button
                 onclick={() => openProject(item.id)}
                 disabled={busy}
-                ><span class="project-thumb" aria-hidden="true">▤</span><strong
-                  >{item.name}</strong
-                ><span class="subtle">Revision {item.revision}</span><span
-                  aria-hidden="true">↗</span
-                ></button
+                ><span class="project-thumb" aria-hidden="true"
+                  ><Icon name="story" /></span
+                ><strong>{item.name}</strong><span class="subtle"
+                  >Revision {item.revision}</span
+                ><span aria-hidden="true"><Icon name="arrow" /></span></button
               >{/each}
           </div>
         </section>{/if}
@@ -526,7 +538,9 @@
             <div class="story-canvas">
               <article class="treatment-paper">
                 <div class="paper-heading">
-                  <span class="paper-icon" aria-hidden="true">▤</span>
+                  <span class="paper-icon" aria-hidden="true"
+                    ><Icon name="story" /></span
+                  >
                   <h2>Treatment</h2>
                   <span class="subtle"
                     >{dirty
@@ -581,7 +595,7 @@
                         onclick={() =>
                           (sections = sections.filter(
                             (s) => s.id !== section.id,
-                          ))}>×</button
+                          ))}><Icon name="close" size={18} /></button
                       >
                     </div>
                     <div class="section-times">
@@ -623,7 +637,6 @@
                       <span class="dot amber"></span>Awaiting footage
                     </div>
                   </article>{:else}<div class="empty-inline">
-                    <span aria-hidden="true">╱</span>
                     <p>
                       Give the song a beginning, a turning point, and somewhere
                       to arrive.
@@ -693,7 +706,7 @@
                       onclick={() =>
                         (audioBreaks = audioBreaks.filter(
                           (b) => b.id !== item.id,
-                        ))}>×</button
+                        ))}><Icon name="close" size={18} /></button
                     >
                   </div>{/each}<button class="quiet" onclick={addBreak}
                   >+ Add audio break</button
@@ -706,6 +719,8 @@
                   class="reference-card"
                 >
                   {#if urls[reference.assetId]}<img
+                      loading="lazy"
+                      decoding="async"
                       src={urls[reference.assetId]}
                       alt={reference.description || reference.name}
                     />{:else}<div class="reference-placeholder">
@@ -721,7 +736,7 @@
                     <p>{reference.description}</p>
                   </div>
                 </article>{:else}<div class="empty-inline spacious">
-                  <span aria-hidden="true">▧</span>
+                  <span aria-hidden="true"><Icon name="image" /></span>
                   <h2>Build a shared visual memory.</h2>
                   <p>
                     Import images, then name the characters, locations, and
@@ -844,7 +859,9 @@
                 </p>{/if}
             </article>
             <article class="panel capability-panel">
-              <span class="capability-symbol" aria-hidden="true">◈</span>
+              <span class="capability-symbol" aria-hidden="true"
+                ><Icon name="production" /></span
+              >
               <div>
                 <h2>Generation is not connected yet</h2>
                 <p>
@@ -893,7 +910,9 @@
                   edit remains safe.
                 </p>
               </div>
-              <span class="review-ring" aria-hidden="true">◉</span>
+              <span class="review-ring" aria-hidden="true"
+                ><Icon name="review" /></span
+              >
             </article>
             {#each project.revisions as revision (revision.id)}<article
                 class="panel revision-card"
@@ -937,7 +956,7 @@
                       )}>Restore as candidate</button
                   >{/if}
               </article>{:else}<div class="empty-inline spacious">
-                <span aria-hidden="true">◌</span>
+                <span aria-hidden="true"><Icon name="production" /></span>
                 <h2>Your first cut will arrive here.</h2>
                 <p>
                   Generate and assemble footage before comparing revisions. No
@@ -963,9 +982,9 @@
           </div>
           <div class="preview-frame">
             <div class="preview-corners" aria-hidden="true"></div>
-            <span class="preview-symbol" aria-hidden="true">◌</span><strong
-              >{currentSection?.name ?? "Your film starts here"}</strong
-            >
+            <span class="preview-symbol" aria-hidden="true"
+              ><Icon name="production" /></span
+            ><strong>{currentSection?.name ?? "Your film starts here"}</strong>
             <p>
               {currentSection?.intent ||
                 "Add story sections to preview their intentions alongside the song."}
@@ -1044,18 +1063,20 @@
                   void importFiles(e.currentTarget.files);
                   e.currentTarget.value = "";
                 }}
-              /><span aria-hidden="true">＋</span><strong
+              /><span aria-hidden="true"><Icon name="upload" /></span><strong
                 >{busy ? "Working…" : "Import files"}</strong
               ><small>Audio, images, or clips · 128 MiB per file</small></label
             >
             <div class="asset-list">
               {#each assets as asset (asset.id)}<div class="asset">
-                  <span class="asset-type" aria-hidden="true"
-                    >{asset.mediaType.startsWith("audio/")
-                      ? "♫"
-                      : asset.mediaType.startsWith("image/")
-                        ? "▧"
-                        : "▤"}</span
+                  <span class="asset-type"
+                    ><Icon
+                      name={asset.mediaType.startsWith("audio/")
+                        ? "audio"
+                        : asset.mediaType.startsWith("image/")
+                          ? "image"
+                          : "story"}
+                    /></span
                   >
                   <div>
                     <strong title={asset.name}>{asset.name}</strong><small

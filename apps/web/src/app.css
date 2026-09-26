@@ -7,6 +7,10 @@
 @import "@fontsource/manrope/700.css";
 
 :root {
+  color-scheme: dark;
+  accent-color: var(--lavender);
+  caret-color: var(--lavender);
+  scrollbar-color: #7e8ba3 #242a35;
   font-family: "DM Sans", "Segoe UI", sans-serif;
   color: #e1e4ec;
   background: #20252f;
@@ -15,7 +19,7 @@
   font-weight: 400;
   --surface: #272d39;
   --panel: #2c3340;
-  --line: #3b4351;
+  --line: #69758b;
   --muted: #a6afbf;
   --lavender: #c3bafa;
   --ink: #20252f;
@@ -100,7 +104,7 @@ p {
 }
 h1 {
   font-family: "Manrope", "Segoe UI", sans-serif;
-  letter-spacing: -1.1px;
+  letter-spacing: -0.03em;
   font-size: 27px;
   font-weight: 650;
   line-height: 1.25;
@@ -115,7 +119,7 @@ p {
   color: #adb7c8;
 }
 small {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 a {
@@ -176,7 +180,8 @@ a {
   padding: 31px 19px 16px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
   position: sticky;
   top: 0;
 }
@@ -193,7 +198,7 @@ a {
 }
 .brand-icon {
   width: 43px;
-  height: 43px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -247,9 +252,9 @@ nav button:hover {
   background: #333b49;
 }
 .nav-glyph {
-  font-size: 19px;
+  display: inline-flex;
   line-height: 1;
-  width: 19px;
+  width: 20px;
   text-align: center;
 }
 .nav-count {
@@ -257,14 +262,14 @@ nav button:hover {
   background: #5f5d7b;
   padding: 1px 6px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .sidebar-note {
   margin-top: auto;
   padding: 60px 12px 35px;
 }
 .sidebar-note p {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.8;
   color: #8995a9;
 }
@@ -289,7 +294,7 @@ nav button:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   padding: 14px 2px 2px;
   border-top: 1px solid var(--line);
   text-align: left;
@@ -350,11 +355,11 @@ main {
   gap: 14px !important;
 }
 .revision {
-  font-size: 11px;
+  font-size: 12px;
   color: #8f9bb0;
 }
 .private-badge {
-  font-size: 10px;
+  font-size: 12px;
   border: 1px solid #465160;
   color: #b6c3cc;
   padding: 5px 9px;
@@ -433,7 +438,7 @@ main {
 .welcome h1 {
   font-size: clamp(34px, 3.5vw, 56px);
   font-weight: 500;
-  letter-spacing: -2.3px;
+  letter-spacing: -0.03em;
   line-height: 1.16;
 }
 .welcome-copy > p {
@@ -504,7 +509,7 @@ main {
   position: absolute;
   bottom: 25px;
   left: 25px;
-  font-size: 9px;
+  font-size: 12px;
   color: #adb4c5;
 }
 .frame-corner {
@@ -620,7 +625,6 @@ main {
   border: 1px solid #525969;
   border-radius: 9px;
   padding: 22px 24px 14px;
-  box-shadow: 0 9px 20px #13192524;
 }
 .paper-heading {
   display: flex;
@@ -629,7 +633,7 @@ main {
 }
 .paper-heading .subtle {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 12px;
 }
 .paper-icon {
   color: #c7c0e5;
@@ -651,13 +655,13 @@ main {
 .paper-foot {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 12px;
   color: #a2acc0;
   padding-top: 12px;
   border-top: 1px solid #4a5261;
 }
 .paper-foot .subtle {
-  font-size: 10px;
+  font-size: 12px;
 }
 .section-heading {
   display: flex;
@@ -693,7 +697,7 @@ main {
   font-weight: 500;
 }
 .section-number {
-  font-size: 10px;
+  font-size: 12px;
   color: #c2b8e2;
   background: #45475d;
   padding: 5px 6px;
@@ -710,12 +714,12 @@ main {
   margin: 15px 0 6px;
 }
 .section-times label {
-  font-size: 10px;
+  font-size: 12px;
   color: #a9b2c4;
   flex: 1;
 }
 .section-times input {
-  font-size: 11px;
+  font-size: 12px;
   padding: 7px;
   margin-top: 5px;
 }
@@ -731,7 +735,7 @@ main {
   align-items: center;
   gap: 7px;
   color: #b2bdcd;
-  font-size: 10px;
+  font-size: 12px;
   border-top: 1px solid #434c5d;
   padding-top: 10px;
 }
@@ -770,26 +774,26 @@ main {
 }
 .breaks summary span {
   color: #9fabbd;
-  font-size: 11px;
+  font-size: 12px;
   float: right;
 }
 .breaks p {
-  font-size: 11px;
+  font-size: 12px;
   margin: 14px 0;
 }
 .break-row {
   display: grid;
-  grid-template-columns: 1fr 75px 75px 1fr 20px;
+  grid-template-columns: 1fr 90px 90px 1fr 44px;
   gap: 8px;
   align-items: end;
   margin-bottom: 15px;
 }
 .break-row label {
-  font-size: 10px;
+  font-size: 12px;
 }
 .break-row input,
 .break-row select {
-  font-size: 10px;
+  font-size: 12px;
   padding: 7px;
 }
 .break-row button {
@@ -817,16 +821,18 @@ main {
   background: #354050;
   padding: 4px 7px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.4;
 }
 .preview-heading .tag {
-  font-size: 9px;
+  font-size: 12px;
   background: #3c3d4f;
   color: #c6bfd9;
 }
 .preview-frame {
-  aspect-ratio: 16/9;
+  width: 100%;
+  min-width: 0;
+  min-height: 180px;
   background: #171e2a;
   border: 1px solid #465060;
   border-radius: 6px;
@@ -845,19 +851,18 @@ main {
   margin-bottom: 6px;
 }
 .preview-frame strong {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #cbd0df;
 }
 .preview-frame p {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.5;
   margin-top: 5px;
-  max-height: 42px;
-  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 .preview-frame small {
-  font-size: 8px;
+  font-size: 12px;
   color: #8995a7;
   margin-top: 10px;
 }
@@ -870,11 +875,11 @@ main {
   font-size: 12px;
 }
 .master-panel > p {
-  font-size: 11px;
+  font-size: 12px;
   margin: 8px 0 12px;
 }
 .master-panel select {
-  font-size: 11px;
+  font-size: 12px;
   padding: 9px;
 }
 .filename {
@@ -921,12 +926,12 @@ main {
   margin-bottom: 5px;
 }
 .import-zone strong {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #d0d7e4;
 }
 .import-zone small {
-  font-size: 9px;
+  font-size: 12px;
   color: #a1acc0;
   margin-top: 5px;
 }
@@ -948,7 +953,7 @@ main {
   min-width: 0;
 }
 .asset strong {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 450;
   white-space: nowrap;
   overflow: hidden;
@@ -956,7 +961,7 @@ main {
   display: block;
 }
 .asset small {
-  font-size: 9px;
+  font-size: 12px;
   color: #94a1b5;
   display: block;
   margin-top: 3px;
@@ -1028,7 +1033,7 @@ main {
   gap: 14px;
 }
 .status-pill {
-  font-size: 10px;
+  font-size: 12px;
   border: 1px solid #716857;
   color: #d7c398;
   padding: 5px 9px;
@@ -1141,14 +1146,15 @@ main {
   gap: 13px;
 }
 .play {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border: 1px solid #59657a;
   background: #39465a;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12px;
   color: #e6e0fb;
 }
 .transport-controls strong {
@@ -1163,26 +1169,26 @@ main {
 }
 .transport-controls small {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   color: #97a6bd;
   margin-top: 4px;
 }
 .timeline-description {
-  font-size: 10px;
+  font-size: 12px;
   color: #c6cddd;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .timeline-description .subtle {
-  font-size: 9px;
+  font-size: 12px;
   margin-left: 12px;
 }
 .playhead {
   display: block;
   width: 100%;
   accent-color: #b9afe5;
-  height: 15px;
+  height: 28px;
   padding: 0;
   margin: 8px 0 5px;
   cursor: pointer;
@@ -1190,7 +1196,7 @@ main {
 .timeline {
   display: flex;
   gap: 3px;
-  height: 43px;
+  min-height: 56px;
 }
 .timeline > button {
   background: #44445d;
@@ -1217,10 +1223,10 @@ main {
   text-overflow: ellipsis;
   overflow: hidden;
   max-width: 100%;
-  font-size: 10px;
+  font-size: 12px;
 }
 .timeline small {
-  font-size: 8px;
+  font-size: 12px;
   color: #c3c5d0;
   font-variant-numeric: tabular-nums;
 }
@@ -1229,7 +1235,7 @@ main {
   border: 1px dashed #526077;
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: 12px;
   color: #96a5bd;
   border-radius: 4px;
 }
@@ -1315,165 +1321,78 @@ main {
 }
 @media (max-width: 850px) {
   .studio-shell {
-    grid-template-columns: 76px minmax(0, 1fr);
+    display: block;
   }
   .sidebar {
-    padding: 24px 10px 12px;
-    align-items: center;
+    position: static;
+    max-height: none;
+    height: auto;
+    padding: 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
   }
   .brand {
-    margin-bottom: 35px;
-  }
-  .brand > span:last-child,
-  .project-switcher,
-  .sidebar-note,
-  .connection {
-    display: none;
+    margin: 0;
+    justify-self: start;
   }
   .brand-icon {
     width: 40px;
     height: 40px;
   }
+  .project-switcher {
+    grid-column: 1/-1;
+    min-width: 0;
+  }
+  .project-switcher .full {
+    margin-top: 8px;
+  }
   .sidebar nav {
-    width: 100%;
-    margin-top: 0;
+    grid-column: 1/-1;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
   }
   .sidebar nav button {
-    font-size: 9px;
-    display: flex;
+    min-width: 0;
+    padding: 10px 2px;
     flex-direction: column;
-    gap: 7px;
-    padding: 12px 0;
-  }
-  .nav-glyph {
-    font-size: 22px;
+    gap: 6px;
+    text-align: center;
+    font-size: 12px;
   }
   .nav-count {
-    display: none;
-  }
-  .topbar {
-    height: 60px;
-    min-height: 60px;
-  }
-  .private-badge,
-  .revision {
-    display: none;
-  }
-  .workspace {
-    grid-template-columns: minmax(0, 1fr) 235px;
-  }
-  .view-heading h1 {
-    font-size: 21px;
-  }
-  .treatment-paper {
-    padding: 17px;
-  }
-  .paper-heading .subtle {
-    display: none;
-  }
-  .paper-foot {
-    font-size: 9px;
-  }
-  .paper-foot .subtle {
-    display: none;
-  }
-  .transport {
-    padding: 13px 20px;
-  }
-  .timeline-description {
-    display: none;
-  }
-  .welcome {
-    grid-template-columns: 1fr;
-    padding: 40px;
-  }
-  .welcome-frame {
-    max-width: 420px;
-    width: 100%;
-    margin: 20px auto;
-  }
-  .welcome-copy {
-    max-width: 100%;
-  }
-  .welcome h1 {
-    font-size: 43px;
-  }
-  .create-form > div {
-    flex-direction: row;
-  }
-  .connection-panel {
-    margin: 20px;
-  }
-  .reference-grid,
-  .form-pair {
-    grid-template-columns: 1fr;
-  }
-  .capability-panel {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .approval-details > div {
-    display: block;
-  }
-  .approval-details dd {
-    margin-top: 7px;
-  }
-  .review-ring {
-    display: none;
-  }
-}
-@media (max-width: 650px) {
-  .studio-shell {
-    display: block;
-  }
-  .sidebar {
-    height: auto;
-    position: static;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .brand {
     margin: 0;
   }
-  .brand-icon {
-    width: 34px;
-    height: 34px;
-    font-size: 21px;
-    border-radius: 8px;
+  .sidebar-note {
+    display: none;
   }
-  .sidebar nav {
-    display: flex;
-    width: auto;
-    gap: 5px;
-  }
-  .sidebar nav button {
-    font-size: 10px;
-    flex-direction: row;
+  .connection {
+    grid-column: 2;
+    grid-row: 1;
+    border: 0;
     padding: 8px;
-    gap: 5px;
-  }
-  .sidebar .nav-glyph {
-    font-size: 14px;
-    width: auto;
+    max-width: 145px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    text-align: right;
   }
   .topbar {
-    padding: 0 16px;
-    height: 52px;
-    min-height: 52px;
-  }
-  .breadcrumb {
-    max-width: 140px;
+    min-height: 60px;
+    height: auto;
+    padding: 12px 18px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
   .topbar > div {
-    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
   }
-  .topbar .quiet {
-    font-size: 10px;
-    padding: 7px;
+  .breadcrumb {
+    max-width: min(260px, 70vw);
   }
   .workspace {
     display: flex;
@@ -1481,63 +1400,66 @@ main {
   }
   .canvas-column {
     width: 100%;
-    padding: 25px 18px;
-  }
-  .inspector {
-    width: 100%;
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    padding: 22px 18px;
-  }
-  .preview-heading {
-    grid-column: 1/-1;
-    margin: 0;
-  }
-  .preview-frame {
-    align-self: start;
-  }
-  .master-panel {
-    padding: 0;
-    border: 0;
-  }
-  .asset-panel {
-    grid-column: 1/-1;
-    border-top: 1px solid var(--line);
-    padding-top: 20px;
-  }
-  .asset-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 15px;
+    padding: 28px 18px;
   }
   .view-heading {
-    flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
   }
   .view-heading h1 {
-    font-size: 21px;
+    font-size: 26px;
   }
-  .view-heading p {
-    font-size: 11px;
+  .inspector {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 24px 18px;
+  }
+  .preview-frame {
+    max-width: 560px;
+  }
+  .reference-grid,
+  .section-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .timeline-description {
+    display: none;
+  }
+  .transport {
+    padding: 12px 18px max(12px, env(safe-area-inset-bottom));
+  }
+  .transport-controls {
+    gap: 10px;
+  }
+  .transport-top {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .transport-top > .subtle {
+    font-size: 12px;
   }
   .welcome {
-    padding: 35px 24px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 32px 24px;
   }
   .welcome h1 {
     font-size: 40px;
   }
   .welcome-frame {
-    margin-top: 0;
-    max-width: 330px;
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+    transform: none;
+  }
+  .welcome-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    max-width: 100%;
   }
   .frame-inner {
+    min-width: 0;
+    aspect-ratio: auto;
     min-height: 285px;
-  }
-  .frame-poem {
-    font-size: 31px;
   }
   .create-form > div {
     flex-direction: column;
@@ -1548,55 +1470,126 @@ main {
   .connection-panel form {
     grid-template-columns: 1fr;
   }
-  .connection-panel h2 {
-    font-size: 14px;
+  .connection-panel .primary {
+    grid-column: auto;
   }
   .banner {
     margin: 12px 16px 0;
-  }
-  .transport {
-    padding: 12px 16px;
-    position: sticky;
-  }
-  .timeline-description {
-    display: none;
-  }
-  .transport-top > .subtle {
-    font-size: 10px;
+    flex-wrap: wrap;
   }
   .recent-projects {
-    padding: 0 24px 35px;
+    padding: 0 24px 32px;
+  }
+  .recent-projects > div {
+    display: grid;
   }
   .recent-projects button {
     min-width: 0;
     width: 100%;
   }
-  .recent-projects > div {
-    display: grid;
+  input,
+  select,
+  textarea,
+  .project-switcher select,
+  .section-card-top input,
+  .section-times input,
+  .section-card textarea,
+  .break-row input,
+  .break-row select,
+  .master-panel select,
+  .create-form input,
+  .treatment-paper textarea {
+    font-size: 16px;
   }
-  .section-grid {
+  label,
+  p,
+  .subtle,
+  .quiet,
+  .primary,
+  .small-note,
+  .section-times label,
+  .break-row label,
+  .view-heading p,
+  .master-panel > p,
+  .asset strong,
+  .asset small,
+  .import-zone small,
+  .import-zone strong,
+  .breaks p,
+  .breaks summary {
+    font-size: 14px !important;
+  }
+  button,
+  summary,
+  input:not([type="range"]),
+  select {
+    min-height: 44px;
+  }
+  .preview-frame strong {
+    font-size: 16px;
+  }
+  .preview-frame p,
+  .preview-frame small {
+    font-size: 14px;
+  }
+}
+@media (max-width: 550px) {
+  .brand > span:last-child {
+    display: none;
+  }
+  .connection {
+    max-width: none;
+  }
+  .reference-grid,
+  .section-grid,
+  .form-pair {
     grid-template-columns: 1fr;
   }
-  .reference-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .reference-card > div {
-    padding: 12px;
-  }
-  .reference-card h2 {
-    font-size: 13px;
-  }
-  .reference-card p {
-    font-size: 11px;
-  }
-  .review-summary p {
-    font-size: 11px;
-  }
+  .treatment-paper,
   .panel {
-    padding: 19px;
+    padding: 18px;
   }
-  .transport-controls small {
-    font-size: 8px;
+  .paper-heading {
+    flex-wrap: wrap;
+  }
+  .paper-heading .subtle {
+    margin-left: 0;
+  }
+  .paper-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .break-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .break-row label:first-child,
+  .break-row label:nth-child(4) {
+    grid-column: 1/-1;
+  }
+  .break-row .icon-button {
+    justify-self: end;
+  }
+  .breaks summary span {
+    float: none;
+    margin-left: 8px;
+  }
+  .approval-details > div {
+    display: block;
+  }
+  .approval-details dd {
+    margin-top: 8px;
+  }
+  .capability-panel {
+    flex-direction: column;
+  }
+  .button-row {
+    flex-wrap: wrap;
+  }
+  .shot-row {
+    flex-wrap: wrap;
+  }
+  .review-ring {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1607,4 +1600,91 @@ main {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Shared interactive and native surfaces use the studio's dark palette. */
+::selection {
+  background: #c3bafa;
+  color: #20252f;
+}
+summary {
+  outline-offset: 4px;
+}
+summary:focus-visible {
+  outline: 2px solid var(--lavender);
+}
+button,
+summary {
+  touch-action: manipulation;
+}
+button svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.icon-button,
+.dismiss {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.icon-button:hover,
+.dismiss:hover {
+  background: #414b5e;
+  border-radius: 6px;
+}
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 8px;
+  left: 8px;
+  padding: 12px 18px;
+  background: var(--lavender);
+  color: var(--ink);
+  transform: translateY(-150%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+main:focus {
+  outline: none;
+}
+html {
+  scroll-padding-bottom: 220px;
+}
+:where(input, select, textarea, button, summary, a) {
+  scroll-margin-block: 24px 220px;
+}
+:where(
+  .view-heading,
+  .paper-heading,
+  .section-card-top,
+  .approval-details dd,
+  .shot-row > div,
+  .recent-projects strong,
+  .banner,
+  .reference-card
+) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.section-times > label {
+  min-width: 0;
+}
+@media (forced-colors: active) {
+  .active,
+  .play,
+  .primary,
+  .quiet {
+    border: 1px solid ButtonText;
+  }
+  nav button.active {
+    outline: 2px solid Highlight;
+  }
+}
+
+.section-number {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
