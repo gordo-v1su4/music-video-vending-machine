@@ -1,4 +1,4 @@
-# Music Vending Machine
+# Music Video Vending Machine (mvvm)
 
 Personal narrative music-video studio. **Under construction; not production-ready.**
 
@@ -6,16 +6,18 @@ The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-pl
 
 ## Development
 
-Requirements: Rust stable, Bun, FFmpeg/FFprobe, and PostgreSQL 17. The local coordinator is 127.0.0.1:5199; web development is 127.0.0.1:5198 with strict port binding.
+Requirements: Rust stable, Bun, FFmpeg/FFprobe, a private self-hosted Convex deployment, and RustFS. The coordinator binds to 127.0.0.1:5199; web development uses 127.0.0.1:5198 with strict port binding.
 
-For an isolated loopback-only development database (never use this trust-auth setup in deployment):
+The `convex/` schema and internal functions live in this repository. The home `mvvm` instance runs on app-vm; infrastructure definitions and credential-name inventory live in the canonical proxmox-home repository. Media and large analysis payloads use the scoped RustFS `mvvm` bucket. See [migration evidence and remaining gates](docs/convex-migration-status.md).
+
+Install backend dependencies with `bun install --frozen-lockfile`. Inject the variable names from `.env.example` through the private secret manager, then run:
 
 ```powershell
-docker run -d --name mvm-dev-postgres -p 127.0.0.1:55439:5432 -e POSTGRES_DB=mvm_dev -e POSTGRES_USER=mvm -e POSTGRES_HOST_AUTH_METHOD=trust -v mvm-dev-postgres:/var/lib/postgresql/data postgres:17.10-bookworm
-$env:DATABASE_URL = 'postgres://mvm@127.0.0.1:55439/mvm_dev'
 $env:MVM_DEV_LOCAL = '1'
-cargo run -p mvm-coordinator
+cargo run -p mvm-coordinator --locked
 ```
+
+Convex URL/admin credentials and RustFS configuration are required in both modes. The coordinator never falls back to PostgreSQL or local asset files. It does not load `.env` automatically. Local mode permits only loopback binding; private deployment requires an operator bootstrap token and bounded operator sessions.
 
 In another terminal:
 
@@ -25,8 +27,6 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
-Local mode uses .runtime/assets and identifies itself as development. It refuses non-loopback binding. Production requires an operator token and configured RustFS credentials; copy variable **names** from .env.example and inject values privately from BWS. The coordinator does not load .env automatically.
-
 ## Verification
 
 ```powershell
@@ -34,9 +34,12 @@ cargo fmt --all -- --check
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 node scripts/generate-contract.mjs --check
-# Integration tests require an isolated test database, never a production database:
-$env:MVM_TEST_DATABASE_URL = 'postgres://mvm@127.0.0.1:55439/mvm_test'
-cargo test -p mvm-coordinator --test persistence -- --ignored
+# Docker-backed acceptance: fresh local Convex, fake providers, no homelab credentials.
+bun install --frozen-lockfile
+bun run check:convex
+bunx vitest run scripts/convex-migration.test.ts scripts/convex-persistence.test.ts
+node --test scripts/migration-payloads.test.mjs scripts/convex-backup.test.mjs
+node scripts/test-convex-http.mjs
 cd apps/web
 bun run check
 bun run test
@@ -45,7 +48,7 @@ bun run build
 
 Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvm-coordinator -- --openapi` without service credentials.
 
-No generation or final export is presented as available until its real integration gates pass. Current intake caps each request at 128 MiB; stems, MIDI and lyrics have not yet received intake adapters.
+No generation or final export is presented as available until its real integration gates pass. Current intake caps each request at 128 MiB; aligned audio stems and lyric wording references are supported; MIDI intake remains unavailable.
 
 ## Design and feasibility
 
@@ -53,7 +56,7 @@ Dark mode is the user-confirmed default. UI changes use the pinned [Impeccable w
 
 Local service/model feasibility probes live in `scripts/probe-*.py`; these are operator tools, not the production worker. Their receipts distinguish generated output from inspected acceptance and retain uncertain submissions without automatic retries. See [capability evidence](docs/evidence/2026-09-25-capabilities.md) for pinned workflows, measured results and remaining gates.
 
-The [private storage and recovery evidence](docs/evidence/2026-09-25-private-recovery.md) covers scoped RustFS credentials, authenticated API restart checks and a cold fixture restored into a separate database and fresh object keys. `scripts/verify-local-recovery.py` is an isolated local acceptance harness, not a deployed backup scheduler.
+The [private storage and recovery evidence](docs/evidence/2026-09-25-private-recovery.md) covers scoped RustFS credentials, authenticated API restart checks and a cold fixture restored into a separate database and fresh object keys. That PostgreSQL evidence and `scripts/verify-local-recovery.py` are retained historical rollback material. Current Convex/RustFS backup and isolated restore evidence is in the migration record; scheduled/off-host retention remains pending.
 
 Run deterministic probe guard tests without contacting providers:
 

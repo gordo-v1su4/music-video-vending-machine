@@ -422,7 +422,7 @@
 </script>
 
 <svelte:head
-  ><title>{project ? `${project.name} — ` : ""}Music Vending Machine</title
+  ><title>{project ? `${project.name} — ` : ""}Music Video Vending Machine</title
   ><meta
     name="description"
     content="A private studio for turning a song and a story into a narrative music video."
@@ -436,9 +436,9 @@
       onclick={showLibrary}
       disabled={dirty || busy}
       class="brand"
-      aria-label="Music Vending Machine project library"
-      ><span class="brand-icon" aria-hidden="true">m<span>v</span>m</span><span
-        >Music Vending<br />Machine</span
+      aria-label="Music Video Vending Machine project library"
+      ><span class="brand-icon" aria-hidden="true">m<span>vv</span>m</span><span
+        >Music Video<br />Vending Machine</span
       ></button
     >
     <div class="project-switcher">

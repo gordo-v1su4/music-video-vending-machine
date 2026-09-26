@@ -1,0 +1,13 @@
+{
+  "bucket": "mvvm",
+  "endpoint": "https://s3.v1su4.dev",
+  "key": "projects/25b33767-c252-4c11-bcd3-66a4d1159ac2/storage-acceptance.bin",
+  "created": true,
+  "bytes": 65536,
+  "sha256": "4401857ea83fc0bbe217324fa85210f7a4a3e7357ca3d415851c664f7ffb6cdb",
+  "state": "verified",
+  "checkedAt": "2026-09-26T09:49:58.699Z",
+  "rangeVerified": true,
+  "anonymousStatus": 403,
+  "appCutover": false
+}

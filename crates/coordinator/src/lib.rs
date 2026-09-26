@@ -1,5 +1,12 @@
 pub mod analysis;
 pub mod analysis_jobs;
+pub mod convex;
+pub mod convex_analysis;
+pub mod convex_payloads;
+pub mod convex_projects;
+pub mod convex_sessions;
+pub mod convex_transcription;
+pub mod convex_uploads;
 mod sessions;
 pub mod transcription;
 
@@ -21,7 +28,6 @@ use mvm_domain::{Action, DomainError, Project};
 use object_store::{ObjectStore, path::Path as ObjectPath};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use sqlx::{PgPool, Row};
 use std::{convert::Infallible, sync::Arc, time::Duration};
 use subtle::ConstantTimeEq;
 use tower_http::cors::CorsLayer;
@@ -30,34 +36,39 @@ use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct AppState {
+    pub convex: Option<convex::Client>,
     pub transcription: Option<Arc<transcription::Service>>,
     pub analysis: Option<Arc<analysis_jobs::Service>>,
-    pub pool: PgPool,
     pub objects: Arc<dyn ObjectStore>,
     pub token_hash: Option<[u8; 32]>,
     pub development: bool,
     pub storage_name: String,
+    pub object_bucket: String,
 }
 #[derive(Debug)]
 pub struct ApiError(StatusCode, String);
+impl From<convex::Error> for ApiError {
+    fn from(error: convex::Error) -> Self {
+        use convex::Error;
+        match error {
+            Error::Unauthorized => sessions::unauthorized(),
+            Error::NotFound => missing(),
+            Error::Conflict => Self(
+                StatusCode::CONFLICT,
+                "This project changed. Reload before saving.".into(),
+            ),
+            Error::Invalid => invalid("Invalid saved data or request."),
+            _ => Self(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Project storage is unavailable. Reconnect to check whether your change was saved."
+                    .into(),
+            ),
+        }
+    }
+}
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         (self.0, Json(serde_json::json!({"error": self.1}))).into_response()
-    }
-}
-impl From<sqlx::Error> for ApiError {
-    fn from(error: sqlx::Error) -> Self {
-        tracing::error!(
-            kind = "database",
-            "Database operation failed: {}",
-            error
-                .as_database_error()
-                .map_or("connection or query failure", |e| e.message())
-        );
-        Self(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Project storage is unavailable. Your changes were not saved.".into(),
-        )
     }
 }
 impl From<DomainError> for ApiError {
@@ -108,10 +119,6 @@ pub struct Asset {
     pub created_at: DateTime<Utc>,
 }
 
-pub async fn migrate(pool: &PgPool) -> anyhow::Result<()> {
-    sqlx::migrate!().run(pool).await?;
-    Ok(())
-}
 pub fn router(state: AppState, origins: Vec<axum::http::HeaderValue>) -> Router {
     let protected = Router::new()
         .route(
@@ -238,7 +245,14 @@ fn local_request_host(req: &Request) -> bool {
     })
 }
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
-    let healthy = sqlx::query("SELECT 1").execute(&state.pool).await.is_ok();
+    let healthy = if let Some(client) = &state.convex {
+        client
+            .query::<bool>("maintenance:health", serde_json::json!({}))
+            .await
+            .unwrap_or(false)
+    } else {
+        false
+    };
     (
         if healthy {
             StatusCode::OK
@@ -246,25 +260,27 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
             StatusCode::SERVICE_UNAVAILABLE
         },
         Json(serde_json::json!({
-            "status":if healthy {"ok"} else {"unavailable"},"storage":state.storage_name,"version":env!("CARGO_PKG_VERSION"),
+            "status":if healthy {"ok"} else {"unavailable"},"database":"convex","storage":state.storage_name,"version":env!("CARGO_PKG_VERSION"),
             "capabilities":{"generation":false,"export":false,"essentia":state.analysis.is_some()},"development":state.development,"sessionRequired":state.token_hash.is_some() || !state.development
         })),
     )
 }
 
-/// Retain ended session metadata for seven days, then prune it in bounded batches.
-pub async fn prune_operator_sessions(pool: &PgPool) -> Result<u64, sqlx::Error> {
-    Ok(sqlx::query("DELETE FROM operator_sessions WHERE id IN (SELECT id FROM operator_sessions WHERE expires_at < clock_timestamp()-interval '7 days' OR revoked_at < clock_timestamp()-interval '7 days' LIMIT 1000)")
-        .execute(pool).await?.rows_affected())
-}
 
 #[utoipa::path(get, path="/api/v1/projects", responses((status=200, body=Vec<Project>)))]
-async fn list_projects(State(state): State<AppState>) -> ApiResult<Json<Vec<Project>>> {
-    let rows: Vec<(sqlx::types::Json<Project>,)> =
-        sqlx::query_as("SELECT document FROM projects ORDER BY updated_at DESC LIMIT 200")
-            .fetch_all(&state.pool)
-            .await?;
-    Ok(Json(rows.into_iter().map(|r| r.0.0).collect()))
+async fn list_projects(
+    State(state): State<AppState>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
+) -> ApiResult<Json<Vec<Project>>> {
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    Ok(Json(
+        client
+            .list_projects(&sessions::convex_auth(&state, identity))
+            .await?,
+    ))
 }
 #[utoipa::path(post, path="/api/v1/projects", request_body=CreateProject, responses((status=201, body=Project)))]
 async fn create_project(
@@ -273,40 +289,32 @@ async fn create_project(
     Json(input): Json<CreateProject>,
 ) -> ApiResult<impl IntoResponse> {
     let p = Project::new(input.name)?;
-    let mut tx = state.pool.begin().await?;
-    if !sessions::valid_on(&mut *tx, &state, identity).await? {
-        return Err(sessions::unauthorized());
-    }
-    sqlx::query("INSERT INTO projects(id,revision,document) VALUES($1,$2,$3)")
-        .bind(p.id)
-        .bind(p.revision as i64)
-        .bind(sqlx::types::Json(&p))
-        .execute(&mut *tx)
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    client
+        .commit_project(&sessions::convex_auth(&state, identity), &p, None, &[])
         .await?;
-    sqlx::query("INSERT INTO project_events(project_id,revision,document) VALUES($1,$2,$3)")
-        .bind(p.id)
-        .bind(p.revision as i64)
-        .bind(sqlx::types::Json(&p))
-        .execute(&mut *tx)
-        .await?;
-    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(p)))
 }
 #[utoipa::path(get, path="/api/v1/projects/{id}", params(("id"=Uuid, Path)), responses((status=200, body=Project)))]
 async fn get_project(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<Json<Project>> {
-    Ok(Json(read_project(&state.pool, id).await?))
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    Ok(Json(
+        client
+            .read_project(&sessions::convex_auth(&state, identity), id)
+            .await?,
+    ))
 }
-pub async fn read_project(pool: &PgPool, id: Uuid) -> ApiResult<Project> {
-    let row: Option<(sqlx::types::Json<Project>,)> =
-        sqlx::query_as("SELECT document FROM projects WHERE id=$1")
-            .bind(id)
-            .fetch_optional(pool)
-            .await?;
-    row.map(|r| r.0.0).ok_or_else(missing)
-}
+
 #[utoipa::path(post, path="/api/v1/projects/{id}/actions", params(("id"=Uuid, Path)), request_body=ProjectAction, responses((status=200, body=Project),(status=409, description="Stale revision"),(status=422, description="Invalid action")))]
 async fn project_action(
     State(state): State<AppState>,
@@ -314,23 +322,52 @@ async fn project_action(
     axum::Extension(identity): axum::Extension<sessions::Identity>,
     Json(input): Json<ProjectAction>,
 ) -> ApiResult<Json<Project>> {
-    let mut tx = state.pool.begin().await?;
-    let row: Option<(sqlx::types::Json<Project>,)> =
-        sqlx::query_as("SELECT document FROM projects WHERE id=$1 FOR UPDATE")
-            .bind(id)
-            .fetch_optional(&mut *tx)
-            .await?;
-    let p = row.ok_or_else(missing)?.0.0;
-    if !sessions::valid_on(&mut *tx, &state, identity).await? {
-        return Err(sessions::unauthorized());
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    let auth = sessions::convex_auth(&state, identity);
+    let p = client.read_project(&auth, id).await?;
+    let ids = action_asset_ids(&input.action);
+    let mut assets = std::collections::HashMap::new();
+    for asset_id in &ids {
+        assets.insert(*asset_id, client.read_asset(&auth, id, *asset_id).await?);
     }
+    validate_action_assets(&p, &input.action, &assets)?;
+    let next = p.apply(input.expected_revision, input.action)?;
+    client
+        .commit_project(&auth, &next, Some(input.expected_revision), &ids)
+        .await?;
+    Ok(Json(next))
+}
+
+fn action_asset_ids(action: &Action) -> Vec<Uuid> {
+    match action {
+        Action::SetLyrics {
+            lyrics: Some(lyrics),
+        } => lyrics.aligned_asset_id.into_iter().collect(),
+        Action::SetMaster { asset_id, .. } => vec![*asset_id],
+        Action::AddReference { reference } => vec![reference.asset_id],
+        Action::SetBreaks { breaks } => breaks.iter().filter_map(|b| b.asset_id).collect(),
+        Action::SetShots { shots } | Action::CreateRevision { shots, .. } => {
+            shots.iter().filter_map(|s| s.candidate_asset_id).collect()
+        }
+        _ => vec![],
+    }
+}
+
+fn validate_action_assets(
+    p: &Project,
+    action: &Action,
+    assets: &std::collections::HashMap<Uuid, Asset>,
+) -> ApiResult<()> {
     // Trusted metadata and ownership checks are adapter responsibilities, before pure domain rules.
-    match &input.action {
+    match action {
         Action::SetLyrics {
             lyrics: Some(lyrics),
         } => {
             if let Some(asset_id) = lyrics.aligned_asset_id {
-                let a = read_asset(&mut *tx, id, asset_id).await?;
+                let a = assets.get(&asset_id).ok_or_else(missing)?;
                 if !a.media_type.starts_with("audio/") || a.duration_ms != Some(p.duration_ms()) {
                     return Err(invalid(
                         "Aligned lyric audio must share the master's measured duration.",
@@ -342,7 +379,7 @@ async fn project_action(
             asset_id,
             duration_ms,
         } => {
-            let a = read_asset(&mut *tx, id, *asset_id).await?;
+            let a = assets.get(asset_id).ok_or_else(missing)?;
             if !a.media_type.starts_with("audio/") || a.duration_ms != Some(*duration_ms) {
                 return Err(invalid(
                     "Choose an uploaded audio asset with its measured duration.",
@@ -350,7 +387,7 @@ async fn project_action(
             }
         }
         Action::AddReference { reference } => {
-            let a = read_asset(&mut *tx, id, reference.asset_id).await?;
+            let a = assets.get(&reference.asset_id).ok_or_else(missing)?;
             if !a.media_type.starts_with("image/") {
                 return Err(invalid("References must be uploaded images."));
             }
@@ -358,7 +395,7 @@ async fn project_action(
         Action::SetBreaks { breaks } => {
             for b in breaks {
                 if let Some(asset_id) = b.asset_id {
-                    let a = read_asset(&mut *tx, id, asset_id).await?;
+                    let a = assets.get(&asset_id).ok_or_else(missing)?;
                     if !a.media_type.starts_with("audio/") {
                         return Err(invalid("Audio breaks require audio assets."));
                     }
@@ -368,7 +405,7 @@ async fn project_action(
         Action::SetShots { shots } | Action::CreateRevision { shots, .. } => {
             for shot in shots {
                 if let Some(asset_id) = shot.candidate_asset_id {
-                    let a = read_asset(&mut *tx, id, asset_id).await?;
+                    let a = assets.get(&asset_id).ok_or_else(missing)?;
                     if !a.media_type.starts_with("video/")
                         || a.duration_ms
                             .is_none_or(|d| d < shot.end_ms.saturating_sub(shot.start_ms))
@@ -382,21 +419,7 @@ async fn project_action(
         }
         _ => {}
     }
-    let next = p.apply(input.expected_revision, input.action)?;
-    sqlx::query("UPDATE projects SET revision=$2,document=$3,updated_at=now() WHERE id=$1")
-        .bind(id)
-        .bind(next.revision as i64)
-        .bind(sqlx::types::Json(&next))
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("INSERT INTO project_events(project_id,revision,document) VALUES($1,$2,$3)")
-        .bind(id)
-        .bind(next.revision as i64)
-        .bind(sqlx::types::Json(&next))
-        .execute(&mut *tx)
-        .await?;
-    tx.commit().await?;
-    Ok(Json(next))
+    Ok(())
 }
 
 #[derive(Deserialize)]
@@ -410,7 +433,10 @@ async fn project_events(
     Query(query): Query<EventCursor>,
     axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<impl IntoResponse> {
-    read_project(&state.pool, id).await?;
+    let client = state.convex.clone().ok_or(convex::Error::Configuration)?;
+    client
+        .read_project(&sessions::convex_auth(&state, identity), id)
+        .await?;
     let stream = async_stream::stream! {
         let mut after = query.after;
         loop {
@@ -418,48 +444,36 @@ async fn project_events(
                 yield Ok::<Event, Infallible>(Event::default().event("session-ended").data("Sign in to resume saved events."));
                 break;
             }
-            let rows = sqlx::query("SELECT revision,document FROM project_events WHERE project_id=$1 AND revision>$2 ORDER BY revision LIMIT 100")
-                .bind(id).bind(after).fetch_all(&state.pool).await;
-            match rows {
-                Ok(rows) => for row in rows {
-                    let revision: i64 = row.get("revision");
-                    let document: serde_json::Value = row.get("document");
-                    yield Ok::<Event, Infallible>(Event::default().event("project").id(revision.to_string()).data(document.to_string()));
-                    after = revision;
-                },
-                Err(_) => { yield Ok(Event::default().event("storage-error").data("Reconnect to resume saved events.")); break; }
-            }
-            tokio::time::sleep(Duration::from_secs(1)).await;
+                match client.project_events(&sessions::convex_auth(&state, identity), id, after).await {
+                    Ok(rows) => for row in rows {
+                        yield Ok(Event::default().event("project").id(row.revision.to_string()).data(row.document));
+                        after = row.revision as i64;
+                    },
+                    Err(convex::Error::Unauthorized) => { yield Ok(Event::default().event("session-ended").data("Sign in to resume saved events.")); break; },
+                    Err(_) => { yield Ok(Event::default().event("storage-error").data("Reconnect to resume saved events.")); break; }
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+
         }
     };
     Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
 }
 
-async fn read_asset<'e, E: sqlx::Executor<'e, Database = sqlx::Postgres>>(
-    executor: E,
-    project_id: Uuid,
-    id: Uuid,
-) -> ApiResult<Asset> {
-    let row: Option<(sqlx::types::Json<Asset>,)> =
-        sqlx::query_as("SELECT metadata FROM assets WHERE id=$1 AND project_id=$2")
-            .bind(id)
-            .bind(project_id)
-            .fetch_optional(executor)
-            .await?;
-    row.map(|r| r.0.0).ok_or_else(missing)
-}
 #[utoipa::path(get, path="/api/v1/projects/{id}/assets", params(("id"=Uuid, Path)), responses((status=200, body=Vec<Asset>)))]
 async fn list_assets(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<Json<Vec<Asset>>> {
-    read_project(&state.pool, id).await?;
-    let rows: Vec<(sqlx::types::Json<Asset>,)> =
-        sqlx::query_as("SELECT metadata FROM assets WHERE project_id=$1 ORDER BY created_at")
-            .bind(id)
-            .fetch_all(&state.pool)
-            .await?;
-    Ok(Json(rows.into_iter().map(|r| r.0.0).collect()))
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    Ok(Json(
+        client
+            .list_assets(&sessions::convex_auth(&state, identity), id)
+            .await?,
+    ))
 }
 async fn upload_asset(
     State(state): State<AppState>,
@@ -467,7 +481,10 @@ async fn upload_asset(
     axum::Extension(identity): axum::Extension<sessions::Identity>,
     mut multipart: Multipart,
 ) -> ApiResult<impl IntoResponse> {
-    read_project(&state.pool, id).await?;
+    let client = state.convex.as_ref().ok_or(convex::Error::Configuration)?;
+    client
+        .read_project(&sessions::convex_auth(&state, identity), id)
+        .await?;
     let field = multipart
         .next_field()
         .await
@@ -525,96 +542,46 @@ async fn upload_asset(
         created_at: Utc::now(),
     };
     let key = ObjectPath::from(format!("projects/{id}/originals/{asset_id}"));
-    // Commit intent before touching object storage. A cancelled request or an
-    // uncertain PUT/commit outcome leaves enough information to reconcile.
-    sqlx::query(
-        "INSERT INTO upload_intents(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)",
-    )
-    .bind(asset_id)
-    .bind(id)
-    .bind(key.to_string())
-    .bind(sqlx::types::Json(&asset))
-    .execute(&state.pool)
-    .await?;
-    let mut tx = state.pool.begin().await?;
-    sqlx::query("SELECT id FROM upload_intents WHERE id=$1 FOR UPDATE")
-        .bind(asset_id)
-        .fetch_one(&mut *tx)
+    client
+        .begin_upload(
+            &sessions::convex_auth(&state, identity),
+            &asset,
+            key.as_ref(),
+        )
         .await?;
     state.objects.put(&key, data.into()).await.map_err(|_| {
         ApiError(
             StatusCode::SERVICE_UNAVAILABLE,
-            "The upload outcome is uncertain. Refresh the media library while recovery checks it."
-                .into(),
+            "Upload outcome uncertain; recovery will verify it.".into(),
         )
     })?;
-    complete_upload(&mut tx, &asset, key.as_ref(), state.analysis.as_deref()).await?;
-    tx.commit().await?;
+    convex_uploads::verify(&state, &asset, key.as_ref())
+        .await
+        .map_err(|_| {
+            ApiError(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Upload verification pending; recovery will check it.".into(),
+            )
+        })?;
+    client
+        .complete_upload(
+            &asset,
+            key.as_ref(),
+            state.analysis.as_ref().map(|s| s.origin.as_str()),
+        )
+        .await?;
     Ok((StatusCode::CREATED, Json(asset)))
-}
-
-async fn complete_upload(
-    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
-    asset: &Asset,
-    key: &str,
-    analysis: Option<&analysis_jobs::Service>,
-) -> Result<(), sqlx::Error> {
-    sqlx::query("INSERT INTO assets(id,project_id,object_key,metadata) VALUES($1,$2,$3,$4)")
-        .bind(asset.id)
-        .bind(asset.project_id)
-        .bind(key)
-        .bind(sqlx::types::Json(asset))
-        .execute(&mut **tx)
-        .await?;
-    analysis_jobs::enqueue(tx, asset, analysis).await?;
-    sqlx::query("DELETE FROM upload_intents WHERE id=$1")
-        .bind(asset.id)
-        .execute(&mut **tx)
-        .await?;
-    Ok(())
 }
 
 /// Reconcile complete media left behind by an interrupted request or process.
 /// Missing/uncertain objects retain their intent; never delete a key while a
-/// timed-out remote PUT might still complete. Active upload rows are skipped.
+/// timed-out remote PUT might still complete. Promotion is idempotent after verification.
 pub async fn reconcile_uploads(state: &AppState) -> anyhow::Result<usize> {
-    let mut recovered = 0;
-    let mut tx = state.pool.begin().await?;
-    let rows = sqlx::query(
-        "SELECT id,object_key,metadata FROM upload_intents ORDER BY checked_at,id LIMIT 32 FOR UPDATE SKIP LOCKED",
-    )
-    .fetch_all(&mut *tx)
-    .await?;
-    for row in rows {
-        let id: Uuid = row.get("id");
-        let key: String = row.get("object_key");
-        let asset: sqlx::types::Json<Asset> = row.get("metadata");
-        sqlx::query("UPDATE upload_intents SET checked_at=clock_timestamp() WHERE id=$1")
-            .bind(id)
-            .execute(&mut *tx)
-            .await?;
-        let verification = tokio::time::timeout(Duration::from_secs(30), async {
-            let object = state
-                .objects
-                .get(&ObjectPath::from(key.as_str()))
-                .await
-                .ok()?;
-            if object.meta.size != asset.size_bytes || asset.size_bytes > 128 * 1024 * 1024 {
-                return None;
-            }
-            let data = object.bytes().await.ok()?;
-            (format!("{:x}", Sha256::digest(&data)) == asset.sha256).then_some(())
-        })
-        .await;
-        if matches!(verification, Ok(Some(()))) {
-            complete_upload(&mut tx, &asset, &key, state.analysis.as_deref()).await?;
-            recovered += 1;
-        } else {
-            tracing::warn!(%id, "Upload intent retained: object missing, unverified or unavailable");
-        }
-    }
-    tx.commit().await?;
-    Ok(recovered)
+    let client = state
+        .convex
+        .as_ref()
+        .ok_or(crate::convex::Error::Configuration)?;
+    convex_uploads::reconcile(state, client).await
 }
 async fn probe_duration(data: &Bytes, media_type: &str) -> ApiResult<Option<u64>> {
     if media_type.starts_with("image/") {
@@ -660,14 +627,13 @@ async fn probe_duration(data: &Bytes, media_type: &str) -> ApiResult<Option<u64>
 async fn get_asset(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
 ) -> ApiResult<Response> {
-    let row: Option<(sqlx::types::Json<Asset>, String)> =
-        sqlx::query_as("SELECT metadata,object_key FROM assets WHERE id=$1 AND project_id=$2")
-            .bind(asset_id)
-            .bind(id)
-            .fetch_optional(&state.pool)
-            .await?;
-    let (asset, key) = row.ok_or_else(missing)?;
+    let client = state.convex.as_ref().ok_or(convex::Error::Configuration)?;
+    let row = client
+        .asset_record(&sessions::convex_auth(&state, identity), id, asset_id)
+        .await?;
+    let (asset, key) = (row.asset()?, row.object_key);
     let key = ObjectPath::from(key);
     let object = state.objects.get(&key).await.map_err(|_| {
         ApiError(
