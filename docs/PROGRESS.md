@@ -2,9 +2,11 @@
 
 Updated September 26, 2026. This tracks the approved [product requirements](PRD.md) and [implementation plan](implementation-plan.md).
 
-**Where we are:** the current 5:53 master is imported and analyzed. Revision 6 now saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
+**Where we are:** the current 5:53 master is imported and analyzed. Revision 7 saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
 
-**Current task: song analysis and editable sections.** The user confirmed the 5:53 stem package at a locked 137 BPM as the only source for this song. A 5:53.154 stereo 48 kHz / 24-bit master has been built from all 12 aligned stems, preserving relative levels with a uniform -0.5 dB adjustment (measured -1.1 dBTP). The earlier MP3, separate lyrics file, and earlier analysis are superseded and must not be used. Files in the package's reference-only folder may drift and are not timing authorities. The current trimmed master is connected to durable analysis, visible progress and a saved editable timeline.
+**Current task: Convex migration review, then private deployment and recovery acceptance.** PR #7 replaces PostgreSQL with self-hosted Convex on home app-vm and the scoped RustFS `mvvm` bucket. Local cutover, source preservation, isolated restore and browser playback have passed; exact-head review and CI gates remain pending.
+
+**Song context.** The user confirmed the 5:53 stem package at a locked 137 BPM as the only source for this song. A 5:53.154 stereo 48 kHz / 24-bit master has been built from all 12 aligned stems, preserving relative levels with a uniform -0.5 dB adjustment (measured -1.1 dBTP). The earlier MP3, separate lyrics file, and earlier analysis are superseded and must not be used. Files in the package's reference-only folder may drift and are not timing authorities. The current trimmed master is connected to durable analysis, visible progress and a saved editable timeline.
 
 **Next visible work:** review the proposed arc and timed cards → choose character, setting and visual references → refine scene actions → preview those parts against the music.
 
@@ -18,12 +20,15 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 
 - [x] Approve and preserve the product plan, requirements, and backlog.
 - [x] Create the Svelte/TypeScript workspace and Rust coordinator.
-- [x] Save projects, source assets, story edits, and revisions in PostgreSQL/object storage.
+- [x] Save projects, source assets, story edits, and revisions in self-hosted Convex/RustFS; local migration verified (PR review pending).
 - [x] Reject conflicting project writes instead of silently overwriting them.
 - [x] Verify private RustFS upload/download, coordinator restart, and completed-asset backup restoration.
 - [x] Implement session sign-in/sign-out and retain drafts across disconnection; run local browser checks.
 - [x] Merge session work: PR #4 merged at `c924765` after Greptile 5/5 on `d00c371`, green CI, and all findings resolved.
 - [x] Verify cold isolated backup restoration with verified, incomplete and missing pending uploads; coordinator completes only verified media. [Evidence](evidence/2026-09-26-pending-upload-recovery.md).
+- [x] Remove SQL runtime dependencies and exercise six disposable Convex acceptance tests.
+- [x] Verify the Convex-only local runtime preserves the revision-7 song, lyrics, analysis and audio playback.
+- [ ] Merge Convex migration PR #7 after exact-head Greptile 5/5, green CI and resolved findings.
 - [ ] Verify one shared project from both web and an installed Windows client.
 
 ## 2. Select a song and break it into editable parts — next priority (M1, M4)
@@ -101,7 +106,7 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 
 Recent work focused on durable saving, private storage, authentication, draft retention, and review fixes. Visible local tests created a project, saved its treatment, reloaded it, and preserved a draft through sign-out/reconnect. Those checks do **not** prove audio segmentation, story generation, or finished video production.
 
-The dark zinc workspace is implemented. Browser testing must stay in the user's visible in-app tab. Local services currently use web 5198, API 5199, and PostgreSQL 54329; Windows reserved the former database port 55439 after Docker restarted, so the same retained data volume now uses 54329.
+The dark zinc workspace is implemented. Browser testing must stay in the user's visible in-app tab. Local services use web 5198 and API 5199, with Convex on home app-vm and media in RustFS `mvvm`. PostgreSQL 54329 is retained rollback material only; it is no longer the application database. The local API remains development-only and omits provider credentials during migration review.
 
 ## Rules that stay in force
 
