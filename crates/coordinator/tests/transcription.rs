@@ -233,6 +233,88 @@ async fn transcription_survives_restart_and_never_repeats_paid_submissions() {
     assert_eq!(receipt.0["primary"]["metadata"]["duration"], 11);
     tick(&state).await.unwrap();
     assert_eq!(posts.load(Ordering::SeqCst), 3);
+    // Recovery never resubmits: use saved valid passes or an explicitly verified
+    // completed provider response, and reject stale or cross-source decisions.
+    let recovery_path = format!("{path}/recovery");
+    let decision = json!({"jobId":invalid["id"],"expectedUpdatedAt":invalid["updatedAt"],"sourceSha256":invalid["sha256"]});
+    assert_eq!(
+        request(app.clone(), "POST", &recovery_path, decision.clone())
+            .await
+            .0,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    let (saved,): (sqlx::types::Json<Value>,) =
+        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
+            .bind(ids[0])
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let mut imported = decision.clone();
+    imported["providerResponse"] = saved.0["primary"].clone();
+    assert_eq!(
+        request(app.clone(), "POST", &recovery_path, imported.clone())
+            .await
+            .0,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    imported["confirmedSource"] = json!(true);
+    imported["sourceSha256"] = json!("wrong-source");
+    assert_eq!(
+        request(app.clone(), "POST", &recovery_path, imported.clone())
+            .await
+            .0,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    imported["sourceSha256"] = invalid["sha256"].clone();
+    let (status, restored) = request(app.clone(), "POST", &recovery_path, imported.clone()).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(restored["status"], "completed");
+    assert_eq!(restored["result"]["wordCount"], 2);
+    assert_eq!(
+        request(app.clone(), "POST", &recovery_path, imported)
+            .await
+            .0,
+        StatusCode::CONFLICT
+    );
+    let (retained,): (sqlx::types::Json<Value>,) =
+        sqlx::query_as("SELECT receipt FROM transcription_jobs WHERE asset_id=$1")
+            .bind(ids[4])
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(retained.0["primary"], receipt.0["primary"]);
+    assert_eq!(retained.0["recovery"]["paidReplay"], false);
+    // A interrupted later pass can recover the response already on disk.
+    sqlx::query("UPDATE transcription_jobs SET receipt=$2 WHERE asset_id=$1")
+        .bind(ids[2])
+        .bind(sqlx::types::Json(saved.0))
+        .execute(&pool)
+        .await
+        .unwrap();
+    let saved_path = format!(
+        "/api/v1/projects/{project_id}/assets/{}/transcription/recovery",
+        ids[2]
+    );
+    let saved_decision = json!({"jobId":interrupted["id"],"expectedUpdatedAt":interrupted["updatedAt"],"sourceSha256":interrupted["sha256"]});
+    let mut unauthorized = state.clone();
+    unauthorized.development = false;
+    unauthorized.token_hash = Some([1; 32]);
+    assert_eq!(
+        request(
+            router(unauthorized, vec![]),
+            "POST",
+            &saved_path,
+            saved_decision.clone()
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+    let (status, restored) = request(app.clone(), "POST", &saved_path, saved_decision).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(restored["result"]["wordCount"], 2);
+    tick(&state).await.unwrap();
+    assert_eq!(posts.load(Ordering::SeqCst), 3);
     server.abort();
     sqlx::query("DELETE FROM transcription_jobs WHERE project_id=$1")
         .bind(project_id)

@@ -75,9 +75,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get"];
+        get: operations["get_analysis"];
         put?: never;
-        post: operations["start"];
+        post: operations["start_analysis"];
         delete?: never;
         options?: never;
         head?: never;
@@ -91,9 +91,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get"];
+        get: operations["get_transcription"];
         put?: never;
-        post: operations["start"];
+        post: operations["start_transcription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recover_transcription"];
         delete?: never;
         options?: never;
         head?: never;
@@ -366,6 +382,15 @@ export interface components {
             /** Format: int64 */
             expectedRevision: number;
         };
+        RecoverTranscription: {
+            confirmedSource?: boolean;
+            /** Format: date-time */
+            expectedUpdatedAt: string;
+            /** Format: uuid */
+            jobId: string;
+            providerResponse?: unknown;
+            sourceSha256: string;
+        };
         Reference: {
             /** Format: uuid */
             assetId: string;
@@ -597,7 +622,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_analysis: {
         parameters: {
             query?: never;
             header?: never;
@@ -619,7 +644,7 @@ export interface operations {
             };
         };
     };
-    start: {
+    start_analysis: {
         parameters: {
             query?: never;
             header?: never;
@@ -641,7 +666,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_transcription: {
         parameters: {
             query?: never;
             header?: never;
@@ -663,7 +688,7 @@ export interface operations {
             };
         };
     };
-    start: {
+    start_transcription: {
         parameters: {
             query?: never;
             header?: never;
@@ -674,6 +699,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": null | components["schemas"]["TranscriptionJob"];
+                };
+            };
+        };
+    };
+    recover_transcription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecoverTranscription"];
+            };
+        };
         responses: {
             200: {
                 headers: {

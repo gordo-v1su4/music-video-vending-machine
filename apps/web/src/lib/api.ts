@@ -140,6 +140,12 @@ export class StudioApi {
       start ? { method: "POST" } : {},
     );
   }
+  recoverTranscription(id: string, assetId: string, recovery: components["schemas"]["RecoverTranscription"]) {
+    return this.request<TranscriptionJob | null>(
+      `/projects/${encodeURIComponent(id)}/assets/${encodeURIComponent(assetId)}/transcription/recovery`,
+      { method: "POST", body: JSON.stringify(recovery) },
+    );
+  }
   action(project: Project, action: ProjectAction) {
     return this.request<Project>(
       `/projects/${encodeURIComponent(project.id)}/actions`,

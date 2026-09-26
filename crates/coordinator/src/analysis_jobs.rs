@@ -120,7 +120,7 @@ async fn load(pool: &PgPool, project: Uuid, asset: Uuid) -> ApiResult<Option<Ana
     .transpose()
 }
 
-#[utoipa::path(get, path="/api/v1/projects/{id}/assets/{asset_id}/analysis", params(("id"=Uuid,Path),("asset_id"=Uuid,Path)), responses((status=200,body=Option<AnalysisJob>)))]
+#[utoipa::path(get, operation_id="get_analysis", path="/api/v1/projects/{id}/assets/{asset_id}/analysis", params(("id"=Uuid,Path),("asset_id"=Uuid,Path)), responses((status=200,body=Option<AnalysisJob>)))]
 pub async fn get(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
@@ -129,7 +129,7 @@ pub async fn get(
     Ok(Json(load(&state.pool, id, asset_id).await?))
 }
 
-#[utoipa::path(post, path="/api/v1/projects/{id}/assets/{asset_id}/analysis", params(("id"=Uuid,Path),("asset_id"=Uuid,Path)), responses((status=200,body=AnalysisJob)))]
+#[utoipa::path(post, operation_id="start_analysis", path="/api/v1/projects/{id}/assets/{asset_id}/analysis", params(("id"=Uuid,Path),("asset_id"=Uuid,Path)), responses((status=200,body=AnalysisJob)))]
 pub(crate) async fn start(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,

@@ -135,6 +135,10 @@ pub fn router(state: AppState, origins: Vec<axum::http::HeaderValue>) -> Router 
             get(transcription::get).post(transcription::start),
         )
         .route(
+            "/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery",
+            post(transcription::recover),
+        )
+        .route(
             "/api/v1/projects/{id}/assets/{asset_id}/analysis",
             get(analysis_jobs::get).post(analysis_jobs::start),
         )
@@ -700,6 +704,7 @@ async fn get_asset(
         analysis_jobs::start,
         transcription::get,
         transcription::start,
+        transcription::recover,
         sessions::create,
         sessions::current,
         sessions::revoke,

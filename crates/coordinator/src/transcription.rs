@@ -93,6 +93,106 @@ pub struct TranscriptionJob {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RecoverTranscription {
+    pub job_id: Uuid,
+    pub expected_updated_at: DateTime<Utc>,
+    pub source_sha256: String,
+    pub provider_response: Option<Value>,
+    #[serde(default)]
+    pub confirmed_source: bool,
+}
+
+#[utoipa::path(post, operation_id="recover_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),request_body=RecoverTranscription,responses((status=200,body=Option<TranscriptionJob>)))]
+pub(crate) async fn recover(
+    State(state): State<AppState>,
+    Path((id, asset_id)): Path<(Uuid, Uuid)>,
+    axum::Extension(identity): axum::Extension<sessions::Identity>,
+    Json(request): Json<RecoverTranscription>,
+) -> ApiResult<Json<Option<TranscriptionJob>>> {
+    let asset = read_asset(&state.pool, id, asset_id).await?;
+    let mut tx = state.pool.begin().await?;
+    if !sessions::valid_on(&mut *tx, &state, identity).await? {
+        return Err(sessions::unauthorized());
+    }
+    let row = sqlx::query("SELECT id,status,sha256,updated_at,receipt FROM transcription_jobs WHERE project_id=$1 AND asset_id=$2 ORDER BY created_at DESC LIMIT 1 FOR UPDATE")
+        .bind(id).bind(asset_id).fetch_optional(&mut *tx).await?
+        .ok_or_else(|| invalid("No transcription job to recover."))?;
+    if row.try_get::<Uuid, _>("id")? != request.job_id
+        || row.try_get::<DateTime<Utc>, _>("updated_at")? != request.expected_updated_at
+        || !matches!(
+            row.try_get::<String, _>("status")?.as_str(),
+            "failed" | "reconciliation_required"
+        )
+    {
+        return Err(ApiError(
+            StatusCode::CONFLICT,
+            "The transcription changed. Refresh before recovery.".into(),
+        ));
+    }
+    if request.source_sha256 != asset.sha256 || row.try_get::<String, _>("sha256")? != asset.sha256
+    {
+        return Err(invalid("Recovery source does not match this audio file."));
+    }
+    let mut receipt = row
+        .try_get::<Option<sqlx::types::Json<Value>>, _>("receipt")?
+        .map(|v| v.0)
+        .unwrap_or_else(|| serde_json::json!({}));
+    let duration = asset.duration_ms.unwrap_or(0);
+    let mut selected: Option<Value> = None;
+    for name in ["selected", "primary", "fallback"] {
+        if let Some(pass) = receipt
+            .get(name)
+            .filter(|pass| normalize(pass, duration).is_ok())
+        {
+            selected = Some(match selected {
+                Some(previous) => merge_gaps(&previous, pass),
+                None => pass.clone(),
+            });
+        }
+    }
+    // Older jobs retained a single provider response rather than a pass envelope.
+    if selected.is_none() && normalize(&receipt, duration).is_ok() {
+        selected = Some(receipt.clone());
+    }
+    if let (Some(previous), Some(tail), Some(offset)) = (
+        selected.as_ref(),
+        receipt.get("tail"),
+        receipt.get("tailOffsetSeconds").and_then(Value::as_f64),
+    ) && offset.is_finite()
+        && offset >= 0.
+        && offset * 1000. < duration as f64
+        && normalize(tail, duration - (offset * 1000.).round() as u64).is_ok()
+    {
+        selected = Some(merge_tail(previous, tail, offset));
+    }
+    if let Some(response) = request.provider_response {
+        if !request.confirmed_source {
+            return Err(invalid(
+                "Confirm that the provider response belongs to this exact source audio.",
+            ));
+        }
+        normalize(&response,duration).map_err(|_|invalid("The provider response has invalid timing or does not match this recording's duration."))?;
+        selected = Some(match selected {
+            Some(previous) => merge_gaps(&previous, &response),
+            None => response.clone(),
+        });
+        receipt["operatorResponse"] = response;
+    }
+    let selected = selected.ok_or_else(||invalid("No usable saved response. Obtain the completed response from the provider and import it here. No paid request was repeated."))?;
+    let mut result = normalize(&selected, duration)
+        .map_err(|_| invalid("Saved responses could not be reconciled safely."))?;
+    result.model = "recovered provider responses".into();
+    result.sentiment = None;
+    result.warnings.push("Recovered without another provider call. Coverage may be incomplete; review the timed words. Original provider receipts are retained.".into());
+    receipt["recovery"] = serde_json::json!({"at":Utc::now(),"sourceSha256":asset.sha256,"selected":selected,"paidReplay":false});
+    sqlx::query("UPDATE transcription_jobs SET status='completed',result=$2,receipt=$3,message='Recovered existing provider responses; no new paid request.',updated_at=clock_timestamp() WHERE id=$1")
+        .bind(request.job_id).bind(sqlx::types::Json(result)).bind(sqlx::types::Json(receipt)).execute(&mut *tx).await?;
+    tx.commit().await?;
+    Ok(Json(load(&state, id, asset_id).await?))
+}
+
 fn labels(value: &Value, kind: &str, label: &str) -> Vec<String> {
     let mut out = Vec::new();
     if let Some(segments) = value["results"][kind]["segments"].as_array() {
@@ -247,7 +347,7 @@ async fn load(state: &AppState, project: Uuid, asset: Uuid) -> ApiResult<Option<
     })
     .transpose()
 }
-#[utoipa::path(get,path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
+#[utoipa::path(get, operation_id="get_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
 pub async fn get(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
@@ -255,7 +355,7 @@ pub async fn get(
     read_asset(&state.pool, id, asset_id).await?;
     Ok(Json(load(&state, id, asset_id).await?))
 }
-#[utoipa::path(post,path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
+#[utoipa::path(post, operation_id="start_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),responses((status=200,body=Option<TranscriptionJob>)))]
 pub(crate) async fn start(
     State(state): State<AppState>,
     Path((id, asset_id)): Path<(Uuid, Uuid)>,
@@ -352,6 +452,47 @@ fn richer(primary: &Value, fallback: &Value) -> bool {
     let (next_count, next_end) = coverage(fallback);
     next_count > 0
         && (count == 0 || next_end > end * 1.15 || next_count as f64 > count as f64 * 1.3)
+}
+// Retain complementary words in uncovered time ranges. The preferred pass owns
+// overlapping timing; combining alternative spellings there would duplicate lyrics.
+fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
+    let mut merged = primary.clone();
+    let path = "/results/channels/0/alternatives/0/words";
+    let Some(extra) = secondary.pointer(path).and_then(Value::as_array) else {
+        return merged;
+    };
+    let Some(words) = merged.pointer_mut(path).and_then(Value::as_array_mut) else {
+        return merged;
+    };
+    for word in extra {
+        let (Some(start), Some(end)) = (word["start"].as_f64(), word["end"].as_f64()) else {
+            continue;
+        };
+        if !start.is_finite() || !end.is_finite() || start < 0. || end < start {
+            continue;
+        }
+        if words.iter().any(|existing| {
+            let left = existing["start"].as_f64().unwrap_or(0.);
+            let right = existing["end"].as_f64().unwrap_or(left);
+            start <= right + 0.05 && end >= left - 0.05
+        }) {
+            continue;
+        }
+        words.push(word.clone());
+    }
+    words.sort_by(|a, b| {
+        a["start"]
+            .as_f64()
+            .unwrap_or(0.)
+            .total_cmp(&b["start"].as_f64().unwrap_or(0.))
+    });
+    let text = words
+        .iter()
+        .filter_map(|word| word["punctuated_word"].as_str().or(word["word"].as_str()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    merged["results"]["channels"][0]["alternatives"][0]["transcript"] = Value::String(text);
+    merged
 }
 fn merge_tail(primary: &Value, tail: &Value, offset: f64) -> Value {
     let min_start = coverage(primary).1 + 0.25;
@@ -528,8 +669,13 @@ async fn run_pipeline(
         .await?;
         normalize(&fallback, asset.duration_ms.unwrap_or(0))?;
         if richer(&best, &fallback) {
-            best = fallback.clone();
+            best = merge_gaps(&fallback, &best);
             model = "whisper-large";
+        } else {
+            best = merge_gaps(&best, &fallback);
+        }
+        if coverage(&best).0 > coverage(&primary).0 && coverage(&best).0 > coverage(&fallback).0 {
+            model = "nova-3 / whisper-large";
         }
         persist_pass(
             state,
@@ -602,6 +748,26 @@ mod tests {
         assert_eq!(coverage(&merged).0, 2);
         assert!(richer(&primary, &merged));
         assert!(!richer(&primary, &response(json!([]))));
+    }
+    #[test]
+    fn fallback_retains_mid_song_words_even_below_richer_threshold() {
+        let primary = response(json!([
+            {"word":"first","start":1.,"end":2.},
+            {"word":"last","start":80.,"end":81.}
+        ]));
+        let fallback = response(json!([
+            {"word":"middle","start":40.,"end":41.},
+            {"word":"alternate","start":80.01,"end":81.01}
+        ]));
+        assert!(!richer(&primary, &fallback));
+        let merged = merge_gaps(&primary, &fallback);
+        assert_eq!(coverage(&merged), (3, 81.));
+        let words = merged["results"]["channels"][0]["alternatives"][0]["words"]
+            .as_array()
+            .unwrap();
+        assert_eq!(words[1]["word"], "middle");
+        assert_eq!(words[2]["word"], "last");
+        assert_eq!(merge_gaps(&merged, &fallback), merged);
     }
     #[test]
     fn timed_lyrics_preserve_gaps_and_metadata() {

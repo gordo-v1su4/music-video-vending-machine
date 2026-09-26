@@ -27,7 +27,9 @@
         jobs = Object.fromEntries(entries.map(([id,job]) => [id,job]));
         transcripts = Object.fromEntries(entries.map(([id,,transcript]) => [id,transcript]));
         problem = ''; loading = false;
-        timer = setTimeout(poll,3000);
+        const pending = entries.some(([, job, transcript]) => [job, transcript].some(value => value && ['queued','submitting','running'].includes(value.status)));
+        // Keep other-client changes discoverable without hammering settled projects.
+        if (sources.length) timer = setTimeout(poll, pending ? 3000 : 30000);
       } catch (error) {
         if (disposed) return;
         loading = false; problem = 'Cannot refresh processing status. Reconnecting…'; onError(error);

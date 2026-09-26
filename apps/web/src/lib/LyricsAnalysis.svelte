@@ -3,6 +3,8 @@
   import { time } from './timing';
   let { client, projectId, asset, available, onError, onResult }: { client:StudioApi; projectId:string; asset:Asset; available:boolean; onError:(e:unknown)=>void; onResult:(result:TranscriptionJob['result'])=>void } = $props();
   let job = $state<TranscriptionJob | null>(null), loading = $state(true), starting = $state(false), problem = $state(''), refresh = $state(0);
+  let recovering = $state(false);
+  let recoveryFile = $state<File | null>(null), confirmedSource = $state(false);
   const result = $derived(job?.status === 'completed' && job.sha256 === asset.sha256 ? job.result : null);
   const active = $derived(starting || job?.status === 'queued' || job?.status === 'running');
   $effect(() => {
@@ -22,11 +24,32 @@
     return()=>{disposed=true;clearTimeout(timer);};
   });
   async function start() {
-    if(starting || !available)return;
+    if(starting || recovering || !available)return;
     starting=true;problem='';
     try {job=await client.transcription(projectId,asset.id,true);refresh++;}
     catch(e){problem=e instanceof Error?e.message:'Could not queue transcription.';onError(e);}
     finally{starting=false;}
+  }
+  async function recover() {
+    if (!job || starting || recovering || !available || (recoveryFile && !confirmedSource)) return;
+    const current = job;
+    recovering = true; problem = '';
+    try {
+      let providerResponse = null;
+      if (recoveryFile) {
+        if (recoveryFile.size > 2 * 1024 * 1024) throw new Error('Provider response must be at most 2 MiB.');
+        try { providerResponse = JSON.parse(await recoveryFile.text()); }
+        catch { throw new Error('Choose a valid provider JSON response.'); }
+      }
+      job = await client.recoverTranscription(projectId, asset.id, {
+        jobId: current.id, expectedUpdatedAt: current.updatedAt, sourceSha256: asset.sha256,
+        providerResponse, confirmedSource,
+      });
+      recoveryFile = null; confirmedSource = false; refresh++;
+    } catch (error) {
+      problem = error instanceof Error ? error.message : 'Recovery could not finish.';
+      onError(error);
+    } finally { recovering = false; }
   }
 </script>
 
@@ -36,7 +59,17 @@
   {#if problem}<p role="alert">{problem}</p>{/if}
   {#if active}<progress aria-label="Deepgram transcription in progress"></progress><p>Extracting timed lyrics and checking for early dropout. Sentiment is disabled. Each completed pass is saved with your project.</p>{/if}
   {#if job?.message}<p role="status">{job.message}</p>{/if}
-  {#if !loading && (!job || job.profile === 'legacy-nova-3')}<p>Use Project Stack Structure’s full-song flow: Nova-3 with sentiment off, a Whisper pass if words stop early, then one remaining-audio pass if needed. Up to three billable requests for this {time(asset.durationMs ?? 0)} source; no automatic replay after an interrupted call.</p><button class="primary" disabled={!available || active} onclick={start}>{job ? 'Run full-song lyric recovery' : 'Extract lyrics & context'}</button>{/if}
+  {#if job && ['failed','reconciliation_required'].includes(job.status)}
+    <div class="recovery">
+      <h3>Recover an interrupted transcript</h3>
+      <p>Use responses already saved on the server. If none are usable, obtain the completed JSON response from the provider and select it below. Recovery makes no new paid call and retains the original receipts.</p>
+      <label>Completed provider response (optional)<input type="file" accept=".json,application/json" disabled={!available || starting || recovering} onchange={(event) => { recoveryFile = event.currentTarget.files?.[0] ?? null; confirmedSource = false; }} /></label>
+      {#if recoveryFile}<label><input type="checkbox" bind:checked={confirmedSource} disabled={!available || starting || recovering} />I verified this response belongs to {asset.name}.</label>{/if}
+      <button disabled={!available || starting || recovering || (!!recoveryFile && !confirmedSource)} onclick={recover}>{starting ? 'Recovering saved responses…' : recoveryFile ? 'Recover from provider response' : 'Recover saved responses'}</button>
+      <p class="small-note">If the provider has no completed response, leave the request unresolved. A new paid attempt requires a separate approved quote.</p>
+    </div>
+  {/if}
+  {#if !loading && (!job || job.profile === 'legacy-nova-3')}<p>Use Project Stack Structure’s full-song flow: Nova-3 with sentiment off, a Whisper pass if words stop early, then one remaining-audio pass if needed. Up to three billable requests for this {time(asset.durationMs ?? 0)} source; no automatic replay after an interrupted call.</p><button class="primary" disabled={!available || active || recovering} onclick={start}>{job ? 'Run full-song lyric recovery' : 'Extract lyrics & context'}</button>{/if}
   {#if result}
     {#if !result.wordCount}<p role="status">Deepgram returned no words from this source. Use an aligned isolated vocal stem and review the result before using it for your story.</p>{/if}
     <p><strong>{result.wordCount} words · {result.chunks.length} timed lyric chunks</strong></p>

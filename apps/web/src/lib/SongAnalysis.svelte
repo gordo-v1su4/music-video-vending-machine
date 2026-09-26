@@ -3,6 +3,7 @@
   import Icon from './Icon.svelte';
   import { type AnalysisJob, type Asset, type SongAnalysis, type StudioApi, type TranscriptionJob } from './api';
   import { time } from './timing';
+  import { sampledWaveform } from './waveform';
 
   let { client, projectId, asset, source, lyrics = [], available, locked, hasSections, onUse, onError }: {
     client: StudioApi; projectId: string; asset: Asset; source?: string;
@@ -22,31 +23,29 @@
   let waveform = $state('');
   let waveformProblem = $state('');
   $effect(() => {
-    const url = source;
+    const url = source, ready = job?.status === 'completed', durationMs = asset.durationMs ?? 0, sizeBytes = asset.sizeBytes;
     let disposed = false;
     const abort = new AbortController();
     let context: AudioContext | undefined;
     async function decode() {
       waveform = ''; waveformProblem = '';
-      if (!url) return;
+      if (!url || !ready) return;
+      // Bound decoded memory; measured energy remains available for larger media.
+      if (durationMs <= 0 || durationMs > 600_000 || sizeBytes > 32 * 1024 * 1024) {
+        waveformProblem = 'Showing measured energy. Waveform sampling is limited to files up to 10 minutes and 32 MiB.';
+        return;
+      }
       try {
         const response = await fetch(url, { signal: abort.signal });
+        if (!response.ok) throw new Error('Waveform source unavailable');
         const bytes = await response.arrayBuffer();
+        if (bytes.byteLength > 32 * 1024 * 1024) throw new Error('Waveform source too large');
         if (disposed) return;
-        context = new AudioContext();
+        context = new AudioContext({ sampleRate: 8000 });
         const buffer = await context.decodeAudioData(bytes);
         if (disposed) return;
-        const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
-        const upper: string[] = [], lower: string[] = [];
-        const bins = 1200, stride = Math.max(1, Math.ceil(buffer.length / bins));
-        for (let start = 0; start < buffer.length; start += stride) {
-          let peak = 0;
-          for (const samples of channels) for (let j = start; j < Math.min(start + stride, buffer.length); j++) peak = Math.max(peak, Math.abs(samples[j]));
-          const x = start / buffer.length * 1000, height = Math.min(1, peak) * 28;
-          upper.push(`${x.toFixed(2)},${(57 - height).toFixed(2)}`);
-          lower.push(`${x.toFixed(2)},${(57 + height).toFixed(2)}`);
-        }
-        waveform = [...upper, ...lower.reverse()].join(' ');
+        const channels = Array.from({ length: Math.min(2, buffer.numberOfChannels) }, (_, i) => buffer.getChannelData(i));
+        waveform = sampledWaveform(channels);
       } catch { if (!disposed) waveformProblem = 'Waveform could not load. The measured energy and section timing are still available.'; }
       finally { if (context?.state !== 'closed') await context?.close(); }
     }
