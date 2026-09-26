@@ -1,8 +1,16 @@
 # Bootstrap API contract
 
-All endpoints under /api/v1. JSON camelCase. Protected endpoints accept an operator bearer token; never persist it in browser storage. Development may explicitly enable loopback-only unauthenticated mode. No implicit auth bypass when deployed.
+All endpoints under /api/v1. JSON camelCase. The operator bootstrap key authorizes only POST /sessions; project and media endpoints require the resulting session bearer token. Neither credential belongs in browser storage or URLs. Development may explicitly enable loopback-only unauthenticated mode. No implicit auth bypass when deployed.
 
-- GET /health: {status, storage, version}; readiness must fail on unavailable database.
+- POST /sessions: bootstrap bearer plus {clientLabel}; returns {token,session:{id,clientLabel,createdAt,expiresAt}} (201). Fixed 12-hour expiry; database stores SHA-256 token and issuer hashes only.
+- GET /sessions/current: current session metadata, or null in anonymous development.
+- POST /sessions/current/revoke: revoke the calling session.
+- POST /sessions/revoke-all: revoke sessions issued by the current bootstrap key, including the caller.
+- Rotation of the bootstrap key invalidates existing sessions. Reverting that key can re-enable unexpired sessions unless they were explicitly revoked first.
+- SSE checks session validity each second and ends with a session-ended event. Writes recheck after body extraction (and project-lock acquisition); an already-authorized storage operation may finish after sign-out. Its durable receipt remains recoverable.
+- The UI holds credentials only in memory, polls remote revocation every 15 seconds, schedules local expiry, and keeps unsaved drafts in the current window across sign-out/reconnect. Closing or reloading the window loses those drafts. Failed remote sign-out remains visible and can be retried; it does not falsely report successful revocation.
+
+- GET /health: {status, storage, version, development, sessionRequired, capabilities}; readiness must fail on unavailable database.
 - GET /projects: Project[] summaries or full projects.
 - POST /projects: {name}; returns Project (201).
 - GET /projects/:id: Project.

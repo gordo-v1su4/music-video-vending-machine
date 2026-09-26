@@ -4,6 +4,7 @@
   import {
     StudioApi,
     ApiError,
+    type SessionInfo,
     type Project,
     type ProjectAction,
     type Asset,
@@ -24,6 +25,10 @@
   let token = $state("");
   let api = new StudioApi(defaultOrigin);
   let connected = $state(false);
+  let session = $state<SessionInfo | null>(null);
+  let sessionCheck = false;
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  let connectionEpoch = 0;
   let connecting = $state(false);
   let settingsOpen = $state(false);
   let projects = $state<Project[]>([]);
@@ -84,9 +89,11 @@
   function report(e: unknown) {
     error = e instanceof Error ? e.message : "The request failed.";
     if (e instanceof ApiError && e.status === 409) conflict = true;
+    if (e instanceof ApiError && e.status === 401) disconnect();
   }
   async function perform(work: () => Promise<void>) {
-    if (busy) return;
+    if (busy || connecting) return;
+    if (!connected) { error = "Sign in before saving. Your unsaved story stays in this window."; return; }
     busy = true;
     error = "";
     notice = "";
@@ -98,25 +105,74 @@
       busy = false;
     }
   }
-  async function connect() {
-    connecting = true;
+  function disconnect() {
+    clearTimeout(expiryTimer);
+    connectionEpoch++;
+    api.close();
+    session = null;
+    connected = false;
+    settingsOpen = true;
+    releaseUrls();
+  }
+  async function signOut(all = false) {
+    if (busy || connecting) return;
+    busy = true;
     error = "";
     try {
-      const next = new StudioApi(origin, token);
-      await next.request("/health");
+      await api.signOut(all);
+      disconnect();
+      notice = "Signed out. Unsaved work stays in this window until you close it.";
+    } catch (e) { report(e); }
+    finally { busy = false; }
+  }
+  async function checkSession() {
+    if (!connected || !session) return;
+    if (Date.now() >= Date.parse(session.expiresAt)) {
+      disconnect();
+      error = "Your session expired. Sign in again to save your work.";
+      return;
+    }
+    if (sessionCheck) return;
+    const client = api;
+    sessionCheck = true;
+    try { await client.currentSession(); }
+    catch (e) { if (client === api && connected) report(e); }
+    finally { sessionCheck = false; }
+  }
+  async function connect() {
+    if (connecting || busy) return;
+    const address = origin.replace(/\/+$/, "");
+    if (dirty && address !== api.origin) {
+      error = "Save or discard your story before changing studio servers.";
+      return;
+    }
+    connecting = true;
+    error = "";
+    const epoch = ++connectionEpoch;
+    const bootstrap = token;
+    token = "";
+    let next: StudioApi | undefined;
+    try {
+      next = await StudioApi.connect(address, bootstrap);
       const list = await next.projects();
+      if (epoch !== connectionEpoch) { next.close(); return; }
+      const sameStudio = address === api.origin;
+      api.close();
       releaseUrls();
-      project = null;
-      assets = [];
-      videoMs = 0;
+      if (!sameStudio) { project = null; assets = []; videoMs = 0; }
       api = next;
+      session = next.session;
+      clearTimeout(expiryTimer);
+      if (session) expiryTimer = setTimeout(() => void checkSession(), Math.max(0, Date.parse(session.expiresAt) - Date.now()));
       projects = list;
       connected = true;
       settingsOpen = false;
       notice = "Connected to your studio.";
+      // Preserve the old revision and local draft; stale saves still conflict.
+      if (project) await loadMedia(assets);
     } catch (e) {
-      connected = false;
-      report(e);
+      next?.close();
+      if (epoch === connectionEpoch) { disconnect(); report(e); }
     } finally {
       connecting = false;
     }
@@ -139,6 +195,8 @@
     conflict = false;
   }
   async function loadMedia(list: Asset[]) {
+    const client = api;
+    const epoch = connectionEpoch;
     const results = await Promise.allSettled(
       list
         .filter(
@@ -147,14 +205,17 @@
             (a.mediaType.startsWith("audio/") ||
               a.mediaType.startsWith("image/")),
         )
-        .map(async (a) => ({ id: a.id, url: await api.blob(a) })),
+        .map(async (a) => ({ id: a.id, url: await client.blob(a) })),
     );
     for (const result of results) {
+      if (epoch !== connectionEpoch || !connected) {
+        if (result.status === "fulfilled") URL.revokeObjectURL(result.value.url);
+        continue;
+      }
       if (result.status === "fulfilled")
         urls = { ...urls, [result.value.id]: result.value.url };
-      else
-        error =
-          "Some imported media could not be previewed. Reload the project to retry.";
+      else if (result.reason instanceof ApiError && result.reason.status === 401) report(result.reason);
+      else error = "Some imported media could not be previewed. Reload the project to retry.";
     }
   }
   async function openProject(id: string) {
@@ -278,8 +339,10 @@
   }
   onMount(() => {
     void connect();
+    const timer = setInterval(() => void checkSession(), 15000);
+    return () => clearInterval(timer);
   });
-  onDestroy(releaseUrls);
+  onDestroy(() => { clearTimeout(expiryTimer); connectionEpoch++; api.close(); releaseUrls(); });
 </script>
 
 <svelte:head
@@ -370,7 +433,7 @@
         {#if project}<span class="revision">Revision {project.revision}</span
           ><button
             class="quiet"
-            disabled={busy || dirty}
+            disabled={!connected || connecting || busy || dirty}
             onclick={() => openProject(project!.id)}>Reload saved</button
           >{/if}<span class="private-badge">Private studio</span>
       </div>
@@ -412,19 +475,24 @@
               required
             /></label
           ><label
-            >Operator token<input
+            >Studio access key<input
               type="password"
               bind:value={token}
               autocomplete="off"
               placeholder="Required outside local development"
             /></label
-          ><button class="primary" disabled={connecting}
+          ><button class="primary" disabled={connecting || busy}
             >{connecting ? "Connecting…" : "Connect studio"}</button
           >
         </form>
-        <small
-          >Your token stays in this window and is cleared when you close it.</small
-        >
+        <small>Your access key creates a 12-hour session. Credentials stay in memory and are cleared when you close this window.</small>
+        {#if connected}
+          <div class="session-controls">
+            <p>{session ? `Signed in until ${new Date(session.expiresAt).toLocaleString()}.` : "Connected to local development."}</p>
+            <button disabled={busy || connecting} onclick={() => void signOut()}>Sign out</button>
+            {#if session}<button disabled={busy || connecting} onclick={() => void signOut(true)}>Sign out all devices</button>{/if}
+          </div>
+        {/if}
       </section>
     {/if}
 
@@ -529,7 +597,7 @@
                     }}>Discard drafts</button
                   >{/if}<button
                   class="primary"
-                  disabled={busy || !dirty || conflict}
+                  disabled={!connected || connecting || busy || !dirty || conflict}
                   onclick={saveStory}>{busy ? "Saving…" : "Save story"}</button
                 >
               </div>{/if}
@@ -784,7 +852,7 @@
                 ></textarea></label
               ><button
                 class="primary"
-                disabled={busy ||
+                disabled={!connected || connecting || busy ||
                   dirty ||
                   !referenceAsset ||
                   !referenceName.trim()}>Add reference</button
@@ -840,7 +908,7 @@
               </dl>
               <button
                 class="primary"
-                disabled={busy ||
+                disabled={!connected || connecting || busy ||
                   dirty ||
                   approved ||
                   !project.master?.approved ||
@@ -887,7 +955,7 @@
                     </div>
                     <span class="tag">{shot.status}</span><button
                       class="quiet"
-                      disabled={busy || dirty}
+                      disabled={!connected || connecting || busy || dirty}
                       onclick={() =>
                         action({
                           type: "pinShot",
@@ -931,7 +999,7 @@
                 {#if revision.status === "candidate"}<div class="button-row">
                     <button
                       class="primary"
-                      disabled={busy || dirty}
+                      disabled={!connected || connecting || busy || dirty}
                       onclick={() =>
                         action(
                           { type: "keepRevision", revisionId: revision.id },
@@ -939,7 +1007,7 @@
                         )}>Keep candidate</button
                     ><button
                       class="quiet"
-                      disabled={busy || dirty}
+                      disabled={!connected || connecting || busy || dirty}
                       onclick={() =>
                         action({
                           type: "rejectRevision",
@@ -948,7 +1016,7 @@
                     >
                   </div>{:else if revision.status === "archived"}<button
                     class="quiet"
-                    disabled={busy || dirty}
+                    disabled={!connected || connecting || busy || dirty}
                     onclick={() =>
                       action(
                         { type: "restoreRevision", revisionId: revision.id },
@@ -1014,7 +1082,7 @@
             ><select
               id="master-select"
               value={project.master?.assetId ?? ""}
-              disabled={busy || dirty || project.revisions.length > 0}
+              disabled={!connected || connecting || busy || dirty || project.revisions.length > 0}
               onchange={(e) => {
                 const asset = assets.find(
                   (a) => a.id === e.currentTarget.value,
@@ -1036,7 +1104,7 @@
                 >{/each}</select
             >{#if project.master && !project.master.approved}<button
                 class="primary full"
-                disabled={busy || dirty}
+                disabled={!connected || connecting || busy || dirty}
                 onclick={() =>
                   action(
                     { type: "approveMaster" },
@@ -1053,12 +1121,12 @@
               <h2>Source files</h2>
               <span class="subtle">{assets.length}</span>
             </div>
-            <label class="import-zone" class:disabled={busy}
+            <label class="import-zone" class:disabled={!connected || connecting || busy}
               ><input
                 type="file"
                 accept=".png,.jpg,.jpeg,.webp,.wav,.mp3,.flac,.ogg,.mp4,.webm,.mov"
                 multiple
-                disabled={busy}
+                disabled={!connected || connecting || busy}
                 onchange={(e) => {
                   void importFiles(e.currentTarget.files);
                   e.currentTarget.value = "";

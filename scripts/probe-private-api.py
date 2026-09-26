@@ -13,6 +13,7 @@ import hashlib
 import io
 import json
 import os
+import threading
 from pathlib import Path
 import urllib.error
 import urllib.request
@@ -20,6 +21,8 @@ import wave
 from datetime import datetime, timezone
 
 ENDPOINT = "http://127.0.0.1:5201"
+_session_token = None
+_session_lock = threading.Lock()
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -30,7 +33,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def request(method, path, payload=None, *, authenticated=True, headers=None):
     headers = dict(headers or {})
     if authenticated:
-        headers["Authorization"] = "Bearer " + os.environ["MVM_OPERATOR_TOKEN"]
+        headers["Authorization"] = "Bearer " + session_token()
     if isinstance(payload, dict):
         headers["Content-Type"] = "application/json"
         payload = json.dumps(payload).encode()
@@ -41,6 +44,16 @@ def request(method, path, payload=None, *, authenticated=True, headers=None):
             return response.status, response.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read()
+
+
+def session_token():
+    global _session_token
+    with _session_lock:
+        if _session_token is None:
+            response = request("POST", "/api/v1/sessions", {"clientLabel": "Private acceptance probe"},
+                               authenticated=False, headers={"Authorization": "Bearer " + os.environ["MVM_OPERATOR_TOKEN"]})
+            _session_token = json.loads(expect(201, response))["token"]
+        return _session_token
 
 
 def expect(status, response):
