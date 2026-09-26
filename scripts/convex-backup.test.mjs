@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { createBackup, verifyBackup, restoreObjects, digest } from "./convex-backup.mjs";
+import { runRestoreCommand } from "./restore-convex-objects.mjs";
 await mkdir(".runtime/backups",{recursive:true});
 async function fixture(){
   const directory=join(await mkdtemp(".runtime/backups/backup-test-"),"archive");
@@ -129,4 +130,31 @@ test("same-bucket restore retains missing and incomplete upload state without pr
   assert.deepEqual(written,[incomplete]);
   assert.deepEqual(restored.upload_intents,f.snapshot.upload_intents);
   assert.deepEqual(restored.assets,[]);
+});
+
+test("restore command validates flags, writes pinned snapshot receipt and preserves output on retry",async()=>{
+  const f=await fixture();
+  f.snapshot.operator_sessions=[{id:"session",revoked_at:null}];
+  const backup=await createBackup(f.snapshot,"mvvm",f.client,f.directory);
+  const logs=[];let calls=0;
+  const options={environment:{MVVM_S3_ACCESS_KEY:"fixture",MVVM_S3_SECRET_KEY:"fixture"},log:line=>logs.push(JSON.parse(line)),createClient:()=>({async send(command){
+    calls++;
+    if(command.input.Body!==undefined)throw {$metadata:{httpStatusCode:412}};
+    return f.client.send(command);
+  }})};
+  const args=[f.directory,backup.manifestSha256];
+  await assert.rejects(runRestoreCommand([...args,"--unknown"],options),/Unsupported/);
+  await assert.rejects(runRestoreCommand(args,options),/explicit/);
+  assert.equal(calls,0);
+  await runRestoreCommand([...args,"--same-bucket"],options);
+  const path=join(f.directory,"restored-snapshot.json");
+  const first=await readFile(path,"utf8");
+  assert.equal(logs.length,1);
+  assert.equal(logs[0].snapshotSha256,digest(first));
+  assert.equal(logs[0].databaseImported,false);
+  assert.equal(logs[0].workersMayStart,false);
+  assert.ok(JSON.parse(first).operator_sessions[0].revoked_at);
+  await assert.rejects(runRestoreCommand([...args,"--same-bucket"],options),{code:"EEXIST"});
+  assert.equal(await readFile(path,"utf8"),first);
+  assert.equal(logs.length,1,"retry must not report a new successful snapshot");
 });
