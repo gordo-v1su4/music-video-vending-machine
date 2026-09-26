@@ -24,6 +24,7 @@ use axum::{
 };
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
+use futures::StreamExt;
 use mvm_domain::{Action, DomainError, Project};
 use object_store::{ObjectStore, path::Path as ObjectPath};
 use serde::{Deserialize, Serialize};
@@ -245,7 +246,7 @@ fn local_request_host(req: &Request) -> bool {
     })
 }
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
-    let healthy = if let Some(client) = &state.convex {
+    let database_healthy = if let Some(client) = &state.convex {
         client
             .query::<bool>("maintenance:health", serde_json::json!({}))
             .await
@@ -253,6 +254,21 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     } else {
         false
     };
+    // Listing within the permitted prefix validates endpoint, bucket and credentials,
+    // including an empty bucket. A missing-object HEAD would mask a missing bucket.
+    let prefix = ObjectPath::from("projects");
+    let storage_healthy = tokio::time::timeout(Duration::from_secs(5), async {
+        state
+            .objects
+            .list(Some(&prefix))
+            .next()
+            .await
+            .transpose()
+            .is_ok()
+    })
+    .await
+    .unwrap_or(false);
+    let healthy = database_healthy && storage_healthy;
     (
         if healthy {
             StatusCode::OK

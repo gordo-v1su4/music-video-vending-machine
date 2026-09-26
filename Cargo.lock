@@ -953,6 +953,7 @@ dependencies = [
  "axum",
  "bytes",
  "chrono",
+ "futures",
  "http-body-util",
  "infer",
  "mvm-domain",

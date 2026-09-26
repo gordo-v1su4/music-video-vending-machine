@@ -139,3 +139,26 @@ test("sessions store hashes, expire at twelve hours, and prune only aged inactiv
     expect((await t.run(ctx=>ctx.db.query("operator_sessions").collect())).map(row=>row.legacyId)).toEqual(["active"]);
   } finally { vi.useRealTimers(); }
 });
+
+test("project library retains the newest 200 records", async () => {
+  const t = convexTest(schema, modules);
+  await t.run(async ctx => {
+    for (let i=0;i<205;i++) await ctx.db.insert("projects", {legacyId:`p${i}`,data:{id:`p${i}`,revision:0,document:JSON.stringify({id:`p${i}`}),updated_at:new Date(1700000000000+i*1000).toISOString()}});
+  });
+  const projects = await t.query(internal.projects.list,{auth:dev});
+  expect(projects).toHaveLength(200);
+  expect(JSON.parse(projects[0]).id).toBe("p204");
+  expect(JSON.parse(projects[199]).id).toBe("p5");
+});
+
+test("analysis claims earliest due job across queued and running statuses", async () => {
+  const t=convexTest(schema,modules);
+  await t.run(async ctx=>{
+    await ctx.db.insert("assets",{legacyId:"asset",data:{id:"asset",project_id:"project",object_key:"key",metadata:"{}",created_at:new Date().toISOString()}});
+    for(const [id,status,offset] of [["future","queued",60000],["queued","queued",-1000],["running","running",-2000]] as const) {
+      const time=new Date(Date.now()+offset).toISOString();
+      await ctx.db.insert("audio_analysis_jobs",{legacyId:id,data:{id,asset_id:"asset",project_id:"project",sha256:"hash",duration_ms:1000,provider_origin:"https://example.test",provider_id:status==="running"?"remote":null,status,stage:status,message:null,result:null,receipt:null,created_at:time,updated_at:time,next_poll_at:time}});
+    }
+  });
+  expect((await t.mutation(internal.analysisWorker.claim,{token:"worker"}))?.job.id).toBe("running");
+});

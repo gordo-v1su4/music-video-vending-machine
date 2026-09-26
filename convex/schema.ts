@@ -22,7 +22,7 @@ export const rows = {
 };
 export default defineSchema({
   worker_leases: defineTable({name: v.string(), token: v.string(), jobId: v.string(), expiresAt: v.number()}).index("by_name", ["name"]),
-  projects: defineTable({ legacyId: v.string(), data: rows.projects }).index("by_legacy_id", ["legacyId"]),
+  projects: defineTable({ legacyId: v.string(), data: rows.projects }).index("by_legacy_id", ["legacyId"]).index("by_updated", ["data.updated_at"]),
   project_events: defineTable({ legacyId: v.string(), data: rows.project_events }).index("by_legacy_id", ["legacyId"]).index("by_project_revision", ["data.project_id", "data.revision"]),
   assets: defineTable({ legacyId: v.string(), data: rows.assets }).index("by_legacy_id", ["legacyId"]).index("by_project", ["data.project_id"]).index("by_object_key", ["data.object_key"]),
   upload_intents: defineTable({ legacyId: v.string(), data: rows.upload_intents }).index("by_legacy_id", ["legacyId"]).index("by_checked", ["data.checked_at"]).index("by_object_key", ["data.object_key"]),

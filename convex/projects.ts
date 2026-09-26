@@ -4,7 +4,7 @@ import { identity, requireSession } from "./sessions";
 
 export const list = internalQuery({ args: { auth: identity }, handler: async (ctx, { auth }) => {
   await requireSession(ctx, auth);
-  return (await ctx.db.query("projects").collect()).sort((a,b) => Date.parse(b.data.updated_at)-Date.parse(a.data.updated_at)).map(r => r.data.document);
+  return (await ctx.db.query("projects").withIndex("by_updated").order("desc").take(200)).map(r => r.data.document);
 }});
 export const get = internalQuery({ args: { auth: identity, id: v.string() }, handler: async (ctx, { auth, id }) => {
   await requireSession(ctx, auth);

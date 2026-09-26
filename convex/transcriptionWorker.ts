@@ -11,9 +11,9 @@ export const claim=internalMutation({args:{token:v.string()},handler:async(ctx,{
   const now=Date.now();
   const lease=await ctx.db.query("worker_leases").withIndex("by_name",q=>q.eq("name",name)).unique();
   if(lease && lease.expiresAt>now)return null;
-  const interrupted=await ctx.db.query("transcription_jobs").withIndex("by_status_poll",q=>q.eq("data.status","running")).collect();
+  const interrupted=await ctx.db.query("transcription_jobs").withIndex("by_status_poll",q=>q.eq("data.status","running")).take(32);
   for(const row of interrupted)await ctx.db.patch(row._id,{data:{...row.data,status:"reconciliation_required",message:"Transcription was interrupted; reconcile retained responses before another paid request.",updated_at:new Date(now).toISOString()}});
-  const queued=await ctx.db.query("transcription_jobs").withIndex("by_status_poll",q=>q.eq("data.status","queued")).collect();
+  const queued=await ctx.db.query("transcription_jobs").withIndex("by_status_poll",q=>q.eq("data.status","queued").lte("data.next_poll_at",new Date(now).toISOString())).take(1);
   const row=queued.filter(r=>Date.parse(r.data.next_poll_at)<=now).sort((a,b)=>Date.parse(a.data.next_poll_at)-Date.parse(b.data.next_poll_at))[0];
   if(!row)return null;
   const data={name,token,jobId:row.data.id,expiresAt:now+600000};

@@ -19,6 +19,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 object_store = { version = "0.12", features = ["aws"] }
 bytes = "1"
+futures = "0.3"
 anyhow = "1"
 async-stream = "0.3"
 subtle = "2"

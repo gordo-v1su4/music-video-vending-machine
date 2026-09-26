@@ -12,10 +12,10 @@ export const claim = internalMutation({args: {token: v.string()}, handler: async
   const lease = await ctx.db.query("worker_leases").withIndex("by_name", q => q.eq("name", name)).unique();
   if (lease && lease.expiresAt > now) return null;
   // A prior submission may have reached the provider; never return it to queued.
-  const interrupted = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "submitting")).collect();
+  const interrupted = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "submitting")).take(32);
   for (const row of interrupted) await ctx.db.patch(row._id, {data:{...row.data, status:"reconciliation_required", stage:"submission_uncertain", message:"The previous submission must be reconciled before another submission.", updated_at:new Date(now).toISOString()}});
-  const queued = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "queued")).collect();
-  const running = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "running")).collect();
+  const queued = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "queued").lte("data.next_poll_at", new Date(now).toISOString())).take(1);
+  const running = await ctx.db.query("audio_analysis_jobs").withIndex("by_status_poll", q => q.eq("data.status", "running").lte("data.next_poll_at", new Date(now).toISOString())).take(1);
   const row = [...queued,...running].filter(r => Date.parse(r.data.next_poll_at)<=now).sort((a,b) => Date.parse(a.data.next_poll_at)-Date.parse(b.data.next_poll_at))[0];
   if (!row) return null;
   const data = {name, token, jobId:row.data.id, expiresAt:now+5*60*1000};

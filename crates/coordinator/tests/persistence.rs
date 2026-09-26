@@ -433,3 +433,49 @@ fn test_wav() -> Vec<u8> {
     }
     b
 }
+
+#[tokio::test]
+#[ignore = "requires disposable Convex; run scripts/test-convex-http.mjs"]
+async fn convex_health_requires_object_storage() {
+    let state = support::state();
+    assert_eq!(
+        request(
+            router(state.clone(), vec![]),
+            "GET",
+            "/api/v1/health",
+            Value::Null
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let denied = axum::Router::new().fallback(|| async { StatusCode::FORBIDDEN });
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("http://{}", listener.local_addr().unwrap());
+    let server = tokio::spawn(async move { axum::serve(listener, denied).await.unwrap() });
+    let objects = object_store::aws::AmazonS3Builder::new()
+        .with_endpoint(endpoint)
+        .with_allow_http(true)
+        .with_bucket_name("mvvm")
+        .with_region("us-east-1")
+        .with_access_key_id("test-access")
+        .with_secret_access_key("test-secret")
+        .build()
+        .unwrap();
+    let (status, health) = request(
+        router(
+            AppState {
+                objects: Arc::new(objects),
+                ..state
+            },
+            vec![],
+        ),
+        "GET",
+        "/api/v1/health",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(health["status"], "unavailable");
+    server.abort();
+}
