@@ -59,6 +59,30 @@ def restored_key(restore_id, asset):
     return f'projects/{uuid.UUID(restore_id).hex}/restored/{uuid.UUID(asset["id"])}/{asset["sha256"]}'
 
 
+def backup_object(client, row, objects_dir, *, pending=False):
+    metadata = row["metadata"]
+    record = {"id": row["id"], "originalKey": row["object_key"],
+              "sha256": metadata["sha256"], "expectedBytes": metadata["sizeBytes"]}
+    try:
+        response = client.get_object(Bucket=BUCKET, Key=row["object_key"])
+    except Exception as error:
+        code = getattr(error, "response", {}).get("Error", {}).get("Code")
+        if pending and code in ("NoSuchKey", "NotFound", "404"):
+            return dict(record, objectState="missing")
+        raise
+    with response["Body"] as body:
+        media = body.read()
+    stored_hash = digest(media)
+    valid = stored_hash == metadata["sha256"] and len(media) == metadata["sizeBytes"]
+    if not pending and not valid:
+        raise ValueError("Source media integrity mismatch")
+    # Even an incomplete/corrupt pending object is retained as evidence. Its
+    # expected identity remains unchanged, so reconciliation cannot accept it.
+    (objects_dir / stored_hash).write_bytes(media)
+    return dict(record, objectState="verified" if valid else "unverified",
+                storedSha256=stored_hash, bytes=len(media))
+
+
 def main():
     import boto3
     from botocore.config import Config
@@ -83,29 +107,25 @@ def main():
     dump = command(["pg_dump", "-U", "mvm", "-d", SOURCE, "--format=custom", "--no-owner", "--no-acl"])
     (args.directory / "database.dump").write_bytes(dump)
     rows = json.loads(query(SOURCE, "SELECT COALESCE(json_agg(a),'[]'::json) FROM (SELECT id,object_key,metadata FROM assets ORDER BY id) a"))
-    if query(SOURCE, "SELECT count(*) FROM upload_intents") != "0":
-        raise ValueError("Resolve fixture upload intents before this completed-asset backup acceptance")
+    pending = json.loads(query(SOURCE, "SELECT COALESCE(json_agg(a),'[]'::json) FROM (SELECT id,object_key,metadata FROM upload_intents ORDER BY id) a"))
     if not rows:
         raise ValueError("Acceptance requires at least one real uploaded asset")
-    manifest = {"schemaVersion": 1, "state": "backup_in_progress", "sourceDatabase": SOURCE,
-                "createdAt": datetime.now(timezone.utc).isoformat(), "databaseSha256": digest(dump), "assets": []}
+    manifest = {"schemaVersion": 2, "state": "backup_in_progress", "sourceDatabase": SOURCE,
+                "createdAt": datetime.now(timezone.utc).isoformat(), "databaseSha256": digest(dump), "assets": [], "pendingUploads": []}
     for row in rows:
-        with client.get_object(Bucket=BUCKET, Key=row["object_key"])["Body"] as body:
-            media = body.read()
-        metadata = row["metadata"]
-        if digest(media) != metadata["sha256"] or len(media) != metadata["sizeBytes"]:
-            raise ValueError("Source media integrity mismatch")
-        (objects_dir / metadata["sha256"]).write_bytes(media)
-        manifest["assets"].append({"id": row["id"], "originalKey": row["object_key"],
-                                   "sha256": metadata["sha256"], "bytes": len(media)})
+        manifest["assets"].append(backup_object(client, row, objects_dir))
+    for row in pending:
+        manifest["pendingUploads"].append(backup_object(client, row, objects_dir, pending=True))
     manifest["state"] = "backup_complete"
     (args.directory / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     # Verify the actual backup bytes before creating any restore target.
     if digest((args.directory / "database.dump").read_bytes()) != manifest["databaseSha256"]:
         raise ValueError("Backup database checksum mismatch")
-    for asset in manifest["assets"]:
-        data = (objects_dir / asset["sha256"]).read_bytes()
-        if digest(data) != asset["sha256"] or len(data) != asset["bytes"]:
+    for asset in manifest["assets"] + manifest["pendingUploads"]:
+        if asset["objectState"] == "missing":
+            continue
+        data = (objects_dir / asset["storedSha256"]).read_bytes()
+        if digest(data) != asset["storedSha256"] or len(data) != asset["bytes"]:
             raise ValueError("Backup media checksum mismatch")
     restore_id = uuid.uuid4().hex
     database = "mvm_storage_restore_" + restore_id
@@ -114,18 +134,20 @@ def main():
     command(["createdb", "-U", "mvm", database])
     command(["pg_restore", "-U", "mvm", "-d", database, "--exit-on-error", "--no-owner", "--no-acl"],
             (args.directory / "database.dump").read_bytes())
-    for asset in manifest["assets"]:
+    for asset in manifest["assets"] + manifest["pendingUploads"]:
         key = restored_key(restore_id, asset)
-        media = (objects_dir / asset["sha256"]).read_bytes()
-        client.put_object(Bucket=BUCKET, Key=key, Body=media)
-        with client.get_object(Bucket=BUCKET, Key=key)["Body"] as body:
-            if digest(body.read()) != asset["sha256"]:
-                raise ValueError("Restored object checksum mismatch")
+        if asset["objectState"] != "missing":
+            media = (objects_dir / asset["storedSha256"]).read_bytes()
+            client.put_object(Bucket=BUCKET, Key=key, Body=media)
+            with client.get_object(Bucket=BUCKET, Key=key)["Body"] as body:
+                if digest(body.read()) != asset["storedSha256"]:
+                    raise ValueError("Restored object checksum mismatch")
         # Key/hash are generated here; UUID is parsed before interpolation.
         asset_id = str(uuid.UUID(asset["id"]))
-        query(database, f"UPDATE assets SET object_key='{key}' WHERE id='{asset_id}'")
+        table = "upload_intents" if asset in manifest["pendingUploads"] else "assets"
+        query(database, f"UPDATE {table} SET object_key='{key}' WHERE id='{asset_id}'")
         asset["restoredKey"] = key
-    for table in ("projects", "project_events", "upload_intents"):
+    for table in ("projects", "project_events"):
         # Compare full logical records with stable ordering, not only row counts.
         sql = f"SELECT COALESCE(json_agg(t ORDER BY row_to_json(t)::text),'[]'::json) FROM {table} t"
         if query(SOURCE, sql) != query(database, sql):
@@ -133,8 +155,11 @@ def main():
     sql = "SELECT COALESCE(json_agg(a),'[]'::json) FROM (SELECT id,project_id,metadata FROM assets ORDER BY id) a"
     if query(SOURCE, sql) != query(database, sql):
         raise ValueError("Restored asset identities differ")
+    sql = "SELECT COALESCE(json_agg(to_jsonb(t)-'object_key' ORDER BY id),'[]'::json) FROM upload_intents t"
+    if query(SOURCE, sql) != query(database, sql):
+        raise ValueError("Restored pending upload identities differ")
     manifest.update(state="restored_and_verified", restoredAt=datetime.now(timezone.utc).isoformat(),
-                    limits="Cold isolated fixture; no production scheduling, off-host backup or pending-upload restore acceptance")
+                    limits="Cold isolated fixture; pending records and available bytes restored; coordinator reconciliation requires separate live verification. No production scheduling or off-host backup acceptance.")
     (args.directory / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({key: manifest[key] for key in ("state", "restoredDatabase", "databaseSha256")}))
 

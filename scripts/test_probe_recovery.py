@@ -1,11 +1,13 @@
 """Review regressions that require no remote services or provider credentials."""
 import importlib.util
+import io
 import os
 from pathlib import Path
 import stat
 import tempfile
 import unittest
 import uuid
+from unittest.mock import Mock
 
 
 def load(name, filename):
@@ -20,6 +22,39 @@ scope = load("scope", "probe-scoped-storage.py")
 
 
 class RecoveryRegressionTests(unittest.TestCase):
+    def test_pending_upload_preserves_verified_unverified_and_missing_objects(self):
+        expected = b"complete source"
+        row = {"id": str(uuid.uuid4()), "object_key": "projects/fixture/pending",
+               "metadata": {"sha256": recovery.digest(expected), "sizeBytes": len(expected)}}
+        with tempfile.TemporaryDirectory() as directory:
+            for media, state in ((expected, "verified"), (b"partial", "unverified")):
+                client = Mock()
+                client.get_object.return_value = {"Body": io.BytesIO(media)}
+                record = recovery.backup_object(client, row, Path(directory), pending=True)
+                self.assertEqual(record["objectState"], state)
+                self.assertEqual(record["sha256"], recovery.digest(expected))
+                self.assertEqual((Path(directory) / record["storedSha256"]).read_bytes(), media)
+            error = RuntimeError("object missing")
+            error.response = {"Error": {"Code": "NoSuchKey"}}
+            client.get_object.side_effect = error
+            record = recovery.backup_object(client, row, Path(directory), pending=True)
+            self.assertEqual(record["objectState"], "missing")
+            self.assertNotIn("storedSha256", record)
+            with self.assertRaises(RuntimeError):
+                recovery.backup_object(client, row, Path(directory))
+            for code in ("AccessDenied", "InternalError", "SlowDown"):
+                error.response["Error"]["Code"] = code
+                with self.subTest(code=code), self.assertRaises(RuntimeError):
+                    recovery.backup_object(client, row, Path(directory), pending=True)
+
+    def test_completed_upload_rejects_corrupt_bytes(self):
+        client = Mock()
+        client.get_object.return_value = {"Body": io.BytesIO(b"bad")}
+        row = {"id": str(uuid.uuid4()), "object_key": "fixture",
+               "metadata": {"sha256": recovery.digest(b"good"), "sizeBytes": 4}}
+        with tempfile.TemporaryDirectory() as directory, self.assertRaises(ValueError):
+            recovery.backup_object(client, row, Path(directory))
+
     def test_identical_content_retains_distinct_asset_storage(self):
         restore = uuid.uuid4().hex
         first = {"id": str(uuid.uuid4()), "sha256": "a" * 64}
