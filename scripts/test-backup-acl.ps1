@@ -20,14 +20,35 @@ foreach ($path in @($root,$file)) {
   $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($everyone,'Read','Allow'))
   Set-Acl -LiteralPath $path -AclObject $acl
 }
+$owners = @{}
+foreach ($path in @($root,$nested,$file)) {
+  $owners[$path] = (Get-Acl -LiteralPath $path).GetOwner([Security.Principal.SecurityIdentifier]).Value
+}
+$auditSupported = $false
+try {
+  $audit = Get-Acl -LiteralPath $file -Audit
+  $audit.AddAuditRule([Security.AccessControl.FileSystemAuditRule]::new($operator,'Write','Success'))
+  [IO.FileSystemAclExtensions]::SetAccessControl((Get-Item -LiteralPath $file),$audit)
+  $auditBefore = (Get-Acl -LiteralPath $file -Audit).GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::Audit)
+  $auditSupported = $true
+} catch {
+  if ($_.Exception.ToString() -notmatch 'SeSecurityPrivilege|PrivilegeNotHeld|privilege') { throw }
+  'Audit preservation case skipped: this process lacks the Windows audit privilege.'
+}
 Set-PrivateBackupDirectory $root
 Set-PrivateBackupDirectory $root
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 foreach ($path in @($root,$nested,$file)) {
   $acl = Get-Acl -LiteralPath $path
+  if ($acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $owners[$path]) { throw 'Owner metadata changed' }
   if (-not $acl.AreAccessRulesProtected) { throw 'Inheritance is still enabled' }
   $rules = @($acl.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
   if ($rules.Count -ne 1 -or $rules[0].IdentityReference.Value -ne $sid -or $rules[0].AccessControlType -ne 'Allow') { throw 'Unexpected access remains' }
+}
+if ($auditSupported) {
+  $auditAfter = (Get-Acl -LiteralPath $file -Audit).GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::Audit)
+  if ($auditAfter -ne $auditBefore) { throw 'Audit metadata changed' }
+  'Existing audit rule preserved.'
 }
 if ((Get-Content -LiteralPath $file) -ne 'synthetic fixture') { throw 'File contents changed' }
 'Private ACL test passed for existing directory and child explicit grants.'
