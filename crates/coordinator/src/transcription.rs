@@ -469,6 +469,21 @@ fn recover_passes(receipt: &Value, duration: u64) -> Option<Value> {
 }
 // Retain complementary words in uncovered time ranges. The preferred pass owns
 // overlapping timing; combining alternative spellings there would duplicate lyrics.
+fn word_interval(word: &Value) -> Option<(f64, f64)> {
+    let (start, end) = (word["start"].as_f64()?, word["end"].as_f64()?);
+    (start.is_finite() && end.is_finite() && start >= 0. && end >= start).then_some((start, end))
+}
+fn overlaps((start, end): (f64, f64), (left, right): (f64, f64)) -> bool {
+    (start < right && end > left) || (start == left && end == right)
+}
+fn word_identity(word: &Value) -> String {
+    word["word"]
+        .as_str()
+        .or(word["punctuated_word"].as_str())
+        .unwrap_or("")
+        .trim_matches(|c: char| !c.is_alphanumeric())
+        .to_lowercase()
+}
 fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
     let mut merged = primary.clone();
     let path = "/results/channels/0/alternatives/0/words";
@@ -478,18 +493,41 @@ fn merge_gaps(primary: &Value, secondary: &Value) -> Value {
     let Some(words) = merged.pointer_mut(path).and_then(Value::as_array_mut) else {
         return merged;
     };
+    // Match each preferred detection at most once. Reserve real overlaps first
+    // so a second sung occurrence in the fallback is not mistaken for drift.
+    let mut preferred: Vec<_> = words
+        .iter()
+        .filter_map(|word| {
+            let interval = word_interval(word)?;
+            let matched = extra
+                .iter()
+                .filter_map(word_interval)
+                .any(|other| overlaps(interval, other));
+            Some((interval, word_identity(word), matched))
+        })
+        .collect();
     for word in extra {
-        let (Some(start), Some(end)) = (word["start"].as_f64(), word["end"].as_f64()) else {
+        let Some((start, end)) = word_interval(word) else {
             continue;
         };
-        if !start.is_finite() || !end.is_finite() || start < 0. || end < start {
+        if words
+            .iter()
+            .filter_map(word_interval)
+            .any(|other| overlaps((start, end), other))
+        {
             continue;
         }
-        if words.iter().any(|existing| {
-            let left = existing["start"].as_f64().unwrap_or(0.);
-            let right = existing["end"].as_f64().unwrap_or(left);
-            (start < right && end > left) || (start == left && end == right)
-        }) {
+        let identity = word_identity(word);
+        if let Some((_, _, matched)) =
+            preferred.iter_mut().find(|((left, right), text, matched)| {
+                !*matched
+                    && !identity.is_empty()
+                    && *text == identity
+                    && start <= *right + 0.05
+                    && end >= *left - 0.05
+            })
+        {
+            *matched = true;
             continue;
         }
         words.push(word.clone());
@@ -822,6 +860,22 @@ mod tests {
             "before first adjacent nearby"
         );
         assert_eq!(merge_gaps(&merged, &fallback), merged);
+    }
+    #[test]
+    fn gap_merge_matches_drifted_duplicates_without_collapsing_repetitions() {
+        let primary = response(json!([{"word":"Go","start":2.,"end":2.2}]));
+        let drifted = response(json!([{"word":"go!","start":2.22,"end":2.4}]));
+        let merged = merge_gaps(&primary, &drifted);
+        assert_eq!(coverage(&merged).0, 1);
+        assert_eq!(merge_gaps(&merged, &drifted), merged);
+        let repeated = response(json!([
+            {"word":"go","start":2.,"end":2.2},
+            {"word":"go","start":2.22,"end":2.4}
+        ]));
+        let merged = merge_gaps(&primary, &repeated);
+        assert_eq!(coverage(&merged).0, 2);
+        assert_eq!(merge_gaps(&merged, &repeated), merged);
+        assert_eq!(coverage(&merge_gaps(&repeated, &primary)).0, 2);
     }
     #[test]
     fn timed_lyrics_preserve_gaps_and_metadata() {

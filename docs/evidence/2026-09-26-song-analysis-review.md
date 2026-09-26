@@ -32,3 +32,9 @@ This was desktop browser functional verification. Narrow viewport, Windows WebVi
 Greptile's review of `7f7a820` identified two additional defects. Recovery now uses the same richer-pass selection and complementary-word merge as the live pipeline when no selected response was saved. A valid saved selection retains precedence. Gap merging uses actual interval overlap rather than a 50 ms exclusion margin, retaining distinct adjacent words while suppressing overlapping alternatives and identical intervals.
 
 Regression tests cover richer fallback wording during recovery, saved-selection precedence, distinct words immediately adjacent or 20 ms apart, overlapping alternatives, and repeated-merge idempotence. All 23 non-database Rust workspace tests passed; clippy with warnings denied and formatting passed. The five database integration tests are delegated to the fresh CI run for this commit. No UI or API schema changes were made in this follow-up.
+
+## Third review: duplicate detections with timestamp drift
+
+The review of `e45a0c9` scored 4/5 and identified matching words in nearby nonoverlapping intervals. The merge now matches normalized word text within 50 ms only against unmatched preferred detections. Actual overlaps reserve their detection first, preserving a second occurrence present in the fallback; newly added fallback words do not become fuzzy-match targets. This remains a timing/text heuristic, not ground-truth lyric alignment, and recovered lyrics remain drafts for review.
+
+Regression coverage includes punctuation/case normalization, a 20 ms duplicate, repeated sung words in either preferred or fallback input, distinct adjacent words, and idempotent re-merging. All 24 non-database workspace tests and clippy passed. Fresh CI must run database integration coverage and Greptile must review the exact new head before merge.
