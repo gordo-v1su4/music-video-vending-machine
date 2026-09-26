@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from "svelte";
   import type { Project } from "./api";
   import { time, videoDuration, videoPosition } from "./timing";
-  import { PreviewClock } from "./preview-clock";
+  import { PreviewPlayback } from "./preview-playback";
   let {
     project,
     urls,
@@ -13,14 +13,11 @@
     videoMs?: number;
   } = $props();
   let playing = $state(false);
+  let waiting = $state(false);
   let playbackError = $state("");
   let playbackNotice = $state("");
   let frame = 0;
-  let masterAudio: HTMLAudioElement | undefined;
-  let breakAudio: HTMLAudioElement | undefined;
-  let lastSource = "";
-  let activeBreak = "";
-  const previewClock = new PreviewClock();
+  let loop = 0;
   const duration = $derived(
     videoDuration(project.master?.durationMs ?? 0, project.breaks),
   );
@@ -28,59 +25,28 @@
   const masterUrl = $derived(
     project.master ? urls[project.master.assetId] : "",
   );
+  const playback = new PreviewPlayback(
+    () => ({ durationMs: duration, breaks: project.breaks, masterUrl, urls }),
+    (url) => new Audio(url),
+    () => performance.now(),
+    (state) => {
+      videoMs = state.positionMs;
+      playing = state.playing;
+      waiting = state.waiting;
+      playbackError = state.error;
+    },
+  );
 
   function stop() {
-    // Capture time between the last painted frame and the actual pause.
-    if (playing) videoMs = previewClock.pause(performance.now(), duration);
-    playing = false;
+    loop++;
     cancelAnimationFrame(frame);
-    masterAudio?.pause();
-    breakAudio?.pause();
+    playback.pause();
   }
-  async function synchronize() {
-    if (!masterUrl) return;
-    if (!masterAudio || lastSource !== masterUrl) {
-      masterAudio?.pause();
-      masterAudio = new Audio(masterUrl);
-      lastSource = masterUrl;
-    }
-    const now = videoPosition(videoMs, project.breaks);
-    const inserted =
-      project.breaks.find((b) => b.id === now.breakId)?.kind === "insertion";
-    if (Math.abs(masterAudio.currentTime - now.songMs / 1000) > 0.12)
-      masterAudio.currentTime = now.songMs / 1000;
-    masterAudio.muted = now.muted;
-    if (inserted || !playing) masterAudio.pause();
-    else if (masterAudio.paused) await masterAudio.play();
-    // A visibility change may pause while play() is still pending.
-    if (!playing) masterAudio.pause();
-    const selected = project.breaks.find((b) => b.id === now.breakId);
-    const breakUrl = selected?.assetId ? urls[selected.assetId] : undefined;
-    if (activeBreak !== (breakUrl ?? "")) {
-      breakAudio?.pause();
-      breakAudio = breakUrl ? new Audio(breakUrl) : undefined;
-      activeBreak = breakUrl ?? "";
-    }
-    if (breakAudio) {
-      if (Math.abs(breakAudio.currentTime - now.breakMs / 1000) > 0.12)
-        breakAudio.currentTime = now.breakMs / 1000;
-      if (playing && breakAudio.paused && !breakAudio.ended)
-        await breakAudio.play();
-      if (!playing) breakAudio.pause();
-    }
-  }
-  async function tick(timestamp: number) {
-    if (!playing) return;
-    videoMs = previewClock.position(timestamp, duration);
-    try {
-      await synchronize();
-    } catch {
-      playbackError = "Audio playback failed. Pause and try again.";
-      stop();
-      return;
-    }
-    if (videoMs >= duration) stop();
-    else if (playing) frame = requestAnimationFrame(tick);
+  async function tick(generation: number) {
+    if (!playing || generation !== loop) return;
+    await playback.tick();
+    if (playing && generation === loop)
+      frame = requestAnimationFrame(() => tick(generation));
   }
   async function toggle() {
     if (playing) {
@@ -88,26 +54,18 @@
       return;
     }
     if (document.hidden) return;
-    playbackError = "";
     playbackNotice = "";
-    if (videoMs >= duration) videoMs = 0;
-    playing = true;
-    previewClock.play(videoMs, performance.now());
-    try {
-      await synchronize();
-      if (playing) frame = requestAnimationFrame(tick);
-    } catch {
-      playbackError = "Audio could not play. Check the imported master.";
-      stop();
-    }
+    const generation = ++loop;
+    await playback.play(videoMs >= duration ? 0 : videoMs);
+    if (playing && generation === loop)
+      frame = requestAnimationFrame(() => tick(generation));
   }
-  function seek(value: number) {
-    videoMs = Math.min(duration, Math.max(0, value));
-    previewClock.seek(videoMs, performance.now());
-    void synchronize().catch(() => {
-      playbackError = "Could not seek the audio.";
-      stop();
-    });
+  async function seek(value: number) {
+    const generation = ++loop;
+    cancelAnimationFrame(frame);
+    await playback.seek(value);
+    if (playing && generation === loop)
+      frame = requestAnimationFrame(() => tick(generation));
   }
   onMount(() => {
     const pauseWhenHidden = () => {
@@ -117,13 +75,15 @@
           "Preview paused while this window was hidden. Press Play to continue.";
       }
     };
-    // HTML audio can continue while rAF is suspended. Pause both media tracks
-    // immediately rather than miss an insertion or mute boundary offscreen.
     document.addEventListener("visibilitychange", pauseWhenHidden);
     return () =>
       document.removeEventListener("visibilitychange", pauseWhenHidden);
   });
-  onDestroy(stop);
+  onDestroy(() => {
+    loop++;
+    cancelAnimationFrame(frame);
+    playback.dispose();
+  });
 </script>
 
 <footer class="transport">
@@ -185,6 +145,9 @@
       </div>{/each}
   </div>
   {#if playbackError}<p role="alert" class="error">{playbackError}</p>{/if}
+  {#if waiting}<p role="status" class="small-note">
+      Waiting for audio. Preview time is paused.
+    </p>{/if}
   {#if playbackNotice}<p role="status" class="small-note">
       {playbackNotice}
     </p>{/if}

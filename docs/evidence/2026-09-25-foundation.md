@@ -26,7 +26,15 @@ RustFS adapter is implemented but not yet live round-trip tested. Coordinator cu
 ## Reproduce
 
 See README development and verification commands. Media fixtures and runtime state live in gitignored .runtime or isolated test storage. No secrets are stored in this evidence file.
-# PR review repair cycle 1
+# PR review repairs
+
+## Repair cycle 2
+
+Greptile reviewed `e87b2bd` at 4/5 and found that asynchronous audio startup could let the preview advance before sound began. Audible spans now derive position from media playback time; silence uses the monotonic clock. Pending starts/buffering preserve position. Distinct media sessions and cancellation guards prevent stale asynchronous completions from reviving old playback. Replacing a saved project destroys the previous transport.
+
+Verification: 24 web tests include deliberately delayed master/dialogue starts, restart after insertion/cutout, buffering, hide/cancel/seek races, short dialogue followed by silence, delayed frame boundary traversal and disposal without stale state publication. Svelte check, autofixer and production build pass. Running browser fixture progressed with video time three seconds ahead of song time after the insertion and paused without error; reload returned to Play at 0:00. A fresh Greptile review of this repair is required.
+
+## Repair cycle 1
 
 Greptile reviewed commit `7bee772` at 1/5. All four findings were accepted and repaired before requesting another review:
 

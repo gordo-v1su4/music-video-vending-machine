@@ -1066,7 +1066,9 @@
           </section>
         </aside>
       </div>
-      {#key project.id}<Transport {project} {urls} bind:videoMs />{/key}
+      <!-- Replacing saved project state tears down media, including pending play
+           promises, before a new master/break/revision mapping can be used. -->
+      {#key project}<Transport {project} {urls} bind:videoMs />{/key}
     {/if}
   </main>
 </div>
