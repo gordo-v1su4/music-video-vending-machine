@@ -1,0 +1,41 @@
+# Project Stack Structure UI reuse source audit
+
+Inspected 2026-09-25 at `C:/Users/Gordo/Documents/Github/project-stack-structure`, local `main`, HEAD `0e8c45c`. Working tree already has modified package/config/agent files and an unrelated deleted plan; preserve those. This is a bounded source inspection, not a browser, service, generation, or export test. No servers started or packages installed.
+
+## Recommendation
+
+Use this repository as the music-aware workflow and playback donor: song structure, treatment approval, reference roles, coverage gaps, candidate audition, durable media, and preview/export correspondence. With the user's chosen Svelte/WebGPU stack, port interaction patterns into Svelte and selectively extract plain TypeScript; do not adopt its Next.js application wholesale. Do not mistake its resolved-cut rail for the requested full timeline editor.
+
+The older memory about a missing treatment layer is stale: current source contains a substantial treatment planner and confirmation snapshot. Its current design remains footage-first, which must change for a song-to-generated-video product.
+
+## Implemented source and reuse implications
+
+All paths below are relative to `C:/Users/Gordo/Documents/Github/project-stack-structure`; line numbers refer to this inspection.
+
+| Area | Current source evidence | Reuse and limits |
+| --- | --- | --- |
+| Studio shell | `src/components/StudioApp.tsx:2401-2447` mounts ActRail, TrackHeader, BeatSpine, StageGateBanner, and ProgramMonitor. `src/components/studio/shell/BeatSpine.tsx:9-24` exposes song playhead, seek, cut slots, and alternate takes. | Good song-centered shell and navigation pattern. React components need Svelte equivalents. StudioApp's large stateful orchestration function spans `106-2691`; avoid copying that coupling. |
+| Direction approval | `src/components/studio/StoryTreatmentPlanner.tsx:49-122` builds a brief/song/footage request and calls `/api/story/treatments`, handles async Trigger results and validation retries. `214-237` provides the story-seed textarea, generation action, and surfaced errors. `src/components/studio/panels/StoryTab.tsx:215-240` records confirmed treatment snapshot/signature and invalidates approval. | Reuse versioned creative approval and error handling. This is real request code, but service execution is unverified. `canGenerate` requires analysis AND existing video moments (`StoryTreatmentPlanner.tsx:54`); not compatible unchanged with generation-first projects. The hardcoded 80–90% dance/performance instruction at `87-91` is project-specific, not our product default. |
+| Musical structure editing | `src/components/studio/panels/StoryTab.tsx:243-256` wires section update, boundary move, split, remove, and reset to analysis. `src/components/studio/musicVideoProject.ts:87-108,121-146` defines section-linked timeline items, lyric references, prompt, semantic match, edit settings and findings. | Strong domain vocabulary, but single sequence items are not a multitrack NLE document. Define our independent canonical schema with explicit source trims, tracks/layers, asset versions, transitions and reversible edits. |
+| References and continuity | `src/components/studio/referenceAssets.ts:1-37` models characters, environments, crowd, props, vehicles, wardrobe, prompt hints and local/RustFS upload state. `119-184` builds reference instructions and ordered generation inputs. | Reuse role-aware reference packets and durable asset identity. Fixed `character1Id`/`character2Id` selection is too narrow for an extensible cast/continuity bible; replace with role-to-entity bindings. |
+| Generation and gap review | `src/components/studio/panels/GenerateTab.tsx:171-211` computes cue map, coverage, missing/short/weak groups and selected cut. `213-275` imports returned generated clips. `280-334` submits local SwarmUI jobs through an API, waits for Trigger output, and requires durable assets. `353-369` renders coverage metrics and StoryboardPlanner. | Good per-cut replacement, review metrics and provider status UX. Provider selection and job submission are coupled to SwarmUI/Trigger/RustFS and Seedance return imports. Extract adapters; these are not proof of browser-automated Higgsfield/Midjourney. |
+| Generation gates | `src/components/studio/panels/GenerateTab.tsx:371-375` blocks generation until Story edit slots and Match assignments exist. `src/components/studio/musicVideoProject.ts:631-670` requires song analysis, detected sections, source moments, assignments and edit plan. | Useful explicit errors, but footage-first assumptions need replacement with planned shots and still animatic states. Source validation is technical/completeness QC, not model-driven cinematography or musical-flow review. |
+| Final sequence rail | `src/components/studio/panels/JoinTab.tsx:12-114` presents the resolved preview/export sequence in song order and selectable cut cards. | Preserve exact-preview/exact-export semantics. This examined panel does not supply free multitrack drag editing, trim handles, ripple, or undo history. A full in-app timeline remains new work or another donor's responsibility. |
+| Review room | `src/review/components/layout/review-workspace.tsx:19-67` combines asset sidebar, media viewer, comments, and approved-video handoff. | Useful approval/evidence layout. React/Zustand asset state needs mapping to our project and revision schema. This component's existence does not prove it is the active studio route. |
+| Browser WebGPU | `src/components/studio/PreviewPlayerComponent.tsx:40-121` owns dual video elements, master audio and renderer lifecycle. `src/components/studio/stutterWebGpuPreview.ts:236-309` initializes a standalone renderer; `320-348` imports video as external texture and draws; `352-407` provides Canvas2D fallback. | Strong extraction candidate: browser/TypeScript renderer can survive framework migration, with Svelte lifecycle wrappers. This is shader/effect preview over video; do not claim a general multilayer compositor or frame-accurate export engine. |
+| Export | `src/components/StudioApp.tsx:1432-1467` waits for a queued worker export, records MP4 URL/name and errors. `src/trigger/export.ts:26-43` defines stored audio/video plus timed segments/effect cues. | Reuse explicit render job status and durable output linkage. Preserve original song timing. Playback/render fidelity, codec coverage and WebGPU-to-export equivalence require actual tests later. |
+
+## Dependencies and integration boundaries
+
+`package.json` declares Next `16.2.1`, React/React DOM `19.2.4`, Zustand `^5.0.14`, Trigger SDK/hooks `4.5.16`, NextAuth beta, Tailwind 4, TypeScript 5, Bun `1.3.10`, and Node `>=24.5.0 <25`. Local package files are modified, so these are working-tree values, not asserted release versions. The application also uses private service gateways and durable media APIs. Adapt those contracts to the planned homelab coordinator and PC GPU worker; no deployment assumptions are validated here.
+
+Svelte migration should separate four pieces: canonical project/asset/job schema, pure music/continuity algorithms, media player/renderer service, and presentation. Port compact panels after that separation. Avoid sharing old React state, fixed cast slots, footage-required gates, and provider-specific models as our canonical data model.
+
+`git ls-files '*LICENSE*' '*COPYING*'` and the root license filename check returned no license file; package declares `private: true` and no license field. User has authorized using their repositories; do not describe this repository as openly licensed or infer redistribution terms from local availability. Keep third-party attribution when extracting code.
+
+## Questions this donor resolves or exposes
+
+- It provides credible existing patterns for approval, music structure, reference packets and WebGPU effects.
+- It does not settle the full timeline UI or generation-first gates.
+- Keep the approved treatment snapshot as the boundary for automatic vision-QC fixes; add scored evidence, proposed repair, budget/retry accounting and edit history around it.
+- Determine whether to present one unified workspace with contextual panels or distinct Direction / Production / Edit workspaces after comparing the other UI donors.

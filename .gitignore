@@ -1,0 +1,16 @@
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Private runtime and generated artifacts
+.env
+.env.*
+!.env.example
+.runtime/
+node_modules/
+.svelte-kit/
+build/
+target/
+test-results/
+playwright-report/
+*.log
+*.local

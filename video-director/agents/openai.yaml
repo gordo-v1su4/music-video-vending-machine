@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Director"
+  short_description: "Create and refine coherent video prompts"
+  default_prompt: "Act as the video director for this project. Read the available lyrics, story, references, images, and existing prompts, then help create or refine a coherent video prompt sequence."
