@@ -139,10 +139,16 @@
     }
     if (sessionCheck) return;
     const client = api;
+    const startedAfterDeadline = client.sessionRemainingMs() <= 0;
+    let crossedDeadline = false;
     sessionCheck = true;
     try {
       await client.currentSession();
-      if (client === api) { sessionError = ""; sessionUnverified = false; }
+      if (client === api) {
+        crossedDeadline = !startedAfterDeadline && client.sessionRemainingMs() <= 0;
+        if (!crossedDeadline) { sessionError = ""; sessionUnverified = false; }
+        else sessionUnverified = true;
+      }
     }
     catch (e) {
       if (client === api && connected) {
@@ -150,7 +156,10 @@
         else if (!sessionUnverified) sessionError = e instanceof Error ? e.message : "Session check failed. Retrying shortly.";
       }
     }
-    finally { sessionCheck = false; }
+    finally {
+      sessionCheck = false;
+      if (crossedDeadline && client === api) void checkSession();
+    }
   }
   async function connect() {
     if (connecting || busy) return;
