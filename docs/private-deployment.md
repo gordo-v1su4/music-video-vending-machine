@@ -17,6 +17,8 @@ coordinator has no host-published port. Both containers drop all capabilities,
 use read-only roots and bounded memory/CPU. Writable scratch is tmpfs. Tailscale
 Serve will terminate HTTPS and proxy to loopback. Never enable Funnel for this
 deployment. Inspect existing Serve configuration before configuring port 8443.
+The static web service starts independently of coordinator health: a backend or
+storage outage must not prevent the UI from loading and showing connection errors.
 
 ## Deployment procedure
 

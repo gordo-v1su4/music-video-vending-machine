@@ -24,6 +24,8 @@ jobs:
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "http://$address/" > /tmp/mvvm-web.html
           test "$(docker exec mvvm-web-ci id -u)" = 10001
           grep -q '<html' /tmp/mvvm-web.html
+          test "$(curl --max-time 10 --silent -o /dev/null -w '%{http_code}' "http://$address/api/v1/health")" = 502
+          curl --fail --silent "http://$address/" > /dev/null
   backup-acl:
     runs-on: windows-latest
     steps:

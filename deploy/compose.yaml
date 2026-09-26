@@ -25,9 +25,6 @@ services:
   web:
     image: ${MVVM_WEB_IMAGE:?Use a reviewed immutable image tag}
     restart: unless-stopped
-    depends_on:
-      coordinator:
-        condition: service_healthy
     ports:
       - "127.0.0.1:13220:8080"
     read_only: true
