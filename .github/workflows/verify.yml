@@ -1,0 +1,54 @@
+name: Verify
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.10-bookworm
+        env:
+          POSTGRES_USER: mvm
+          POSTGRES_DB: mvm_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mvm -d mvm_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: cargo fmt --all -- --check
+      - run: cargo test --workspace --locked
+      - run: cargo test -p mvm-coordinator --locked --test persistence -- --ignored
+        env:
+          MVM_TEST_DATABASE_URL: postgres://mvm@localhost:5432/mvm_test
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - run: bun install --frozen-lockfile
+        working-directory: apps/web
+      - run: node scripts/generate-contract.mjs --check
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run test
+      - run: bun run build
