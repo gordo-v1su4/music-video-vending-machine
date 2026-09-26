@@ -12,6 +12,7 @@ foreach ($path in @($root,$file)) {
   Set-Acl -LiteralPath $path -AclObject $acl
 }
 Set-PrivateBackupDirectory $root
+Set-PrivateBackupDirectory $root
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 foreach ($path in @($root,$nested,$file)) {
   $acl = Get-Acl -LiteralPath $path
