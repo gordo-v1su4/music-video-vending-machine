@@ -1146,14 +1146,16 @@ main {
   gap: 13px;
 }
 .play {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   border: 1px solid #71717a;
   background: #27272a;
-  border-radius: 50%;
+  border-radius: 3px;
   font-size: 12px;
   color: #f4f4f5;
 }
@@ -1193,6 +1195,20 @@ main {
   margin: 8px 0 5px;
   cursor: pointer;
 }
+input[type="range"].playhead {
+  appearance: none;
+  background: transparent;
+  border: 0;
+}
+.playhead::-webkit-slider-runnable-track { height: 4px; background: #52525b; border-radius: 0; }
+.playhead::-webkit-slider-thumb { appearance: none; width: 10px; height: 18px; margin-top: -7px; border: 1px solid #f4f4f5; border-radius: 0; background: #d4d4d8; }
+.playhead::-moz-range-track { height: 4px; background: #52525b; border-radius: 0; }
+.playhead::-moz-range-thumb { width: 8px; height: 16px; border: 1px solid #f4f4f5; border-radius: 0; background: #d4d4d8; }
+.playhead:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.timeline button.short-section { background: rgb(59 130 246 / 12%); }
+.timeline button.medium-section { background: rgb(99 102 241 / 12%); }
+.timeline button.long-section { background: rgb(147 51 234 / 12%); }
+.timeline button[aria-current="true"] { filter: brightness(1.35); }
 .timeline {
   display: flex;
   gap: 3px;
@@ -1201,22 +1217,14 @@ main {
 .timeline > button {
   background: #27272a;
   min-width: 0;
-  border: 1px solid #71717a;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: flex-start;
   padding: 6px 9px;
   overflow: hidden;
-}
-.timeline > button:nth-child(3n + 2) {
-  background: #27272a;
-  border-color: #71717a;
-}
-.timeline > button:nth-child(3n) {
-  background: #27272a;
-  border-color: #71717a;
 }
 .timeline > button > span {
   white-space: nowrap;
@@ -1229,6 +1237,10 @@ main {
   font-size: 12px;
   color: #f4f4f5;
   font-variant-numeric: tabular-nums;
+}
+@media (max-width: 600px) {
+  .timeline { overflow-x: auto; padding-bottom: 6px; }
+  .timeline > button { min-width: 72px; flex-shrink: 0; }
 }
 .empty-track {
   width: 100%;
@@ -1688,3 +1700,14 @@ html {
   flex-shrink: 0;
   white-space: nowrap;
 }
+/* Lyric evidence stays distinct from editable creative direction. */
+.lyric-alignment { display:flex; align-items:center; gap:10px; margin-block:14px 6px; }
+.lyric-alignment input { width:auto; flex:none; }
+.lyric-reference { padding-block:16px 24px; }
+.lyric-reference summary { cursor:pointer; padding-block:10px; overflow-wrap:anywhere; }
+.lyric-reference label { display:block; margin-top:14px; }
+.lyric-reference textarea { width:100%; margin-top:8px; }
+.section-lyrics { padding-block:12px 18px; line-height:1.6; overflow-wrap:anywhere; }
+.section-lyrics strong { font-size:13px; font-weight:600; }
+.section-lyrics p { margin:8px 0; }
+.section-lyrics small { color:var(--muted); }

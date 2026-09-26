@@ -35,6 +35,8 @@ async fn missing_auth_is_rejected_before_database_access() {
         .connect_lazy("postgres://localhost/never_connected")
         .unwrap();
     let state = AppState {
+        analysis: None,
+        transcription: None,
         pool,
         objects: Arc::new(InMemory::new()),
         token_hash: Some(Sha256::digest(b"test-only-operator-token-not-for-runtime").into()),
@@ -52,6 +54,8 @@ async fn cross_origin_multipart_cannot_mutate_local_development() {
         .connect_lazy("postgres://localhost/never_connected")
         .unwrap();
     let state = AppState {
+        analysis: None,
+        transcription: None,
         pool,
         objects: Arc::new(InMemory::new()),
         token_hash: None,
@@ -77,6 +81,8 @@ async fn cross_origin_multipart_cannot_mutate_local_development() {
 #[tokio::test]
 async fn anonymous_local_reads_require_loopback_host_even_without_origin() {
     let state = AppState {
+        analysis: None,
+        transcription: None,
         pool: PgPoolOptions::new()
             .connect_lazy("postgres://localhost/never_connected")
             .unwrap(),
@@ -172,6 +178,8 @@ async fn concurrent_writes_restart_and_asset_ownership() {
     migrate(&pool).await.unwrap();
     let objects: Arc<dyn ObjectStore> = Arc::new(InMemory::new());
     let state = AppState {
+        analysis: None,
+        transcription: None,
         pool: pool.clone(),
         objects,
         token_hash: None,

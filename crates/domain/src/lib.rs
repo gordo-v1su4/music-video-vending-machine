@@ -120,6 +120,8 @@ pub struct Project {
     pub revision: u64,
     pub master: Option<Master>,
     pub treatment: String,
+    #[serde(default)]
+    pub lyrics: Option<LyricsContext>,
     pub sections: Vec<Section>,
     pub references: Vec<Reference>,
     pub breaks: Vec<AudioBreak>,
@@ -132,6 +134,15 @@ pub struct Project {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LyricsContext {
+    pub text: String,
+    pub source_name: String,
+    /// Explicit assertion that this audio shares the master's zero point and duration.
+    pub aligned_asset_id: Option<Uuid>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(
     tag = "type",
     rename_all = "camelCase",
@@ -141,6 +152,9 @@ pub struct Project {
 pub enum Action {
     SetTreatment {
         text: String,
+    },
+    SetLyrics {
+        lyrics: Option<LyricsContext>,
     },
     SetMaster {
         #[serde(rename = "assetId")]
@@ -201,6 +215,7 @@ impl Project {
             revision: 0,
             master: None,
             treatment: String::new(),
+            lyrics: None,
             sections: vec![],
             references: vec![],
             breaks: vec![],
@@ -216,8 +231,12 @@ impl Project {
         self.master.as_ref().map_or(0, |m| m.duration_ms)
     }
     pub fn approval_fingerprint(&self) -> String {
-        let content = serde_json::json!({"master":self.master,"treatment":self.treatment,
+        let mut content = serde_json::json!({"master":self.master,"treatment":self.treatment,
             "sections":self.sections,"references":self.references,"breaks":self.breaks,"route":"local"});
+        // Preserve existing approvals for projects created before lyric context existed.
+        if let Some(lyrics) = &self.lyrics {
+            content["lyrics"] = serde_json::json!(lyrics);
+        }
         format!("{:x}", Sha256::digest(content.to_string().as_bytes()))
     }
     pub fn production_approved(&self) -> bool {
@@ -244,6 +263,19 @@ impl Project {
     }
     fn apply_inner(&mut self, action: Action) -> Result<()> {
         match action {
+            Action::SetLyrics { lyrics } => {
+                if let Some(value) = &lyrics {
+                    require(
+                        value.text.len() <= 100_000 && value.source_name.len() <= 255,
+                        "Lyric reference is too long.",
+                    )?;
+                    require(
+                        value.aligned_asset_id.is_none() || self.master.is_some(),
+                        "Choose a master before aligning lyrics.",
+                    )?;
+                }
+                self.lyrics = lyrics;
+            }
             Action::SetTreatment { text } => {
                 require(text.len() <= 100_000, "Treatment is too long.")?;
                 self.treatment = text;
@@ -265,6 +297,9 @@ impl Project {
                     duration_ms,
                     approved: false,
                 });
+                if let Some(lyrics) = &mut self.lyrics {
+                    lyrics.aligned_asset_id = None;
+                }
                 self.sections.clear();
                 self.breaks.clear();
                 self.shots.clear();

@@ -56,6 +56,8 @@ async fn sessions_are_bounded_revocable_and_durable() {
     migrate(&pool).await.unwrap();
     let bootstrap = uuid::Uuid::new_v4().to_string();
     let state = AppState {
+        analysis: None,
+        transcription: None,
         pool: pool.clone(),
         objects: Arc::new(InMemory::new()),
         token_hash: Some(Sha256::digest(bootstrap.as_bytes()).into()),
