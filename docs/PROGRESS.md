@@ -23,7 +23,7 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 - [x] Verify private RustFS upload/download, coordinator restart, and completed-asset backup restoration.
 - [x] Implement session sign-in/sign-out and retain drafts across disconnection; run local browser checks.
 - [x] Merge session work: PR #4 merged at `c924765` after Greptile 5/5 on `d00c371`, green CI, and all findings resolved.
-- [ ] Verify backup restoration with pending uploads.
+- [x] Verify cold isolated backup restoration with verified, incomplete and missing pending uploads; coordinator completes only verified media. [Evidence](evidence/2026-09-26-pending-upload-recovery.md).
 - [ ] Verify one shared project from both web and an installed Windows client.
 
 ## 2. Select a song and break it into editable parts — next priority (M1, M4)
