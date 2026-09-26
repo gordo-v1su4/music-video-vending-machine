@@ -31,6 +31,8 @@ A personal, local-first studio turns an approved song and collaboratively develo
 
 ## Authority and boundaries
 
+UI decision, 2026-09-25: dark mode is the default, as explicitly requested by the user. Use the pinned Impeccable skill set for UI design and testing, including contrast, keyboard focus, responsive composition and clear production states. These checks support rather than replace browser and Windows WebView2 acceptance.
+
 The director proposes validated project actions. Rust enforces approvals, locks and allowances; agents and reviewer scores cannot override them. Story/style changes return to the user. Approve the supplied song directly in v1; Ableton preparation, singing and abstract modes are later milestones. No primary NLE, offline standalone production, public accounts/billing, or social publishing.
 
 Use appropriate user-owned donor patterns without modifying donor repositories: Storyception visual organization, Creative Studio Pro Svelte workspace, Beatsmaxxer musical timing, and selected Project Stack/TrailerCraft patterns. Reject their permissive weak-match and placeholder-success behavior.

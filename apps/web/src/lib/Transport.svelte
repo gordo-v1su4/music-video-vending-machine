@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from "./Icon.svelte";
   import { onDestroy, onMount } from "svelte";
   import type { Project } from "./api";
   import { time, videoDuration, videoPosition } from "./timing";
@@ -94,7 +95,7 @@
         onclick={toggle}
         disabled={!masterUrl || !duration}
         aria-label={playing ? "Pause preview" : "Play preview"}
-        >{playing ? "Ⅱ" : "▶"}</button
+        ><Icon name={playing ? "pause" : "play"} size={18} /></button
       >
       <div>
         <strong>{time(videoMs)} <span>/ {time(duration)}</span></strong><small
@@ -119,6 +120,7 @@
     max={duration || 1}
     step="1"
     value={videoMs}
+    aria-valuetext={`${time(videoMs)} of ${time(duration)} video time`}
     oninput={(e) => seek(Number(e.currentTarget.value))}
     disabled={!duration}
   />

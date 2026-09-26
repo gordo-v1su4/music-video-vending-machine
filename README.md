@@ -39,9 +39,22 @@ $env:MVM_TEST_DATABASE_URL = 'postgres://mvm@127.0.0.1:55439/mvm_test'
 cargo test -p mvm-coordinator --test persistence -- --ignored
 cd apps/web
 bun run check
+bun run test
 bun run build
 ```
 
 Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvm-coordinator -- --openapi` without service credentials.
 
 No generation or final export is presented as available until its real integration gates pass. Current intake caps each request at 128 MiB; stems, MIDI and lyrics have not yet received intake adapters.
+
+## Design and feasibility
+
+Dark mode is the user-confirmed default. UI changes use the pinned [Impeccable workflow](docs/ui-design-workflow.md) alongside Svelte checks and real browser verification.
+
+Local service/model feasibility probes live in `scripts/probe-*.py`; these are operator tools, not the production worker. Their receipts distinguish generated output from inspected acceptance and retain uncertain submissions without automatic retries. See [capability evidence](docs/evidence/2026-09-25-capabilities.md) for pinned workflows, measured results and remaining gates.
+
+Run deterministic probe guard tests without contacting providers:
+
+```powershell
+uv run --python 3.12 python -m unittest discover -s scripts -p 'test_probe*.py' -v
+```

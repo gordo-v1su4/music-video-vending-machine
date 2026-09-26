@@ -4,8 +4,8 @@ Updated: 2026-09-25. Overall: in progress, not a release.
 
 | Milestone | Status | Evidence / next action |
 | --- | --- | --- |
-| M0 | Implemented; review pending | PRD/backlog, private GitHub baseline, CI and test commands; mandatory Greptile gate pending |
-| M1 | Partial | GPU identity and homelab reachability checked; authenticated storage/model/analysis gates pending |
+| M0 | Accepted | PRD/backlog, private GitHub baseline and CI; [PR #1](https://github.com/gordo-v1su4/music-vending-machine/pull/1) merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
+| M1 | Partial | [Live probes](evidence/2026-09-25-capabilities.md): private RustFS round-trip and Essentia fixture passed; Qwen still and H3 clip generated and inspected; Qwen edit preservation failed; vision, WebGPU/WebView2, Jcode and Ableton gates pending |
 | M2 | Partial | Rust/PostgreSQL project/revision/event transactions, immutable uploads, auth/origin gates and conflicts tested locally; live RustFS and backup/restore pending |
 | M3 | Pending | Trigger/worker integration not implemented |
 | M4–M5 | Partial | Real Svelte intake, master/story/reference/approval UI and timed audio preview; director, Essentia and installed Tauri verification pending |
@@ -24,4 +24,4 @@ Updated: 2026-09-25. Overall: in progress, not a release.
 
 Store redacted reproducible results under docs/evidence; large media and private runtime state stay outside Git. Cite checks with their limits. Never mark a whole milestone complete because a subset of tests passed.
 
-Latest evidence: [foundation verification](evidence/2026-09-25-foundation.md). Local development uses ports 5198 (web), 5199 (API), 55439 (PostgreSQL), all loopback-bound. Synthetic fixtures are not real pilot acceptance.
+Latest evidence: [foundation verification](evidence/2026-09-25-foundation.md), [live capabilities](evidence/2026-09-25-capabilities.md), [Impeccable dark-mode audit](evidence/2026-09-25-impeccable-ui.md). Local development uses ports 5198 (web), 5199 (API), 55439 (PostgreSQL), and isolated standalone ComfyUI 8198, all loopback-bound. Synthetic fixtures are not real pilot acceptance. Capability probes do not enable production generation or analysis in the API.

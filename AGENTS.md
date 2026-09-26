@@ -39,3 +39,9 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+## UI design and verification
+
+Use the project-local [Impeccable skill](.agents/skills/impeccable/SKILL.md) for UI design, refinement and testing, as requested by the user. Preserve the approved product requirements in `docs/PRD.md`. Dark mode is the user-confirmed default; verify text contrast, keyboard focus, disabled states and responsive layouts in that theme. Apply the Svelte skill alongside Impeccable for component changes.
+
+For existing surfaces, use scoped audit/refinement rather than treating each change as a redesign. Record mechanical checks separately from observed browser behavior, and never report browser emulation as physical-device or Windows WebView2 acceptance. See `docs/ui-design-workflow.md` for provenance and verification expectations.

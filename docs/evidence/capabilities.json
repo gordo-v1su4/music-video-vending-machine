@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-09-25",
+  "milestone": "M1",
+  "status": "partial",
+  "productionAdapterAccepted": false,
+  "comfy": {
+    "endpoint": "http://127.0.0.1:8198",
+    "mode": "isolated_standalone",
+    "version": "0.37.0",
+    "commit": "73c9bad4d21e7addbe1d13bc92eee0f1431b017d",
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "pytorch": "2.11.0+cu130",
+    "packages": [
+      {
+        "name": "comfyui-frontend-package",
+        "installed": "1.52.7",
+        "required": "1.52.7"
+      },
+      {
+        "name": "comfyui-workflow-templates",
+        "installed": "0.11.66",
+        "required": "0.11.66"
+      },
+      {
+        "name": "comfyui-embedded-docs",
+        "installed": "0.5.12",
+        "required": "0.5.12"
+      },
+      {
+        "name": "comfy-kitchen",
+        "installed": "0.2.35",
+        "required": "0.2.35"
+      },
+      {
+        "name": "comfy-aimdo",
+        "installed": "0.5.5",
+        "required": "0.5.5"
+      }
+    ],
+    "attention": "pytorch",
+    "customNodesEnabled": false,
+    "paidApiNodesEnabled": false,
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "hostRamBytes": 134947917824,
+    "maxHeavyConcurrency": 1,
+    "resourceMeasurements": {
+      "deviceVramMiB": 32607,
+      "sampledWholeDevicePeakMiB": 31659,
+      "sampleIntervalSeconds": 5,
+      "scope": "Edit/H3 sequence; includes other GPU consumers. T2I peak and concurrent preview playback not measured."
+    }
+  },
+  "models": [
+    {
+      "file": "qwen_image_2.1_int8_convrot.safetensors",
+      "bytes": 7256783064,
+      "sha256": "cb74113cb03faecd79611b01fd7fd642f0aa60d6f0b95086abee214d75eaa57d"
+    },
+    {
+      "file": "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors",
+      "bytes": 9471072252,
+      "sha256": "32707d01b427e488af252b95c551989aad59f9fec611a694f5db6bde7f0f1f6c"
+    },
+    {
+      "file": "qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot.safetensors",
+      "bytes": 9471072252,
+      "sha256": "9182abae56fe05459840a86d22abd21f972061c92fce032630af680c8c5178d3"
+    },
+    {
+      "file": "minimax_h3_fl2va_pruned_w4a8_mixed.safetensors",
+      "bytes": 12540858008,
+      "sha256": "01aa7b92c007c599890461c325f9b7e3c96fb06c36f242f95b62f7f20e538dec"
+    },
+    {
+      "file": "qwen_image_2.1_vae_bf16.safetensors",
+      "bytes": 675509688,
+      "sha256": "bb21f7473051e1ac368515dd3f2e15cd44d7a11748ee8823e1ddca3e4876b7c9"
+    },
+    {
+      "file": "minimax_h3_video_vae_fp16.safetensors",
+      "bytes": 5207874273,
+      "sha256": "2e11c74f06a0eecbcece1845ec3c34f254b98e66b4eda0a55550fa1d4ca613dc"
+    },
+    {
+      "file": "minimax_h3_audio_vae_fp32.safetensors",
+      "bytes": 605254808,
+      "sha256": "8e505d95dd1561d47abd43d4238fd40d9bb1ae9e147ed0a4cba778d76ae4db48"
+    },
+    {
+      "file": "qwen3vl_8b_bf16.safetensors",
+      "bytes": 17534334616,
+      "sha256": "68bdc82bc1b66851162ae656225e7e2068166b603db19bd5d5a3b90eb12669a9"
+    },
+    {
+      "file": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+      "bytes": 15687142551,
+      "sha256": "35a88d51044231fe332301d7a62aa81e3f2cba62febeb446e2c1e3e0ef76f2c6"
+    }
+  ],
+  "runs": [
+    {
+      "receipt": ".runtime/comfy/qwen-t2i-receipt.json",
+      "probeId": "eeaf21ca-7017-4844-b10d-8bc25ea51fdf",
+      "providerId": "15474d07-72ed-4799-ad28-707c8ed92404",
+      "workflowSha256": "dfbd5256b435a0c22959f0433d4ff4ba82480e06adcc3adcfa0bf14bfea954de",
+      "workflowHashEncoding": "sha256(json.dumps(workflow, sort_keys=True).encode())",
+      "executionSeconds": 25.54,
+      "artifact": {
+        "path": ".runtime/comfy/output/mvm-qwen-feasibility_00001_.png",
+        "bytes": 929991,
+        "sha256": "0b39aa7e4205b697444fa7fdebe9f5c7b5d6935ca8efe5266214034b72a10eae"
+      },
+      "assessment": "single_fixture_pass"
+    },
+    {
+      "receipt": ".runtime/comfy/qwen-edit-receipt-2.json",
+      "probeId": "85bb4725-5c71-417b-87d1-c1c53c4353f7",
+      "providerId": "1e54b03d-5083-474e-9af3-cc74d585aa7b",
+      "workflowSha256": "420a6e8d8a59517a2bdcf270ce0f8cefbc0cdd0f885d87e9d2f6c48d3b13d04c",
+      "workflowHashEncoding": "sha256(json.dumps(workflow, sort_keys=True).encode())",
+      "executionSeconds": 7.58,
+      "artifact": {
+        "path": ".runtime/comfy/output/mvm-qwen-edit-feasibility_00001_.png",
+        "bytes": 1518459,
+        "sha256": "2846e157d05d9544f764037fe74e65d9a8ec4185f7ec61d2a39a08c8b5f74f9f"
+      },
+      "assessment": "preservation_failed"
+    },
+    {
+      "receipt": ".runtime/comfy/qwen-edit-receipt-3.json",
+      "probeId": "43147d18-0f4c-4015-a033-ceed842349d5",
+      "providerId": "b59ea9fc-ae11-448e-bddf-624a60152b22",
+      "workflowSha256": "685aa615d84625ac1433e5fe3a381611bd33b0cfb83ed4813e55dde1546f0008",
+      "workflowHashEncoding": "sha256(json.dumps(workflow, sort_keys=True).encode())",
+      "executionSeconds": 10.461,
+      "artifact": {
+        "path": ".runtime/comfy/output/mvm-qwen-edit-50-feasibility_00001_.png",
+        "bytes": 1596470,
+        "sha256": "205eebdb717010d2c2eb127e88e1aa0de656d37187428ea97e5cdcd50099eb01"
+      },
+      "assessment": "preservation_failed"
+    },
+    {
+      "receipt": ".runtime/comfy/h3-receipt.json",
+      "probeId": "95a751cb-7e69-4c8b-ade9-463fbc62ae34",
+      "providerId": "93aa13c7-eb91-4e27-92a3-79d99b04ea63",
+      "workflowSha256": "82871d6833bf0eb728092bae5e6f165cd470743b4fe38b1ef697da5c763a1467",
+      "workflowHashEncoding": "sha256(json.dumps(workflow, sort_keys=True).encode())",
+      "executionSeconds": 261.069,
+      "artifact": {
+        "path": ".runtime/comfy/output/mvm-h3-feasibility_00001_.mp4",
+        "bytes": 375702,
+        "sha256": "b0103bf13754d1c47eafbb4583def0c787bec994360cd80fef917696957914f9"
+      },
+      "assessment": "single_clip_feasibility_with_low_motion_finding"
+    }
+  ],
+  "essentia": {
+    "status": "synthetic_fixture_pass",
+    "endpoint": "http://100.118.78.13:18000",
+    "receipt": ".runtime/essentia-private-receipt.json",
+    "providerId": "8f1f42bcff9d461b95593321af433216",
+    "imageDigest": "sha256:86b7699795e387091286e6a5a85d481f2e81d5f9e2fcb9b753d211331f83491d",
+    "fixtureSha256": "fff838fb7516eba46aea43df66ef109f9058bdf6ad81d4d005c35009ee733c59",
+    "fixtureSeconds": 48,
+    "fixtureBpm": 120,
+    "observedBpm": 120.0110092163086,
+    "nativeConfidence": 3.5930838584899902,
+    "beatCount": 95,
+    "onsetCount": 98,
+    "submissionToFirstCompletedPollSeconds": 22.996,
+    "durationSeconds": 47.999977324263035,
+    "limits": [
+      "Synthetic fixture only",
+      "Structure uncertain; tiny terminal fragment",
+      "Native confidence is not normalized",
+      "Private route only; public ingress unverified"
+    ]
+  },
+  "storage": {
+    "status": "service_probe_pass",
+    "receipt": "2026-09-25-rustfs.json",
+    "scopedApplicationWriterVerified": false
+  },
+  "pending": [
+    "Qwen edit preservation",
+    "Directed vision adapter",
+    "WebGPU device loss and proxy",
+    "Windows WebView2",
+    "Jcode",
+    "Ableton export",
+    "Production adapter recovery",
+    "Concurrent preview resource acceptance"
+  ]
+}
