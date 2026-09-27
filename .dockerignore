@@ -1,0 +1,14 @@
+.git
+.runtime
+**/.env
+**/.env.*
+**/node_modules
+**/target
+**/.svelte-kit
+**/build
+**/*.log
+graft
+.agents
+docs
+test-results
+playwright-report
