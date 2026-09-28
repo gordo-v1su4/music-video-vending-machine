@@ -19,7 +19,7 @@ import time
 
 from . import comfy, graphs, timing
 
-STAGES = ("sheets", "keyframes", "clips", "cut")
+STAGES = ("sheets", "keyframes", "clips", "check", "cut")
 SWARM_HISTORY = os.environ.get("MVVM_SWARM_HISTORY", r"D:\output\local\MVVM")
 
 
@@ -215,6 +215,52 @@ class Run:
     def take_path(self, sid, take):
         return self.path("clips", f"{sid}.mp4" if take == 0 else f"{sid}-t{take}.mp4")
 
+    def check(self):
+        """Technical self-check of each picked take; writes check/report.json and a contact sheet.
+
+        Mechanical only (coverage, resolution, black and frozen spans). It does not judge
+        identity or creative quality; those stay with visual review.
+        """
+        report, rows = {}, []
+        w, h = self.plan["frame_size"]
+        for shot, count in zip(self.plan["shots"], self.shot_frames()):
+            sid, take = shot["id"], shot.get("pick", 0)
+            clip = self.take_path(sid, take)
+            if not os.path.exists(clip):
+                report[sid] = {"status": "missing", "clip": clip}
+                continue
+            probe = json.loads(subprocess.run(
+                ["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries",
+                 "stream=width,height,r_frame_rate,nb_read_frames", "-of", "json", clip],
+                check=True, capture_output=True, text=True).stdout)["streams"][0]
+            used = f"trim=end_frame={count}"
+            scan = subprocess.run(["ffmpeg", "-v", "info", "-i", clip, "-vf",
+                                   f"{used},blackdetect=d=0.25:pix_th=0.06,freezedetect=n=0.002:d=1.0", "-an", "-f", "null", "-"],
+                                  capture_output=True, text=True).stderr
+            black = scan.count("black_start")
+            frozen = scan.count("freeze_start")
+            frames = int(probe["nb_read_frames"])
+            problems = [p for p, bad in (("short", frames < count), ("resolution", (probe["width"], probe["height"]) != (w, h)),
+                                         ("black", black > 0), ("frozen", frozen > 0)) if bad]
+            report[sid] = {"take": take, "clip": clip, "frames": frames, "needed": count, "fps": probe["r_frame_rate"],
+                           "size": [probe["width"], probe["height"]], "black_spans": black, "frozen_spans": frozen,
+                           "status": "pass" if not problems else "flagged", "problems": problems}
+            row = self.path("check", f"{sid}.png")
+            os.makedirs(os.path.dirname(row), exist_ok=True)
+            picks = "+".join(f"eq(n\\,{int(count * f)})" for f in (0.05, 0.5, 0.95))
+            subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", clip, "-vf",
+                            f"select='{picks}',scale=426:-2,tile=3x1", "-frames:v", "1", row], check=True)
+            rows.append(row)
+        with open(self.path("check", "report.json"), "w", encoding="utf-8") as fh:
+            json.dump(report, fh, indent=2)
+        if rows:
+            args = [a for r in rows for a in ("-i", r)]
+            subprocess.run(["ffmpeg", "-y", "-v", "error", *args, "-filter_complex",
+                            "".join(f"[{i}:v]" for i in range(len(rows))) + f"vstack=inputs={len(rows)}",
+                            self.path("check", "contact-sheet.jpg")], check=True)
+        flagged = {k: v.get("problems", v["status"]) for k, v in report.items() if v["status"] != "pass"}
+        print(f"[check] {len(report) - len(flagged)}/{len(report)} pass; flagged: {flagged or 'none'}", flush=True)
+
     def shot_frames(self):
         return timing.shot_frames([s["bars"] for s in self.plan["shots"]], self.plan["song"]["bpm"])
 
@@ -264,9 +310,12 @@ def main(argv=None):
     parser.add_argument("--force", nargs="*", default=[], help="manifest keys to regenerate, e.g. keyframe:s03")
     args = parser.parse_args(argv)
     run = Run(args.plan, args.force)
-    if args.stage != "cut":
+    if args.stage not in ("cut", "check"):
         print("preflight:", comfy.preflight(), flush=True)
-    for stage in (STAGES if args.stage == "all" else (args.stage,)):
+    stages = STAGES if args.stage == "all" else (args.stage,)
+    if args.stage == "all" and run.plan.get("clip_mode") == "ref2v":
+        stages = tuple(s for s in stages if s != "keyframes")  # Ref2V renders straight from the sheets.
+    for stage in stages:
         print(f"== {stage}", flush=True)
         getattr(run, stage)()
     return 0
