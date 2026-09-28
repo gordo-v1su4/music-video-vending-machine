@@ -18,6 +18,7 @@ WORKFLOWS = ("pk_v11_t2v", "pk_v11_fl2v", "pk_v11_ref2v", "pk_v11_fl2v_refs")
 
 SEED, SAVE, TARGET, DURATION = "5445", "5480", "5612", "5479:5476"
 COMBINED, REF_SWITCH, BUNDLE = "5479:5961", "5479:5881", "5556:5570"
+SAMPLER = "5479:5472"
 
 
 def template():
@@ -25,8 +26,13 @@ def template():
         return json.load(fh)
 
 
-def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, images=(), unet=None, overrides=None):
+def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, images=(), unet=None, overrides=None,
+          song_audio=None):
     """Return an API prompt for one of WORKFLOWS.
+
+    song_audio: (uploaded audio name, start seconds) to condition on real music. The node pack's
+        MiniMaxH3SongMaskedAVContext writes that slice into the target audio latent and protects it
+        from denoising, so the picture is generated hearing the song (as in its "Music Video" example).
 
     images: uploaded image names, one per bundle slot (None leaves a slot empty). fl2v takes
         [first] or [first, last]; ref2v takes up to 9 refs; fl2v_refs takes [first, last-or-None,
@@ -58,4 +64,11 @@ def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, i
             continue
         g[f"mvvm_image_{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
         g[BUNDLE]["inputs"][f"input_{i}"] = [f"mvvm_image_{i}", 0]
+    if song_audio:
+        name, start = song_audio
+        g["mvvm_song"] = {"class_type": "LoadAudio", "inputs": {"audio": name}}
+        g["mvvm_song_ctx"] = {"class_type": "MiniMaxH3SongMaskedAVContext", "inputs": {
+            "latent": [COMBINED, 1], "audio_vae": g[COMBINED]["inputs"]["audio_vae"], "master_audio": ["mvvm_song", 0],
+            "clip_start_seconds": float(start), "context_length": 0, "source_fps": 24.0, "crop": "disabled"}}
+        g[SAMPLER]["inputs"]["latent_image"] = ["mvvm_song_ctx", 0]
     return g
