@@ -54,6 +54,9 @@ class GraphTests(unittest.TestCase):
     def test_pilot_plan_references_are_consistent(self):
         with open(PLAN, encoding="utf-8") as fh:
             plan = json.load(fh)
+        for lora in plan.get("clip_loras", []):
+            self.assertIsInstance(lora, list)
+            self.assertEqual(len(lora), 2)
         ids = [shot["id"] for shot in plan["shots"]]
         self.assertEqual(len(ids), len(set(ids)))
         for shot in plan["shots"]:
@@ -64,4 +67,5 @@ class GraphTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
