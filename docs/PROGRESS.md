@@ -4,7 +4,7 @@ Updated September 26, 2026. This tracks the approved [product requirements](PRD.
 
 **Where we are:** the current 5:53 master is imported and analyzed. Revision 7 saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
 
-**Current task: scheduled backups, then private deployment.** PR #7 migrated PostgreSQL to home Convex/RustFS and PR #8 added explicit same-bucket recovery; both merged after exact-head Greptile 5/5, green CI and resolved findings. Local cutover, source preservation, fresh current-backup restore/restart and browser playback passed. Scheduled runner implementation is under review; task execution is not yet verified.
+**Current task: local end-to-end production pilot (Linear V1S-102/105/106/107).** A local pipeline (`scripts/mvvm_gen`) drives the running SwarmUI-managed ComfyUI backend on the RTX 5090: Qwen Image 2.1 builds panel character sheets and MiniMax H3 reference-to-video renders each shot straight from those sheets, then FFmpeg cuts the clips to the 137 BPM grid against the 5:53 master. The user chose reference-to-video over composited keyframes on September 28 and delegated creative choices; the first 16-shot, 32-bar pilot passage is rendering. Earlier: scheduled backups and private deployment packaging merged in PRs #9–#11.
 
 **Song context.** The user confirmed the 5:53 stem package at a locked 137 BPM as the only source for this song. A 5:53.154 stereo 48 kHz / 24-bit master has been built from all 12 aligned stems, preserving relative levels with a uniform -0.5 dB adjustment (measured -1.1 dBTP). The earlier MP3, separate lyrics file, and earlier analysis are superseded and must not be used. Files in the package's reference-only folder may drift and are not timing authorities. The current trimmed master is connected to durable analysis, visible progress and a saved editable timeline.
 
@@ -112,7 +112,7 @@ The dark zinc workspace is implemented. Browser testing must stay in the user's 
 
 ## Rules that stay in force
 
-- Every implementation PR needs exact-head Greptile 5/5, green CI, and addressed findings before merge and the next implementation PR.
+- Every implementation PR needs green CI on the current head and addressed findings before merge and the next implementation PR. (The Greptile 5/5 gate was retired on September 28 when credits ran out.)
 - Creative approval belongs to the user. Paid calls require a separately approved quote.
 - Update this checklist at each completed work item or changed blocker, and keep the current and next task at the top accurate.
 - Full completion means both the private pilot and the complete-song acceptance pass. A fixture, passing unit tests, or a working service alone is not completion.

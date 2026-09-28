@@ -42,9 +42,20 @@ class GraphTests(unittest.TestCase):
                     if isinstance(value, list) and len(value) == 2 and isinstance(value[1], int):
                         self.assertIn(value[0], g)
 
+    def test_ref2v_wires_references_and_names_pictures(self):
+        g = graphs.h3_ref2v(["a.png", "b.png"], "p", 1, "x")
+        self.assertEqual(g["cond"]["inputs"]["ref_images.ref_image_1"], ["ref1", 0])
+        self.assertIn("ref2va", g["unet"]["inputs"]["unet_name"])
+        prompt = graphs.h3_ref2v_prompt([("Rafa.", [1, 2])], "s", "look", "shot", "sound")
+        self.assertIn("<Subject 1> is the person in <Picture 1> and <Picture 2>", prompt)
+        self.assertIn("retention_analysis:", prompt)
+        self.assertNotIn("subject_definitions", graphs.h3_ref2v_prompt([], "s", "l", "sh", "so"))
+
     def test_pilot_plan_references_are_consistent(self):
         with open(PLAN, encoding="utf-8") as fh:
             plan = json.load(fh)
+        ids = [shot["id"] for shot in plan["shots"]]
+        self.assertEqual(len(ids), len(set(ids)))
         for shot in plan["shots"]:
             self.assertIn(shot["location"], plan["locations"])
             for cid in shot["characters"]:
@@ -53,3 +64,4 @@ class GraphTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

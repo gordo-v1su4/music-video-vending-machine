@@ -162,6 +162,8 @@ class Run:
                           self.path("keyframes", f"{sid}.png"), seed)
 
     def clips(self):
+        if self.plan.get("clip_mode") == "ref2v":
+            return self.ref_clips()
         w, h = self.plan["frame_size"]
         frames = self.shot_frames()
         for shot, count in zip(self.plan["shots"], frames):
@@ -172,6 +174,43 @@ class Run:
                                   f"mvvm/{self.name}/clip-{sid}", w, h, count / timing.FPS + 0.5,
                                   steps=self.plan.get("clip_steps", 20))
             self.generate(f"clip:{sid}", graph, self.path("clips", f"{sid}.mp4"), seed)
+
+    def ref_clips(self):
+        """H3 reference-to-video straight from the character sheet panels (no composited keyframe)."""
+        w, h = self.plan["frame_size"]
+        extras = self.plan.get("extras", "")
+        for shot, count in zip(self.plan["shots"], self.shot_frames()):
+            sid = shot["id"]
+            seed = seed_for(self.name, "clip", sid)
+            refs, subjects = [], []
+            for cid in shot.get("characters", []):
+                char = self.plan["characters"][cid]
+                panels = char.get("ref_panels", ["portrait", "front"])
+                start = len(refs) + 1
+                refs += [self.upload(self.panel(cid, p)) for p in panels]
+                subjects.append((f"{char['name']}. {char['identity']} Outfit: {char['look']}",
+                                 list(range(start, len(refs) + 1))))
+            background = self.plan["locations"][shot["location"]]["prompt"]
+            summary = f"One uninterrupted music-video shot. {shot['summary']}"
+            description = (f"{shot['framing']} {shot['still']} {shot['motion']} {shot['camera']} "
+                           f"Background: {background} {extras if subjects else ''} "
+                           "There is no cut, zoom, scene change, text overlay or logo.")
+            hints = [""] + self.plan.get("variation_hints", [])
+            for take in range(shot.get("takes", self.plan.get("takes", 1))):
+                # Take 0 is the base; later takes re-roll the seed and nudge camera/motion wording.
+                prompt = graphs.h3_ref2v_prompt(
+                    subjects, summary, self.plan["style"], f"{description} {hints[take % len(hints)]}".strip(),
+                    self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
+                graph = graphs.h3_ref2v(refs, prompt, seed + take, f"mvvm/{self.name}/clip-{sid}-t{take}", w, h,
+                                        count / timing.FPS + 0.5, steps=self.plan.get("clip_steps", 20))
+                self.generate(self.take_key(sid, take), graph, self.take_path(sid, take), seed + take)
+
+    @staticmethod
+    def take_key(sid, take):
+        return f"clip:{sid}" if take == 0 else f"clip:{sid}:t{take}"
+
+    def take_path(self, sid, take):
+        return self.path("clips", f"{sid}.mp4" if take == 0 else f"{sid}-t{take}.mp4")
 
     def shot_frames(self):
         return timing.shot_frames([s["bars"] for s in self.plan["shots"]], self.plan["song"]["bpm"])
@@ -195,7 +234,7 @@ class Run:
         total = sum(frames) / timing.FPS
         inputs, filters = [], []
         for i, (shot, count) in enumerate(zip(self.plan["shots"], frames)):
-            clip = self.path("clips", f"{shot['id']}.mp4")
+            clip = self.take_path(shot["id"], shot.get("pick", 0))
             inputs += ["-i", clip]
             filters.append(
                 f"[{i}:v]fps={timing.FPS},scale={out_w}:{out_h}:force_original_aspect_ratio=increase,"
@@ -232,6 +271,7 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

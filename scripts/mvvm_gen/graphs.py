@@ -110,6 +110,27 @@ def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, st
     return g
 
 
+def h3_ref2v_prompt(subjects, summary, look, shot, sound):
+    """H3 reference prompt: subjects is [(description, picture_numbers)], pictures numbered from 1."""
+    defs, keep = [], []
+    for n, (desc, pics) in enumerate(subjects, start=1):
+        tags = " and ".join(f"<Picture {p}>" for p in pics)
+        defs.append(f"<Subject {n}> is the person in {tags}: {desc}")
+        defs.append(f"{tags} are canonical identity and wardrobe references for <Subject {n}> only; "
+                    "their grey studio background, lighting, pose and framing are not used.")
+        keep.append(f"<Subject {n}> (appears in [Shot 1]): fully_preserved - retain the exact face, hair, skin tone "
+                    "and every garment and accessory; no other person shares this face or outfit.")
+    parts = []
+    if defs:
+        parts += ["subject_definitions:", *defs, ""]
+    parts += ["summary:", f"[reference generation] {summary}", ""]
+    if keep:
+        parts += ["retention_analysis:", *keep, ""]
+    parts += ["detailed_description:", look, f"[Shot 1] {shot}", "",
+              "overall_soundscape:", sound, "", "non_diegetic_music:", "N/A"]
+    return "\n".join(parts)
+
+
 def h3_prompt(scene, motion, camera, sound="Muffled festival bass and crowd ambience. No dialogue or vocals."):
     """H3's documented multimodal prompt structure for a single continuous shot."""
     return (
