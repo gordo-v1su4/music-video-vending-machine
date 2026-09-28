@@ -218,10 +218,19 @@ class Run:
                            f"Background: {background} {crowd if subjects else ''} "
                            "There is no cut, zoom, scene change, text overlay or logo.")
             hints = [""] + self.plan.get("variation_hints", [])
-            for take in range(shot.get("takes", self.plan.get("takes", 1))):
-                # Take 0 is the base; later takes re-roll the seed and nudge camera/motion wording.
+            alts = shot.get("alts", [])
+            for take in range(max(shot.get("takes", self.plan.get("takes", 1)), 1 + len(alts))):
+                # Take 0 is the main setup; takes 1..n are the shot's alternate setups (own framing and
+                # camera, same beat); any further takes re-roll the seed with a variation hint.
+                if 1 <= take <= len(alts):
+                    alt = {**shot, **alts[take - 1]}
+                    body = (f"{alt['framing']} {alt['still']} {alt['motion']} {alt['camera']} "
+                            f"Background: {background} {crowd if subjects else ''} "
+                            "There is no cut, zoom, scene change, text overlay or logo.")
+                else:
+                    body = f"{description} {hints[take % len(hints)]}".strip()
                 prompt = graphs.h3_ref2v_prompt(
-                    subjects, summary, self.plan["style"], f"{description} {hints[take % len(hints)]}".strip(),
+                    subjects, summary, self.plan["style"], body,
                     self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
                 seconds = min(count / timing.FPS + 0.5, self.plan.get("max_clip_seconds", 12))
                 prefix = f"mvvm/{self.name}/clip-{sid}-t{take}"
