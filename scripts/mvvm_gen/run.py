@@ -74,14 +74,21 @@ class Run:
         print(f"[{key}] submitting ({digest})", flush=True)
         started = time.monotonic()
         prompt_id = comfy.submit(graph)
-        record = comfy.wait(prompt_id)
+        try:
+            record = comfy.wait(prompt_id, timeout=self.plan.get("job_timeout_s", 1200))
+        except comfy.LostPrompt as err:
+            # A backend crash/restart drops queued work; wait for SwarmUI to bring 7821 back, then resubmit once.
+            print(f"[{key}] {err}; resubmitting once", flush=True)
+            comfy.wait_for_backend()  # uploads are content-named in the persistent input dir
+            prompt_id = comfy.submit(graph)
+            record = comfy.wait(prompt_id, timeout=self.plan.get("job_timeout_s", 1200))
         files = comfy.output_files(record)
         if not files:
             raise comfy.ComfyError(f"{key}: prompt {prompt_id} completed without saved output")
         comfy.download(files[0], dest)
         elapsed = round(time.monotonic() - started, 1)
         models = sorted({v for n in graph.values() for k, v in n["inputs"].items()
-                         if k in ("unet_name", "clip_name", "vae_name") and isinstance(v, str)})
+                         if k in ("unet_name", "clip_name", "vae_name", "lora_name") and isinstance(v, str)})
         self.manifest[key] = {"prompt_id": prompt_id, "seed": seed, "graph": digest, "elapsed_s": elapsed,
                               "models": models, "gpu_mib_after": gpu_memory_mib(), "backend": comfy.BASE,
                               "output": dest, "status": "generated_unverified"}

@@ -23,6 +23,10 @@ class ComfyError(RuntimeError):
     pass
 
 
+class LostPrompt(ComfyError):
+    """The backend lost the prompt (crash/restart); safe to resubmit."""
+
+
 def _request(url, data=None, headers=None, timeout=60):
     req = urllib.request.Request(url, data=data, headers=headers or {})
     try:
@@ -86,9 +90,25 @@ def submit(graph):
 def wait(prompt_id, timeout=3600, poll=3.0):
     """Block until the prompt finishes; return its history record or raise."""
     deadline = time.monotonic() + timeout
+    refused = missing = 0
     while time.monotonic() < deadline:
-        hist = get_json(f"/history/{prompt_id}")
+        try:
+            hist = get_json(f"/history/{prompt_id}")
+            refused = 0
+        except (OSError, ComfyError) as err:
+            # The backend died (SwarmUI owns its restart); fail fast instead of waiting out the timeout.
+            refused += 1
+            if refused >= 10:
+                raise LostPrompt(f"backend {BASE} unreachable while waiting for {prompt_id}") from err
+            time.sleep(poll)
+            continue
         record = hist.get(prompt_id)
+        if not record:
+            queue = get_json("/queue")
+            queued = {item[1] for key in ("queue_running", "queue_pending") for item in queue.get(key, [])}
+            missing = 0 if prompt_id in queued else missing + 1
+            if missing >= 3:
+                raise LostPrompt(f"prompt {prompt_id} is neither queued nor in history (backend restarted?)")
         if record:
             status = record.get("status", {})
             if status.get("status_str") == "error" or (status.get("completed") is False and status.get("messages")):
@@ -120,3 +140,14 @@ def download(file_info, dest):
         fh.write(data)
     os.replace(tmp, dest)
     return dest
+
+
+def wait_for_backend(timeout=600, poll=5.0):
+    """Block until SwarmUI has the managed backend answering on BASE again."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            return get_json("/system_stats")
+        except (OSError, ComfyError):
+            time.sleep(poll)
+    raise ComfyError(f"backend {BASE} did not return within {timeout}s; restart SwarmUI with its launcher")
