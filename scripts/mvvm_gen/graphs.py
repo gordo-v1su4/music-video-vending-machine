@@ -119,14 +119,15 @@ def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, st
 
 def h3_ref2v_prompt(subjects, summary, look, shot, sound):
     """H3 reference prompt: subjects is [(description, picture_numbers)], pictures numbered from 1."""
+    # Follows the mustyrocks/PlagueKind six-section Ref2Vid contract: one line per subject, labels
+    # defined before use, style/lighting stated before the first [Shot N].
     defs, keep = [], []
     for n, (desc, pics) in enumerate(subjects, start=1):
         tags = " and ".join(f"<Picture {p}>" for p in pics)
-        defs.append(f"<Subject {n}> is the person in {tags}: {desc}")
-        defs.append(f"{tags} are canonical identity and wardrobe references for <Subject {n}> only; "
-                    "their grey studio background, lighting, pose and framing are not used.")
-        keep.append(f"<Subject {n}> (appears in [Shot 1]): fully_preserved - retain the exact face, hair, skin tone "
-                    "and every garment and accessory; no other person shares this face or outfit.")
+        defs.append(f"<Subject {n}> is the person in {tags} (identity and wardrobe only, not their grey studio "
+                    f"background, lighting or pose): {desc}")
+        keep.append(f"<Subject {n}> (appears in [Shot 1]): fully_preserved - exact face, hair, skin tone and every "
+                    "garment and accessory; no other person shares this face or outfit.")
     parts = []
     if defs:
         parts += ["subject_definitions:", *defs, ""]

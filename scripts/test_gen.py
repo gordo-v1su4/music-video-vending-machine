@@ -53,10 +53,11 @@ class GraphTests(unittest.TestCase):
 
     def test_pk_v11_modes_only_touch_his_bundle_and_switch(self):
         for workflow, images, switch in (("pk_v11_t2v", [], False), ("pk_v11_fl2v", ["a.png", "b.png"], False),
-                                         ("pk_v11_ref2v", ["a.png", "b.png", "c.png"], True)):
+                                         ("pk_v11_ref2v", ["a.png", "b.png", "c.png"], True),
+                                         ("pk_v11_fl2v_refs", ["f.png", None, "r1.png", "r2.png"], False)):
             g = pk_v11.build(workflow, "p", 7, "x", seconds=4.0, images=images)
             self.assertEqual(g[pk_v11.REF_SWITCH]["inputs"]["value"], switch)
-            self.assertEqual(len(g[pk_v11.BUNDLE]["inputs"]), len(images))
+            self.assertEqual(len(g[pk_v11.BUNDLE]["inputs"]), len([i for i in images if i]))
             self.assertEqual(g[pk_v11.TARGET]["inputs"]["width"], 1344)
             self.assertEqual(g["5310:5603"]["inputs"]["sparsity_ratio"], 0.7)  # his SLA setting, untouched
             self.assertEqual(g["5479:5471"]["inputs"]["steps"], 13)

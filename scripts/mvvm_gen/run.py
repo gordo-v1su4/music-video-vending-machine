@@ -228,7 +228,7 @@ class Run:
                 workflow = shot.get("workflow", self.plan.get("clip_workflow", "h3_ref2v"))
                 if workflow in pk_v11.WORKFLOWS:
                     graph = pk_v11.build(workflow, prompt, seed + take, prefix, w, h, seconds, images=refs,
-                                         unet=self.plan.get("clip_unet"))
+                                         unet=self.plan.get("clip_unet"), overrides=self.plan.get("clip_overrides"))
                 else:
                     graph = graphs.h3_ref2v(refs, prompt, seed + take, prefix, w, h, seconds,
                                             steps=self.plan.get("clip_steps", 20),
