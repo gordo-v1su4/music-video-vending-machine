@@ -23,6 +23,16 @@ STAGES = ("sheets", "keyframes", "clips", "check", "cut")
 SWARM_HISTORY = os.environ.get("MVVM_SWARM_HISTORY", r"D:\output\local\MVVM")
 
 
+def gpu_memory_mib():
+    """Whole-device used memory after a job (includes other processes); None if unavailable."""
+    try:
+        out = subprocess.run(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+                             capture_output=True, text=True, timeout=10).stdout
+        return int(out.split()[0])
+    except (OSError, ValueError, IndexError, subprocess.SubprocessError):
+        return None
+
+
 def seed_for(*parts):
     return int(hashlib.sha256("/".join(parts).encode()).hexdigest()[:12], 16)
 
@@ -70,7 +80,10 @@ class Run:
             raise comfy.ComfyError(f"{key}: prompt {prompt_id} completed without saved output")
         comfy.download(files[0], dest)
         elapsed = round(time.monotonic() - started, 1)
+        models = sorted({v for n in graph.values() for k, v in n["inputs"].items()
+                         if k in ("unet_name", "clip_name", "vae_name") and isinstance(v, str)})
         self.manifest[key] = {"prompt_id": prompt_id, "seed": seed, "graph": digest, "elapsed_s": elapsed,
+                              "models": models, "gpu_mib_after": gpu_memory_mib(), "backend": comfy.BASE,
                               "output": dest, "status": "generated_unverified"}
         self.save_manifest()
         mirror = os.path.join(SWARM_HISTORY, self.name, os.path.basename(os.path.dirname(dest)))
