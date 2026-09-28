@@ -29,8 +29,36 @@ _Avoid_: Finished video, rendered scene
 The user's acceptance of the timed preview, reference images, and estimated cost before automated video production begins.
 
 **Hybrid review**:
-Quality review combining visual observations with other review evidence to judge the music video's technical quality, musical alignment, and film flow.
-_Avoid_: Hybrid generation
+Review after the automatic musical edit that combines independent visual reviewers and deterministic evidence to judge story coherence, musical fit, continuity, and technical cut quality.
+_Avoid_: Generation self-check, final QC
+
+**Production self-check**:
+Automated per-shot checks during generation for prompt/reference fit, timing, and media health, with bounded repair before the edit is submitted for Review.
+_Avoid_: Review
+
+**Character**:
+A persistent visual identity whose recognizable features should remain stable across the video.
+_Avoid_: Look
+
+**Look**:
+An approved appearance variant of a Character, including a particular hair and costume combination, assigned to one or more scenes or sequences.
+_Avoid_: Character, outfit (when referring to the full approved variant)
+
+**Character sheet**:
+The approved visual reference set anchoring one Character Look for generation.
+_Avoid_: Character profile
+
+**Sequence**:
+A contiguous group of shots planned and reviewed together as part of the musical edit.
+_Avoid_: Shot
+
+**Repair chunk**:
+A candidate edit section proposed for revision, with neighboring footage and context handles included so the user can judge continuity.
+_Avoid_: Single-shot fix (unless only one shot is affected)
+
+**Performance footage**:
+Supplied footage of an artist performing or singing, treated as an intentional visual strand; word-level lip-sync is evaluated separately from story Review.
+_Avoid_: Generated singing
 
 **Director agent**:
 The collaborator that develops and operates the music-video project through concrete creative and production actions, with visual results the user can inspect and revise.
