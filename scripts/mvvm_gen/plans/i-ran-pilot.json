@@ -12,7 +12,6 @@
     1280,
     720
   ],
-  "clip_steps": 8,
   "style": "Realistic cinematic photography, anamorphic 35mm music-video look, moody but readable exposure: dark emerald and teal shadows, a warm orange firelight key on faces, thin green lasers in humid haze, rim light, sweat glistening, natural skin detail, correct human anatomy and natural proportions, subtle film grain, physically coherent motion.",
   "characters": {
     "rafa": {
@@ -477,11 +476,14 @@
     "Alternate take: slow motion, a tighter lens and a gentle rack focus, more intimate performance."
   ],
   "max_clip_seconds": 12,
-  "clip_loras": [
-    [
-      "mini\\minimax_h3_turbo_v4_step600_ema.safetensors",
-      1.0
-    ]
-  ],
-  "clip_sampler": "euler"
+  "clip_workflow": "pk_v11_ref2v",
+  "clip_unet": "video\\minimax_h3_hybrid_fl2va_ref2va_b25-49-int8.safetensors",
+  "clip_overrides": {
+    "5310:5603": {
+      "reference_protection": "Light",
+      "dense_last_steps": 1
+    }
+  },
+  "seeds_per_prompt": 2,
+  "job_timeout_s": 900
 }

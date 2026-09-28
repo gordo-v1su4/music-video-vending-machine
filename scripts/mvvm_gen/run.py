@@ -219,16 +219,18 @@ class Run:
                            "There is no cut, zoom, scene change, text overlay or logo.")
             hints = [""] + self.plan.get("variation_hints", [])
             alts = shot.get("alts", [])
-            for take in range(max(shot.get("takes", self.plan.get("takes", 1)), 1 + len(alts))):
-                # Take 0 is the main setup; takes 1..n are the shot's alternate setups (own framing and
-                # camera, same beat); any further takes re-roll the seed with a variation hint.
-                if 1 <= take <= len(alts):
-                    alt = {**shot, **alts[take - 1]}
+            seeds = self.plan.get("seeds_per_prompt", 1)
+            for take in range(max(shot.get("takes", self.plan.get("takes", 1)), (1 + len(alts)) * seeds)):
+                # Takes are grouped by prompt: setup 0 is the main one, setups 1..n are the shot's
+                # alternates (own framing and camera, same beat); each setup renders `seeds` seeds.
+                setup = take // seeds
+                if 1 <= setup <= len(alts):
+                    alt = {**shot, **alts[setup - 1]}
                     body = (f"{alt['framing']} {alt['still']} {alt['motion']} {alt['camera']} "
                             f"Background: {background} {crowd if subjects else ''} "
                             "There is no cut, zoom, scene change, text overlay or logo.")
                 else:
-                    body = f"{description} {hints[take % len(hints)]}".strip()
+                    body = f"{description} {hints[setup % len(hints)] if setup else ''}".strip()
                 prompt = graphs.h3_ref2v_prompt(
                     subjects, summary, self.plan["style"], body,
                     self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
