@@ -218,7 +218,9 @@ class Run:
                     self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
                 seconds = min(count / timing.FPS + 0.5, self.plan.get("max_clip_seconds", 12))
                 graph = graphs.h3_ref2v(refs, prompt, seed + take, f"mvvm/{self.name}/clip-{sid}-t{take}", w, h,
-                                        seconds, steps=self.plan.get("clip_steps", 20))
+                                        seconds, steps=self.plan.get("clip_steps", 20),
+                                        loras=[tuple(x) for x in self.plan.get("clip_loras", [])],
+                                        sampler=self.plan.get("clip_sampler", "res_multistep"))
                 self.generate(self.take_key(sid, take), graph, self.take_path(sid, take), seed + take)
 
     @staticmethod

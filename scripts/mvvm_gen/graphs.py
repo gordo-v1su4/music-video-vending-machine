@@ -80,17 +80,24 @@ def h3_i2v(first_frame, prompt, seed, prefix, width=1344, height=768, seconds=5.
     }
 
 
-def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, steps=20):
-    """MiniMax H3 reference-to-video: identity comes from sheet panels, no composited keyframe."""
+def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, steps=20, loras=(), sampler="res_multistep"):
+    """MiniMax H3 reference-to-video: identity comes from sheet panels, no composited keyframe.
+
+    `loras` is [(filename, strength)], e.g. a turbo LoRA with steps=4 or 8.
+    """
     cond = {"clip": ["clip", 0], "vae": ["vae", 0], "audio_vae": ["audio_vae", 0], "prompt": prompt,
             "width": snap32(width), "height": snap32(height), "length": h3_length(seconds), "ref_image_size": "match"}
-    g = {
-        "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors", "weight_dtype": "default"}},
-        "shift": {"class_type": "MiniMaxH3SigmaShift", "inputs": {"model": ["unet", 0], "shift_video": 12.0, "shift_audio": 3.0}},
+    g = {"unet": {"class_type": "UNETLoader", "inputs": {"unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors", "weight_dtype": "default"}}}
+    model = ["unet", 0]
+    for i, (name, strength) in enumerate(loras):
+        g[f"lora{i}"] = {"class_type": "LoraLoaderModelOnly", "inputs": {"model": model, "lora_name": name, "strength_model": strength}}
+        model = [f"lora{i}", 0]
+    g.update({
+        "shift": {"class_type": "MiniMaxH3SigmaShift", "inputs": {"model": model, "shift_video": 12.0, "shift_audio": 3.0}},
         "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": H3["clip"], "type": "minimax", "device": "default"}},
         "vae": {"class_type": "VAELoader", "inputs": {"vae_name": H3["vae"]}},
         "audio_vae": {"class_type": "VAELoader", "inputs": {"vae_name": H3["audio_vae"]}},
-    }
+    })
     for i, name in enumerate(refs):
         g[f"ref{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
         cond[f"ref_images.ref_image_{i}"] = [f"ref{i}", 0]
@@ -98,7 +105,7 @@ def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, st
         "cond": {"class_type": "MiniMaxH3ReferenceToVideo", "inputs": cond},
         "guider": {"class_type": "BasicGuider", "inputs": {"model": ["shift", 0], "conditioning": ["cond", 0]}},
         "noise": {"class_type": "RandomNoise", "inputs": {"noise_seed": seed}},
-        "sampler": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "res_multistep"}},
+        "sampler": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": sampler}},
         "sigmas": {"class_type": "BasicScheduler", "inputs": {"model": ["shift", 0], "scheduler": "simple", "steps": steps, "denoise": 1.0}},
         "sample": {"class_type": "SamplerCustomAdvanced", "inputs": {
             "noise": ["noise", 0], "guider": ["guider", 0], "sampler": ["sampler", 0], "sigmas": ["sigmas", 0], "latent_image": ["cond", 1]}},
