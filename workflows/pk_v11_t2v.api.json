@@ -44,7 +44,7 @@
   "5612": {
     "inputs": {
       "scale_mode": "Dimensions (W × H)",
-      "aspect_ratio": "4:3 (Standard)",
+      "aspect_ratio": "16:9 (Widescreen)",
       "long_side_target": 1280,
       "short_side_target": 768,
       "width": 1344,

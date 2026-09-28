@@ -36,7 +36,8 @@ def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, i
     g[SEED]["inputs"]["noise_seed"] = seed
     g[SAVE]["inputs"]["filename_prefix"] = prefix
     # His note: for generation from scratch set the Target Dimension node to explicit W x H.
-    g[TARGET]["inputs"].update({"scale_mode": "Dimensions (W × H)", "width": width, "height": height})
+    g[TARGET]["inputs"].update({"scale_mode": "Dimensions (W × H)", "aspect_ratio": "16:9 (Widescreen)",
+                               "width": width, "height": height})
     g[DURATION]["inputs"]["value"] = seconds
     g[COMBINED]["inputs"]["prompt"] = prompt
     if unet:
