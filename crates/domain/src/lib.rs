@@ -233,6 +233,7 @@ impl Project {
     pub fn approval_fingerprint(&self) -> String {
         let mut content = serde_json::json!({"master":self.master,"treatment":self.treatment,
             "sections":self.sections,"references":self.references,"breaks":self.breaks,"route":"local"});
+        // Characters, Looks and sequence assignments must join this fingerprint once modeled (R05, M5).
         // Preserve existing approvals for projects created before lyric context existed.
         if let Some(lyrics) = &self.lyrics {
             content["lyrics"] = serde_json::json!(lyrics);
@@ -366,7 +367,7 @@ impl Project {
                 )?;
                 require(
                     local_attempts_per_shot == 3,
-                    "The local allowance is one attempt plus two repairs.",
+                    "The local allowance is one attempt plus two replacements.",
                 )?;
                 self.production_approval = Some(Approval {
                     fingerprint: self.approval_fingerprint(),

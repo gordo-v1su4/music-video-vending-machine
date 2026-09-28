@@ -1055,12 +1055,11 @@
                 <h2>Generation is not connected yet</h2>
                 <p>
                   The local image and video workflows must pass a real
-                  generation check before this studio can submit production.
-                  Your approvals are saved; no generation has been submitted.
+                  generation check through SwarmUI before this studio can
+                  offer Generate. Your approvals are saved; no generation has
+                  been submitted.
                 </p>
-                <span class="tag"
-                  >Qwen and MiniMax H3 awaiting verification</span
-                >
+                <span class="tag">SwarmUI workflows awaiting verification</span>
               </div>
             </article>
             {#if project.shots.length}<h2>Shot coverage</h2>

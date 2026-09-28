@@ -1,6 +1,6 @@
 # Music Vending Machine — build checklist
 
-Updated September 26, 2026. This tracks the approved [product requirements](PRD.md) and [implementation plan](implementation-plan.md).
+Updated September 28, 2026. This tracks the approved [product requirements](PRD.md) and [implementation plan](implementation-plan.md).
 
 **Where we are:** the current 5:53 master is imported and analyzed. Revision 7 saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
 
@@ -56,27 +56,36 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 - [x] Provide reference intake and exact-versus-inspiration roles.
 - [x] Provide timed audio preview and insertion/cutout timing primitives.
 - [ ] Integrate the director to propose story parts grounded in the song and treatment.
-- [ ] Keep stable character/location identities and reference constraints.
+- [ ] Keep stable Character, location and visual-style anchors and reference constraints.
+- [ ] Approve each Character's Looks: every hair/costume combination gets its own Character sheet.
+- [ ] Assign an approved Look to every scene or sequence before generation, favoring fewer changes.
 - [ ] Show the whole song as timed story parts with stills or clearly marked placeholders.
-- [ ] Let the user revise and approve master, treatment, references, breaks, route, and attempt allowance.
-- [ ] Verify the complete-song preview before starting video production.
+- [ ] Let the user revise and approve master, treatment, references, Looks and their assignments, breaks, route, and attempt allowance; any change invalidates that approval.
+- [ ] Verify the complete-song preview against the production master before starting video production.
 
 ## 4. Generate and assemble video — service experiments only (M1, M3, M6)
 
-- [x] Generate and inspect one local Qwen still and one H3 clip outside the app.
-- [ ] Validate Qwen edit preservation; current experiment did not preserve the scene adequately.
+- [x] Generate and inspect exploratory stills and clips through standalone ComfyUI outside the app. These probes do not count as production workflows.
+- [ ] Validate candidate image and video workflows submitted through SwarmUI, with pinned model/workflow hashes and measured resources.
+- [ ] Validate image-edit preservation and Look identity; the exploratory edit did not preserve the scene adequately.
 - [ ] Connect dedicated Trigger jobs and the Windows GPU worker.
 - [ ] Implement leases, cancellation, recovery, provider receipts, and duplicate-submission protection.
+- [ ] Add a Generate action, separate from production approval, that starts one unattended run.
 - [ ] Generate from approved story parts with an initial attempt plus at most two replacements per shot.
-- [ ] Apply musical cut controls, protected sections, seeds, and pinned shots.
+- [ ] Run the production self-check on each shot: prompt/reference fit, assigned Look, timing, and media health.
+- [ ] Apply musical cut controls, protected sections, seeds, and pinned shots, then assemble the musical edit automatically.
 - [ ] Rank acceptable candidates and keep unresolved coverage visibly empty.
 - [ ] Integrate candidate comparison, Keep/Reject, and restoration without replacing the active cut automatically.
 
 ## 5. Review the moving result — unfinished (M7)
 
-- [ ] Run technical checks and directed temporal visual review on actual clips and transitions.
-- [ ] Record findings with artifact, time range, observation, uncertainty, and proposed action.
-- [ ] Verify bounded repairs, intentional creative choices, and exhausted-attempt behavior.
+- [ ] Compare candidate reviewer models on the same shared clips; Gemini Flash only under a separately approved quote.
+- [ ] Run multi-reviewer Review on the whole musical edit: story coherence, musical fit, continuity, Characters and Looks, cuts and timing, and technical errors.
+- [ ] Record findings with revision or artifact, time range, evidence, uncertainty, reviewer, and proposed action; mark reviewer disagreement.
+- [ ] Separate blocking findings (objective failures) from advisory story and style judgments.
+- [ ] Propose repairs scoped to a shot or a chunk with neighboring context; each approved repair gets a fresh attempt allowance.
+- [ ] Put an approved repair chunk in a new candidate revision, recheck it locally, re-review the full cut, then offer Keep.
+- [ ] Verify intentional creative choices, supplied performance footage (no lip-sync scoring in v1), and exhausted-repair behavior.
 
 ## 6. Export and editable archive — unfinished (M8)
 
