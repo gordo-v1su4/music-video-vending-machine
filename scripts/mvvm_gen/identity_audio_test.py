@@ -31,7 +31,8 @@ def stamp(s):
 
 def prompt_for(run, chunk):
     char = run.plan["characters"]["lune"]
-    subjects = [(f"{char['name']}. {char['identity']} Outfit: {char['look']}", [1, 2])]
+    # She is in shots 2-5 (shot 1 is the POV); retention and <Subject 1> tags follow that.
+    subjects = [(f"{char['identity']} Outfit: {char['look']}", [1, 2], run.full_name("lune"), [2, 3, 4, 5])]
     off = lambda ms: (ms - chunk["startMs"]) / 1000
     s = [off(x["startMs"]) for x in chunk["shots"]]
     hits = [off(x["ms"]) for x in chunk["impacts"]]
@@ -41,15 +42,15 @@ def prompt_for(run, chunk):
     body = (
         f"First-person POV sprinting through dense moonlit jungle palms at night, fronds whipping past the lens, heavy "
         f"realistic footfalls. At {stamp(hits[1])}, on the hit, a palm frond smacks across the lens.\n\n"
-        f"[Shot 2] At {stamp(s[1])}, HARD CUT on the beat. Lune runs straight toward the camera through the palms, "
-        f"silver halter top catching green laser light, real weight in every stride; the camera tracks backward at her "
+        f"[Shot 2] At {stamp(s[1])}, HARD CUT on the beat. <Subject 1> runs straight toward the camera through the "
+        f"palms, silver headwrap and silver halter top catching green laser light, real weight in every stride; the camera tracks backward at her "
         f"running speed. At {stamp(hits[3])}, on the accent, she snaps her head back over her shoulder in fear.\n\n"
-        f"[Shot 3] At {stamp(s[2])}, HARD CUT on the beat. Extreme close-up of her eyes, wide and wet with sweat, a "
-        f"green laser sweeping across her face.\n\n"
-        f"[Shot 4] At {stamp(s[3])}, HARD CUT on the beat. Low angle at ground level: her boots slam into wet roots, "
-        f"mud spraying toward the lens.\n\n"
-        f"[Shot 5] At {stamp(s[4])}, HARD CUT on the hit. The palms part and she bursts out onto a ridge above the "
-        f"festival crowd under a huge full moon; the camera surges forward past her shoulder into the lasers.\n\n"
+        f"[Shot 3] At {stamp(s[2])}, HARD CUT on the beat. Extreme close-up of <Subject 1>'s face and eyes, her silver "
+        f"headwrap across her forehead, eyes wide and wet with sweat, a green laser sweeping across her face.\n\n"
+        f"[Shot 4] At {stamp(s[3])}, HARD CUT on the beat. Low angle at ground level: <Subject 1>'s tan suede boots slam "
+        f"into wet roots, mud spraying toward the lens.\n\n"
+        f"[Shot 5] At {stamp(s[4])}, HARD CUT on the hit. The palms part and <Subject 1> bursts out onto a ridge above "
+        f"the festival crowd under a huge full moon; the camera surges forward past her shoulder into the lasers.\n\n"
         "Camera and transitions: unmistakable HARD CUTS exactly on the music's hits; no dissolves, morphs or split "
         "screens. Her face is identical to <Picture 1> and <Picture 2> in every shot.")
     return graphs.h3_ref2v_prompt(subjects, "A fast-cut chorus montage in five shots, from the jungle run to the festival "
@@ -76,7 +77,7 @@ def main(argv=None):
     print(f"chunk {chunk['index']} {stamp(start)} +{seconds:.2f}s planned cuts {planned}", flush=True)
     print("preflight:", comfy.preflight(), flush=True)
     prompt = prompt_for(run, chunk)
-    refs = [run.upload(run.panel("lune", p)) for p in ("anchor", "closeup")]
+    refs = [run.upload(run.named_panel("lune", p)) for p in ("anchor", "closeup")]
     song_file = run.plan["song"]["audio"]
     song = comfy.upload_image(song_file)
     identity = run.plan["characters"]["lune"]["identity_ref"]
@@ -84,7 +85,7 @@ def main(argv=None):
     base = seed_for(run.name, "audiotest", str(chunk["index"]))
     sla = {**run.plan.get("clip_overrides", {}).get(SLA, {}),
            "reference_protection": "Heavy Enforcement", "protect_audio": True, "dense_last_steps": 1, "dense_steps": "0-2"}
-    variants = [("v2", 0, sla), ("v2", 1, sla), ("v2dense", 1, {**sla, "sparsity_ratio": 0.0})]
+    variants = [("v3", 0, sla), ("v3", 1, sla)]  # v3: named refs, <Subject 1> in shots 2-5, retention on those shots, headwrap required
     results = []
     for name, k, overrides in variants:
         key = f"idtest:c{chunk['index']}:{name}:s{k}"

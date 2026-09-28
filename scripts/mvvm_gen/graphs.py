@@ -118,16 +118,28 @@ def h3_ref2v(refs, prompt, seed, prefix, width=1344, height=768, seconds=5.0, st
 
 
 def h3_ref2v_prompt(subjects, summary, look, shot, sound):
-    """H3 reference prompt: subjects is [(description, picture_numbers)], pictures numbered from 1."""
+    """H3 reference prompt. subjects: [(description, picture_numbers[, name[, shots]])], pictures numbered from 1.
+
+    name: the character's full name (first and last when they have both), which is also printed on their reference
+        pictures, so name and face travel together (user rule 2026-09-28).
+    shots: the [Shot N] numbers the subject appears in; the retention line must name those shots, not Shot 1 by
+        default (a multi-shot montage whose Shot 1 lacks the subject loses their face otherwise).
+    """
     # Follows the mustyrocks/PlagueKind six-section Ref2Vid contract: one line per subject, labels
     # defined before use, style/lighting stated before the first [Shot N].
     defs, keep = [], []
-    for n, (desc, pics) in enumerate(subjects, start=1):
+    for n, subject in enumerate(subjects, start=1):
+        desc, pics = subject[0], subject[1]
+        name = subject[2] if len(subject) > 2 else None
+        shots = subject[3] if len(subject) > 3 and subject[3] else [1]
         tags = " and ".join(f"<Picture {p}>" for p in pics)
-        defs.append(f"<Subject {n}> is the person in {tags} (identity and wardrobe only, not their grey studio "
-                    f"background, lighting or pose): {desc}")
-        keep.append(f"<Subject {n}> (appears in [Shot 1]): fully_preserved - exact face, hair, skin tone and every "
-                    "garment and accessory; no other person shares this face or outfit.")
+        who = (f"{name}, the person labeled \"{name.upper()}\" in {tags} (the label is for identification only; never "
+               f"render any text in the video)" if name else f"the person in {tags}")
+        defs.append(f"<Subject {n}> is {who} (identity and wardrobe only, not their grey studio background, lighting "
+                    f"or pose): {desc}")
+        where = ", ".join(f"[Shot {s}]" for s in shots)
+        keep.append(f"<Subject {n}> (appears in {where}): fully_preserved - exact face, hair, skin tone and every "
+                    "garment and accessory in every one of these shots; no other person shares this face or outfit.")
     parts = []
     if defs:
         parts += ["subject_definitions:", *defs, ""]

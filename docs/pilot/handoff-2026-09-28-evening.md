@@ -77,3 +77,11 @@ References: `seedance-reference-cuts.md` (target cut grammar), `story-v2-beats.m
 User check of the c25 renders (confirms the diagnosis): the headwrap drops out and the eyes close-up does not look
 like her. Plan `look` now requires the silver headwrap in every shot (fixed in the plan); the `<Subject 1>` tagging
 and retention-line fix in `graphs.h3_ref2v_prompt` / the chunk prompts are still to do.
+
+**Fixed after the user's check (commit below):** reference panels now carry her printed name (`Run.named_panel`,
+caption band "LUNE" under the picture); prompts introduce her as `<Subject 1> is Lune, the person labeled "LUNE" in
+<Picture 1> and <Picture 2>` (full first+last name when a character has both, plan `full_name`); the retention line
+lists the shots she is actually in (`h3_ref2v_prompt(subjects=[(desc, pics, name, shots)])`); every shot with her uses
+`<Subject 1>`; the headwrap is required. **First step for the next thread:** run
+`python -m scripts.mvvm_gen.identity_audio_test scripts/mvvm_gen/plans/i-ran-pilot.json` (variant v3, two seeds) and
+report the face scores; only continue to chunk renders at >= 0.45.

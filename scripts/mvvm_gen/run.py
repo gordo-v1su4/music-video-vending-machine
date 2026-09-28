@@ -115,6 +115,24 @@ class Run:
     def panel(self, cid, view):
         return self.path("sheets", cid, f"{view}.png")
 
+    def full_name(self, cid):
+        """First and last name when the character has both (plan `full_name`), else their one name."""
+        char = self.plan["characters"][cid]
+        return char.get("full_name") or char["name"]
+
+    def named_panel(self, cid, view):
+        """The sheet panel with the character's name printed in a caption band under it (user rule 2026-09-28):
+        references always carry the name the prompt uses. Rebuilt when the panel changes."""
+        src = self.panel(cid, view)
+        dest = self.path("sheets", cid, f"{view}-named.png")
+        if not os.path.exists(dest) or os.path.getmtime(dest) < os.path.getmtime(src):
+            label = re.sub(r"[^A-Z0-9 .-]", "", self.full_name(cid).upper())
+            font = "C\\:/Windows/Fonts/arialbd.ttf"  # explicit font file: fontconfig is not set up on this machine
+            vf = (f"pad=iw:ih+ih/9:0:0:color=white,drawtext=fontfile='{font}':text='{label}':fontcolor=black:"
+                  f"fontsize=h/16:x=(w-text_w)/2:y=h-h/10+(h/10-text_h)/2")
+            subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", src, "-vf", vf, dest], check=True)
+        return dest
+
     def sheets(self):
         """Build each sheet from separately rendered panels so every view gets full resolution.
 
@@ -221,9 +239,9 @@ class Run:
                 char = self.plan["characters"][cid]
                 panels = char.get("ref_panels", ["portrait", "front"])
                 start = len(refs) + 1
-                refs += [self.upload(self.panel(cid, p)) for p in panels]
-                subjects.append((f"{char['name']}. {char['identity']} Outfit: {char['look']}",
-                                 list(range(start, len(refs) + 1))))
+                refs += [self.upload(self.named_panel(cid, p)) for p in panels]
+                subjects.append((f"{char['identity']} Outfit: {char['look']}",
+                                 list(range(start, len(refs) + 1)), self.full_name(cid), [1]))
             location = self.plan["locations"][shot["location"]]
             background = location["prompt"]
             crowd = extras if location.get("crowd", True) else "No other people are anywhere in the shot."
