@@ -67,6 +67,10 @@
     "dark_jungle": {
       "prompt": "a pitch-dark night jungle of huge leaves, roots and hanging vines, lit only by distant green laser flashes and faint orange glow from the far-off rave through the trees, thin mist.",
       "crowd": false
+    },
+    "afterhours_lounge": {
+      "prompt": "a cramped smoky after-hours lounge tent in the festival city on a different night: murky amber and deep red practical lamps, low cushions, thick cigarette-like haze, muffled bass through canvas walls, a few blurred strangers slumped in the dark.",
+      "crowd": false
     }
   },
   "shots": [
@@ -284,10 +288,10 @@
       "characters": [
         "lune"
       ],
-      "summary": "Now: running through the dark toward where she last saw him, Lune trips and falls forward into the darkness; her fall becomes the next shot's leap.",
+      "summary": "Now: running through the dark toward where she last saw him, Lune trips and falls forward toward the lens; the fall match-cuts into another night.",
       "framing": "Medium shot, 35mm lens, deep shadows, low camera.",
       "still": "Lune sprints toward camera through the pitch-dark jungle, lit by distant laser flashes, then catches her foot on a root and falls forward toward the lens.",
-      "motion": "She pitches forward in slow motion, arms reaching out, falling toward the camera until her dark silhouette fills the frame.",
+      "motion": "She pitches forward, arms reaching out, falling toward the camera until her body fills the frame.",
       "camera": "Low backward tracking in front of her, stopping as she falls toward the lens.",
       "alts": [
         {
@@ -302,6 +306,29 @@
     },
     {
       "id": "s11",
+      "bars": 2,
+      "location": "afterhours_lounge",
+      "characters": [
+        "lune"
+      ],
+      "summary": "Another night: continuing her fall, Lune collapses into a stranger's arms, half-conscious, and mistakes him for Rafa.",
+      "framing": "Medium close-up, 50mm lens, shallow depth of field, murky amber and red light, soft drifting focus like her own blurred vision.",
+      "still": "Lune, barely conscious and swaying, falls forward into the arms of a man in the smoky lounge; he has dark curly hair and an olive shirt like Rafa, but his face is a stranger's. She smiles dreamily and touches his cheek as if he were Rafa.",
+      "motion": "Her eyes drift half shut; she smiles and strokes his face; he turns into the lamplight, clearly a stranger, and her smile slowly falls.",
+      "camera": "Handheld, drifting in and out of focus with her dazed state, a slow push toward her face.",
+      "alts": [
+        {
+          "framing": "Over her shoulder, 85mm lens, the stranger's face soft and unreadable in the haze.",
+          "camera": "Slow rack focus that finally reveals he is a stranger."
+        },
+        {
+          "framing": "Wide shot, 35mm lens: the two of them slumped together on low cushions in the red-lit lounge.",
+          "camera": "Slow lateral drift through the haze."
+        }
+      ]
+    },
+    {
+      "id": "s12",
       "bars": 4,
       "location": "cliff_moon",
       "characters": [
@@ -321,30 +348,6 @@
         {
           "framing": "Behind them on the cliff edge, 24mm lens, the lagoon far below.",
           "camera": "Following them to the edge and stopping as they leap."
-        }
-      ]
-    },
-    {
-      "id": "s12",
-      "bars": 2,
-      "location": "lagoon_underwater",
-      "characters": [
-        "lune",
-        "rafa"
-      ],
-      "summary": "Then: they plunge into the lagoon in an explosion of bubbles.",
-      "framing": "Underwater medium shot, 24mm lens, moonlight rays from the surface, teal water.",
-      "still": "Underwater, Lune and Rafa plunge into the dark lagoon side by side in an explosion of churning white bubbles, moonlight shafts from above.",
-      "motion": "In slow motion the bubbles burst around them, then they kick upward toward the light.",
-      "camera": "Underwater, drifting upward with them.",
-      "alts": [
-        {
-          "framing": "Underwater wide shot looking up at the bright surface, 20mm lens.",
-          "camera": "Locked-off as they crash in from above."
-        },
-        {
-          "framing": "Underwater close-up of their joined hands in the bubbles, 50mm lens.",
-          "camera": "Slow drift as their hands slip apart."
         }
       ]
     },
