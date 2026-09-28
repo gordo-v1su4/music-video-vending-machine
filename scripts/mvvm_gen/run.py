@@ -148,8 +148,10 @@ class Run:
             refs, names = [], []
             for cid in shot.get("characters", []):
                 # The close-up carries the face; the front panel carries the whole outfit.
-                refs += [self.upload(self.panel(cid, "portrait")), self.upload(self.panel(cid, "front"))]
-                names.append(f"<image{len(refs) - 1}> and <image{len(refs)}> show {self.plan['characters'][cid]['name']}")
+                panels = self.plan["characters"][cid].get("ref_panels", ["portrait", "front"])
+                refs += [self.upload(self.panel(cid, p)) for p in panels]
+                tags = " and ".join(f"<image{len(refs) - len(panels) + i + 1}>" for i in range(len(panels)))
+                names.append(f"{tags} show {self.plan['characters'][cid]['name']}")
             cast = ("; ".join(names) + " (keep exactly the same face, skin tone, hair and outfit). ") if names else ""
             background = self.plan["locations"][shot["location"]]["prompt"]
             prompt = (f"{cast}{shot['framing']} Shot: {shot['still']} Background: {background} "
@@ -230,6 +232,7 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
 
 
 

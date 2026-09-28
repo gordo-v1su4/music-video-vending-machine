@@ -19,7 +19,11 @@
       "name": "Rafa",
       "identity_ref": ".runtime/gen/refs/rafa-identity.png",
       "identity": "Keep exactly his face, bone structure, dark eyes, thick curly black hair, thin moustache and goatee, diamond stud earrings, warm olive-tan skin (the same tone on face, arms and legs) and lean athletic build.",
-      "look": "Earthy jungle-festival utility set: an unbuttoned short-sleeve camp shirt worn open over his bare chest with a black tactical nylon chest harness with grey buckles strapped over his bare torso, and matching relaxed knee-length cargo shorts with plain flat flap side pockets, both cut from the same washed olive-khaki cotton ripstop fabric; a faded grey paisley bandana knotted loosely around his neck; his thin gold chain with a small cross pendant plus a short cord necklace of dark wooden beads; stacked chunky silver chain bracelets on both wrists; and on his feet only, scuffed tan suede lace-up boots with grey socks."
+      "look": "Earthy jungle-festival utility set: an unbuttoned short-sleeve camp shirt worn open over his bare chest with a black tactical nylon chest harness with grey buckles strapped over his bare torso, and matching relaxed knee-length cargo shorts with plain flat flap side pockets, both cut from the same washed olive-khaki cotton ripstop fabric; a faded grey paisley bandana knotted loosely around his neck; his thin gold chain with a small cross pendant plus a short cord necklace of dark wooden beads; stacked chunky silver chain bracelets on both wrists; and on his feet only, scuffed tan suede lace-up boots with grey socks.",
+      "ref_panels": [
+        "front",
+        "side"
+      ]
     },
     "lune": {
       "name": "Lune",
