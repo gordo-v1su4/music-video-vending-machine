@@ -280,24 +280,23 @@
     {
       "id": "s10",
       "bars": 2,
-      "location": "cliff_top",
+      "location": "dark_jungle",
       "characters": [
-        "lune",
-        "rafa"
+        "lune"
       ],
-      "summary": "Then: running hand in hand toward the cliff edge above the moonlit lagoon.",
-      "framing": "Medium-wide shot from behind, 24mm lens, deep shadows, moonlit amber backlight.",
-      "still": "Silhouettes of Lune and Rafa running hand in hand through a curtain of hanging jungle roots toward a glowing cliff edge, moonlight blazing through the gaps.",
-      "motion": "They sprint toward the edge.",
-      "camera": "Fast low handheld tracking right behind their heels, roots whipping past the lens.",
+      "summary": "Now: running through the dark toward where she last saw him, Lune trips and falls forward into the darkness; her fall becomes the next shot's leap.",
+      "framing": "Medium shot, 35mm lens, deep shadows, low camera.",
+      "still": "Lune sprints toward camera through the pitch-dark jungle, lit by distant laser flashes, then catches her foot on a root and falls forward toward the lens.",
+      "motion": "She pitches forward in slow motion, arms reaching out, falling toward the camera until her dark silhouette fills the frame.",
+      "camera": "Low backward tracking in front of her, stopping as she falls toward the lens.",
       "alts": [
         {
-          "framing": "Front medium two-shot, 35mm lens, faces lit by the moon. Flashback grade: cooler moonlit blue-teal, dreamy haze, soft halation.",
-          "camera": "Backward tracking in front of them."
+          "framing": "Side profile, 50mm lens, low to the ground.",
+          "camera": "Lateral tracking with her run, holding as she falls out of frame."
         },
         {
-          "framing": "Wide side profile along the cliff top, 50mm lens, the moon ahead of them.",
-          "camera": "Lateral tracking at their speed."
+          "framing": "Close-up of her face, 85mm lens, as she falls.",
+          "camera": "Handheld, dropping with her fall."
         }
       ]
     },
@@ -356,19 +355,19 @@
       "characters": [
         "rafa"
       ],
-      "summary": "Now: Rafa runs out into the black jungle, searching in the wrong direction.",
+      "summary": "Now: Rafa runs through the dark jungle, looking back over his shoulder for her.",
       "framing": "Medium shot from the waist up, 35mm lens, deep shadows.",
-      "still": "Rafa runs out of the rave into the pitch-dark jungle, searching, pushing through huge leaves, lit only by distant laser flashes.",
-      "motion": "He runs deeper into the darkness, turning to look each way, heading the wrong way.",
+      "still": "Rafa runs through the pitch-dark jungle, pushing through huge leaves, looking back over his shoulder again and again, lit only by distant laser flashes.",
+      "motion": "He keeps running away from where she is, glancing back, then turns forward and runs on.",
       "camera": "Fast handheld tracking at running speed, leaves and branches whipping past the lens.",
       "alts": [
         {
-          "framing": "Wide shot, 24mm: his small silhouette running away from the glowing rave into the black jungle.",
-          "camera": "Locked-off as he runs away from camera."
+          "framing": "Front medium shot, 50mm lens, his face turned back over his shoulder.",
+          "camera": "Backward tracking in front of him."
         },
         {
-          "framing": "Close-up of his face as he runs, 85mm lens.",
-          "camera": "Handheld, running backward in front of him."
+          "framing": "Wide shot, 24mm: his small silhouette running away into the black jungle, looking back.",
+          "camera": "Locked-off as he runs away from camera."
         }
       ]
     },
@@ -379,19 +378,19 @@
       "characters": [
         "lune"
       ],
-      "summary": "Now: Lune runs through the dark jungle, stumbling, looking back.",
+      "summary": "Now: Lune picks herself up and runs toward him, toward the place he was; he is already gone.",
       "framing": "Medium shot, 35mm lens, deep shadows, only distant laser flashes.",
-      "still": "Lune runs through the pitch-dark jungle, stumbling over roots, lit only by flashes of distant green lasers, looking back over her shoulder.",
-      "motion": "She stumbles, catches herself and keeps running, looking back into the dark.",
-      "camera": "Fast handheld tracking at running speed, leaves and branches whipping past the lens.",
+      "still": "Lune scrambles up from the ground and runs toward camera through the dark jungle, calling out silently, lit by distant laser flashes, running toward where he was.",
+      "motion": "She runs hard toward camera, searching ahead; the path in front of her is empty.",
+      "camera": "Backward tracking in front of her at running speed, leaves whipping past the lens.",
       "alts": [
         {
-          "framing": "Wide shot from behind her, 24mm, the jungle swallowing her.",
+          "framing": "Over-the-shoulder from behind her, 35mm lens, the empty dark path ahead.",
           "camera": "Following behind at running speed."
         },
         {
-          "framing": "Low angle of her feet and legs racing over roots and leaves, 35mm lens.",
-          "camera": "Low fast tracking beside her feet."
+          "framing": "Close-up of her face as she runs, 85mm lens, hope turning to fear.",
+          "camera": "Handheld, running backward in front of her."
         }
       ]
     },
