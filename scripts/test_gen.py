@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 
-from mvvm_gen import graphs, timing
+from mvvm_gen import graphs, pk_v11, timing
 
 PLAN = os.path.join(os.path.dirname(__file__), "mvvm_gen", "plans", "i-ran-pilot.json")
 
@@ -50,6 +50,22 @@ class GraphTests(unittest.TestCase):
         self.assertIn("<Subject 1> is the person in <Picture 1> and <Picture 2>", prompt)
         self.assertIn("retention_analysis:", prompt)
         self.assertNotIn("subject_definitions", graphs.h3_ref2v_prompt([], "s", "l", "sh", "so"))
+
+    def test_pk_v11_modes_only_touch_his_bundle_and_switch(self):
+        for workflow, images, switch in (("pk_v11_t2v", [], False), ("pk_v11_fl2v", ["a.png", "b.png"], False),
+                                         ("pk_v11_ref2v", ["a.png", "b.png", "c.png"], True)):
+            g = pk_v11.build(workflow, "p", 7, "x", seconds=4.0, images=images)
+            self.assertEqual(g[pk_v11.REF_SWITCH]["inputs"]["value"], switch)
+            self.assertEqual(len(g[pk_v11.BUNDLE]["inputs"]), len(images))
+            self.assertEqual(g[pk_v11.TARGET]["inputs"]["width"], 1344)
+            self.assertEqual(g["5310:5603"]["inputs"]["sparsity_ratio"], 0.7)  # his SLA setting, untouched
+            self.assertEqual(g["5479:5471"]["inputs"]["steps"], 13)
+            for node in g.values():
+                for value in node["inputs"].values():
+                    if isinstance(value, list) and len(value) == 2 and isinstance(value[1], int):
+                        self.assertIn(value[0], g)
+        with self.assertRaises(ValueError):
+            pk_v11.build("pk_v11_fl2v", "p", 1, "x", images=["a", "b", "c"])
 
     def test_pilot_plan_references_are_consistent(self):
         with open(PLAN, encoding="utf-8") as fh:

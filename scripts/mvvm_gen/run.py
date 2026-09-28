@@ -17,7 +17,7 @@ import subprocess
 import sys
 import time
 
-from . import comfy, graphs, timing
+from . import comfy, graphs, pk_v11, timing
 
 STAGES = ("sheets", "keyframes", "clips", "check", "cut")
 SWARM_HISTORY = os.environ.get("MVVM_SWARM_HISTORY", r"D:\output\local\MVVM")
@@ -224,10 +224,16 @@ class Run:
                     subjects, summary, self.plan["style"], f"{description} {hints[take % len(hints)]}".strip(),
                     self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
                 seconds = min(count / timing.FPS + 0.5, self.plan.get("max_clip_seconds", 12))
-                graph = graphs.h3_ref2v(refs, prompt, seed + take, f"mvvm/{self.name}/clip-{sid}-t{take}", w, h,
-                                        seconds, steps=self.plan.get("clip_steps", 20),
-                                        loras=[tuple(x) for x in self.plan.get("clip_loras", [])],
-                                        sampler=self.plan.get("clip_sampler", "res_multistep"))
+                prefix = f"mvvm/{self.name}/clip-{sid}-t{take}"
+                workflow = shot.get("workflow", self.plan.get("clip_workflow", "h3_ref2v"))
+                if workflow in pk_v11.WORKFLOWS:
+                    graph = pk_v11.build(workflow, prompt, seed + take, prefix, w, h, seconds, images=refs,
+                                         unet=self.plan.get("clip_unet"))
+                else:
+                    graph = graphs.h3_ref2v(refs, prompt, seed + take, prefix, w, h, seconds,
+                                            steps=self.plan.get("clip_steps", 20),
+                                            loras=[tuple(x) for x in self.plan.get("clip_loras", [])],
+                                            sampler=self.plan.get("clip_sampler", "res_multistep"))
                 self.generate(self.take_key(sid, take), graph, self.take_path(sid, take), seed + take)
 
     @staticmethod
