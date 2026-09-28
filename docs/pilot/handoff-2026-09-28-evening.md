@@ -73,3 +73,7 @@ essential. Options to try next (measure each with face_check.py):
    Wan Dancer for danced phrases; Linear updates V1S-102/105/106/107/111; PR when the user asks.
 
 References: `seedance-reference-cuts.md` (target cut grammar), `story-v2-beats.md`, `multicut-reference-prompt.md`.
+
+User check of the c25 renders (confirms the diagnosis): the headwrap drops out and the eyes close-up does not look
+like her. Plan `look` now requires the silver headwrap in every shot (fixed in the plan); the `<Subject 1>` tagging
+and retention-line fix in `graphs.h3_ref2v_prompt` / the chunk prompts are still to do.
