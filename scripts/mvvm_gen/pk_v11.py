@@ -27,12 +27,15 @@ def template():
 
 
 def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, images=(), unet=None, overrides=None,
-          song_audio=None):
+          song_audio=None, reference_audio=None):
     """Return an API prompt for one of WORKFLOWS.
 
     song_audio: (uploaded audio name, start seconds) to condition on real music. The node pack's
         MiniMaxH3SongMaskedAVContext writes that slice into the target audio latent and protects it
         from denoising, so the picture is generated hearing the song (as in its "Music Video" example).
+    reference_audio: (local path, start s, duration s): the same slice as an H3 reference audio input
+        (<Audio 1> in the prompt), the ref2va path the model reads for rhythm and lip-sync. Loaded by
+        VHS_LoadAudio straight from the file on this machine, sliced inside ComfyUI.
 
     images: uploaded image names, one per bundle slot (None leaves a slot empty). fl2v takes
         [first] or [first, last]; ref2v takes up to 9 refs; fl2v_refs takes [first, last-or-None,
@@ -71,4 +74,9 @@ def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, i
             "latent": [COMBINED, 1], "audio_vae": g[COMBINED]["inputs"]["audio_vae"], "master_audio": ["mvvm_song", 0],
             "clip_start_seconds": float(start), "context_length": 0, "source_fps": 24.0, "crop": "disabled"}}
         g[SAMPLER]["inputs"]["latent_image"] = ["mvvm_song_ctx", 0]
+    if reference_audio:
+        path, start, duration = reference_audio
+        g["mvvm_ref_audio"] = {"class_type": "VHS_LoadAudio", "inputs": {
+            "audio_file": os.path.abspath(path), "seek_seconds": float(start), "duration": float(duration)}}
+        g[COMBINED]["inputs"]["audio"] = ["mvvm_ref_audio", 0]
     return g

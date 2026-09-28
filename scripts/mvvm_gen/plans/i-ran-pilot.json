@@ -481,6 +481,7 @@
   "clip_overrides": {
     "5310:5603": {
       "reference_protection": "Light",
+      "protect_audio": true,
       "dense_last_steps": 1
     }
   },

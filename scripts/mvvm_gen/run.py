@@ -207,8 +207,14 @@ class Run:
         """H3 reference-to-video straight from the character sheet panels (no composited keyframe)."""
         w, h = self.plan["frame_size"]
         extras = self.plan.get("extras", "")
+        # The song is on every clip (user decision 2026-09-28): each shot hears its own slice, as H3 reference audio
+        # and locked as the output audio. song_conditioning: false in the plan turns it off.
+        song_on = self.plan.get("song_conditioning", True)
+        song_name = comfy.upload_image(self.plan["song"]["audio"]) if song_on else None
+        at = self.passage_start() if song_on else 0.0
         for shot, count in zip(self.plan["shots"], self.shot_frames()):
             sid = shot["id"]
+            shot_start, at = at, at + count / timing.FPS
             seed = seed_for(self.name, "clip", sid)
             refs, subjects = [], []
             for cid in shot.get("characters", []):
@@ -247,7 +253,9 @@ class Run:
                 workflow = shot.get("workflow", self.plan.get("clip_workflow", "h3_ref2v"))
                 if workflow in pk_v11.WORKFLOWS:
                     graph = pk_v11.build(workflow, prompt, seed + take, prefix, w, h, seconds, images=refs,
-                                         unet=self.plan.get("clip_unet"), overrides=self.plan.get("clip_overrides"))
+                                         unet=self.plan.get("clip_unet"), overrides=self.plan.get("clip_overrides"),
+                                         song_audio=(song_name, shot_start) if song_on else None,
+                                         reference_audio=(self.plan["song"]["audio"], shot_start, seconds) if song_on else None)
                 else:
                     graph = graphs.h3_ref2v(refs, prompt, seed + take, prefix, w, h, seconds,
                                             steps=self.plan.get("clip_steps", 20),
