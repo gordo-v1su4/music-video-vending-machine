@@ -37,26 +37,22 @@ def get_json(route):
 
 
 def preflight():
-    """Confirm SwarmUI is live and locate its managed backend before submitting.
+    """Confirm SwarmUI and its managed backend on 7821 are live before submitting.
 
-    SwarmUI restarts its backend on the next free port (7821, then 7822, ...) after a
-    crash, so unless MVVM_COMFY_URL pins one, the first responding candidate is used.
+    Only 7821 is used. If SwarmUI has relaunched its backend elsewhere (it takes the next
+    free port, e.g. 7822, after a crash), stop and restart SwarmUI with its own launcher
+    (D:\\SwarmUI\\Windows_Start_SwarmUI.bat or the "SwarmUI Persistent" task); never follow it.
     """
-    global BASE
     try:
         _request(SWARM + "/", timeout=10)
     except Exception as err:  # noqa: BLE001 - report any reachability failure
         raise ComfyError(f"SwarmUI is not reachable at {SWARM}; start it with its own launcher") from err
-    candidates = [BASE] if "MVVM_COMFY_URL" in os.environ else [f"http://127.0.0.1:{p}" for p in (7821, 7822, 7823)]
-    for base in candidates:
-        try:
-            stats = json.loads(_request(base + "/system_stats", timeout=5))
-        except Exception:  # noqa: BLE001 - try the next candidate
-            continue
-        BASE = base
-        return {"backend": base, "comfyui": stats["system"]["comfyui_version"],
-                "devices": [d["name"] for d in stats.get("devices", [])]}
-    raise ComfyError(f"no Swarm-managed ComfyUI backend responded on {candidates}")
+    try:
+        stats = get_json("/system_stats")
+    except Exception as err:  # noqa: BLE001 - report any reachability failure
+        raise ComfyError(f"Swarm-managed ComfyUI is not on {BASE}; restart SwarmUI so its backend returns to 7821") from err
+    return {"backend": BASE, "comfyui": stats["system"]["comfyui_version"],
+            "devices": [d["name"] for d in stats.get("devices", [])]}
 
 
 def upload_image(path):
