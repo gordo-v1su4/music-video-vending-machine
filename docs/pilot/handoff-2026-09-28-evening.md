@@ -45,6 +45,15 @@ Heavy Enforcement, protect_audio, reference audio + lock, audio-driving prompt; 
 | v2 s1 | 0.17 | 0.04 / 0.48 / 0.30 / 0.22 |
 | v2dense s1 (sparsity 0) | 0.26 | 0.04 / 0.48 / 0.30 / 0.22 |
 
+**Likely root cause (prompt bug, fix first):** `graphs.h3_ref2v_prompt` always writes the retention line as
+`<Subject 1> (appears in [Shot 1]): fully_preserved ...`. True for the old one-shot clips; in the c25 montage Shot 1
+is the POV with no Lune, and she is in Shots 2-5, which the prompt never marks as preserved. The montage shots also
+say "Lune"/"her" instead of the `<Subject 1>` tag the H3 format uses in every shot (see
+`multicut-reference-prompt.md`). And the plan `look` now starts with wardrobe text saying the headwrap is optional
+while every reference picture has it. Fix: retention lists the shots she actually appears in; every shot with her
+uses `<Subject 1>`; keep the headwrap in text when the refs have it. Re-test with face_check.py (old one-shot clips
+scored 0.31-0.40; montage 0.11-0.26).
+
 Protection settings, better panels and dense attention do **not** fix identity: H3 ref2v does not hold Lune (old
 single-shot clips were only 0.31-0.40). This time later cuts landed 0.2-0.5 s after the prompt, so the splice step is
 essential. Options to try next (measure each with face_check.py):
