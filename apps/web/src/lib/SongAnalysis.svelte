@@ -5,6 +5,7 @@
   import { time } from './timing';
   import { sampledWaveform } from './waveform';
   import { studioClock } from './studio-clock.svelte';
+  import { buildCutMap, energyAt, type CutSource } from './cut-map';
 
   let { client, projectId, asset, source, lyrics = [], available, locked, hasSections, onUse, onError }: {
     client: StudioApi; projectId: string; asset: Asset; source?: string;
@@ -56,6 +57,25 @@
   const currentCue = $derived(result?.sections.findIndex(s => positionMs >= s.startMs && positionMs < s.endMs) ?? -1);
   const stage = $derived(({ queued: 'Waiting for analysis', submitting: 'Sending audio', running: 'Analyzing song', completed: 'Analysis ready', failed: 'Analysis failed', reconciliation_required: 'Analysis needs recovery' } as Record<string, string>)[job?.status ?? ''] ?? 'Song analysis');
   const uid = $props.id();
+
+  // Music-driven cut map (cut-map.ts): where the edit should cut, from onsets, energy jumps and sections.
+  let density = $state((() => { try { return Number(localStorage.getItem('mvvm.cutDensity')) || 0.45; } catch { return 0.45; } })());
+  function setDensity(value: number) {
+    density = value;
+    try { localStorage.setItem('mvvm.cutDensity', String(value)); } catch { /* storage unavailable */ }
+  }
+  const cutMap = $derived(result ? buildCutMap({
+    durationMs: result.durationMs,
+    sections: result.sections.map((s) => ({ startMs: s.startMs, endMs: s.endMs, label: s.originalLabel, energy: s.energy })),
+    onsetsMs: result.onsetsMs, beatsMs: result.beatsMs, energy: result.energy, density,
+  }) : null);
+  const cutColor: Record<CutSource, string> = { section: '#f4f4f5', onset: '#c4b5fd', energy: '#f0abfc', lyric: '#c4b5fd', split: '#71717a' };
+  const cutStats = $derived.by(() => {
+    if (!cutMap) return null;
+    const inView = cutMap.slots.filter((x) => x.startMs < viewStart + span && x.endMs > viewStart);
+    const avg = inView.reduce((sum, x) => sum + x.endMs - x.startMs, 0) / Math.max(1, inView.length);
+    return { total: cutMap.slots.length, inView: inView.length, avgS: avg / 1000 };
+  });
 
   // Zoomable song map: a window [viewStart, viewStart + span] over the song, in milliseconds.
   const MIN_SPAN_MS = 4000;
@@ -214,6 +234,16 @@
   {/if}
   {#if result}
     <p class="analysis-facts"><strong>{result.bpm.toFixed(2)} BPM measured</strong><span>{result.beatsMs.length} beats</span><span>{result.sections.length} musical sections</span><span>{time(result.durationMs)}</span></p>
+    {#if cutStats}
+      <div class="cut-controls">
+        <label for="cut-density-{uid}">Cut density <strong>{Math.round(density * 100)}%</strong></label>
+        <input id="cut-density-{uid}" class="playhead density" type="range" min="0.1" max="1" step="0.05" value={density}
+          style:--pct={`${((density - 0.1) / 0.9) * 100}%`}
+          aria-valuetext={`${Math.round(density * 100)} percent, ${cutStats.total} cuts`}
+          oninput={(e) => setDensity(Number(e.currentTarget.value))} />
+        <span class="cut-summary">{cutStats.total} shots across the song · {zoomed ? `${cutStats.inView} in view · ` : ''}average {cutStats.avgS.toFixed(1)} s</span>
+      </div>
+    {/if}
     <div class="map-tools">
       <span class="map-hint">{zoomed ? `Showing ${time(viewStart)}–${time(viewStart + span)}` : 'Whole song'} · Ctrl + scroll to zoom · drag to move · click to jump</span>
       <div class="map-buttons">
@@ -246,6 +276,10 @@
       {#each result.onsetsMs as onset,i(i)}<line x1={onset / result.durationMs * 1000} x2={onset / result.durationMs * 1000} y1="88" y2="93" stroke="#a1a1aa" stroke-opacity={zoomed ? 0.6 : 0.3} stroke-width="1" vector-effect="non-scaling-stroke"/>{/each}
       {#each lyrics as chunk,i(i)}<rect x={chunk.startMs / result.durationMs * 1000} width={Math.max(1,(chunk.endMs-chunk.startMs)/result.durationMs*1000)} y="4" height="6" fill="#c4b5fd" fill-opacity="0.7" />{/each}
       {#each result.beatsMs as beat, i (i)}<line x1={beat / result.durationMs * 1000} x2={beat / result.durationMs * 1000} y1="94" y2="100" stroke="#d4d4d8" stroke-opacity="0.55" stroke-width="1" vector-effect="non-scaling-stroke" />{/each}
+      {#if cutMap}
+        {#each cutMap.builds as build, i (i)}<polygon points="{build.startMs / result.durationMs * 1000},90 {build.endMs / result.durationMs * 1000},90 {build.endMs / result.durationMs * 1000},{90 - build.rise * 60}" fill="#f59e0b" fill-opacity="0.16" stroke="#f59e0b" stroke-opacity="0.5" stroke-width="1" vector-effect="non-scaling-stroke" />{/each}
+        {#each cutMap.cuts as cut, i (i)}<line x1={cut.ms / result.durationMs * 1000} x2={cut.ms / result.durationMs * 1000} y1={cut.source === 'section' ? 12 : 90} y2={cut.source === 'section' ? 92 : 88 - Math.min(1, energyAt(result.energy, cut.ms)) * 80} stroke={cutColor[cut.source]} stroke-opacity={cut.source === 'section' ? 0.55 : 0.45 + cut.score * 0.45} stroke-width="1" stroke-dasharray={cut.source === 'split' ? '3 3' : undefined} vector-effect="non-scaling-stroke" />{/each}
+      {/if}
       <line x1={positionMs/result.durationMs*1000} x2={positionMs/result.durationMs*1000} y1="0" y2="100" stroke="#e4e4e7" stroke-width="1" vector-effect="non-scaling-stroke"/>
     </svg>
     <div class="map-labels" aria-hidden="true">
@@ -254,7 +288,7 @@
     </div>
     <div class="time-axis"><span>{time(viewStart)}</span><span>Energy{waveform ? ' · waveform' : ''} · onsets · beats{lyrics.length ? ' · lyric phrases' : ''}</span><span>{time(viewStart + span)}</span></div>
     {#if waveformProblem}<p class="small-note">{waveformProblem}</p>{/if}
-    <div class="map-legend" aria-label="Section duration color legend"><span><i class="short"></i>Under 16s</span><span><i class="medium"></i>16–28s</span><span><i class="long"></i>28s and longer</span>{#if lyrics.length}<span><i class="lyrics"></i>Lyric phrase markers</span>{/if}</div>
+    <div class="map-legend" aria-label="Section duration color legend"><span><i class="short"></i>Under 16s</span><span><i class="medium"></i>16–28s</span><span><i class="long"></i>28s and longer</span>{#if lyrics.length}<span><i class="lyrics"></i>Lyric phrases</span>{/if}<span><i class="cut-onset"></i>Cut on an onset</span><span><i class="cut-energy"></i>Cut on an energy jump</span><span><i class="cut-section"></i>Cut at a section change</span><span><i class="build"></i>Build (speed-ramp candidate)</span><span><i class="tick-onset"></i>Onsets (grey row)</span><span><i class="tick-beat"></i>Beats (bottom row)</span></div>
     <div class="detected-sections" aria-label="Detected musical sections">
       {#each result.sections as section, i (`${section.startMs}:${section.endMs}`)}
         <button class="section-cue" class:current={currentCue === i} aria-current={currentCue === i ? 'true' : undefined} disabled={!studioClock.available} onclick={() => audition(section.startMs)} aria-label={`Play from ${section.originalLabel}, ${time(section.startMs)} to ${time(section.endMs)}`}>
@@ -279,6 +313,14 @@
   p { line-height: 1.6; }
   .source-name { overflow-wrap: anywhere; color: var(--muted); margin: 8px 0 20px; }
   .analysis-facts { justify-content: flex-start; column-gap: 22px; font-variant-numeric: tabular-nums; }
+  .cut-controls { display: grid; grid-template-columns: auto minmax(160px, 320px) 1fr; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .cut-controls label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .cut-controls label strong { color: #f4f4f5; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: 4px; }
+  .cut-controls .density { margin: 0; height: 24px; }
+  .cut-summary { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .build { background: rgb(245 158 11 / 45%); } .tick-onset { background: #a1a1aa; width: 2px !important; } .tick-beat { background: #d4d4d8; width: 2px !important; height: 6px !important; }
+  .cut-onset { background: #c4b5fd; width: 2px !important; } .cut-energy { background: #f0abfc; width: 2px !important; } .cut-section { background: #f4f4f5; width: 2px !important; }
+  @media (max-width: 700px) { .cut-controls { grid-template-columns: 1fr; } }
   .map-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
   .map-hint { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .map-buttons { display: flex; gap: 6px; }
