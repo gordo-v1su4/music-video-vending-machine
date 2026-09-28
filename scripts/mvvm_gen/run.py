@@ -300,6 +300,69 @@ class Run:
         flagged = {k: v.get("problems", v["status"]) for k, v in report.items() if v["status"] != "pass"}
         print(f"[check] {len(report) - len(flagged)}/{len(report)} pass; flagged: {flagged or 'none'}", flush=True)
 
+    def queued(self, stage):
+        """Run a stage by submitting every missing job to the backend queue at once, then collecting.
+
+        The whole batch is visible in the SwarmUI/ComfyUI queue and the GPU never idles between jobs.
+        Per-job GPU time comes from ComfyUI's own execution_start/execution_success timestamps.
+        """
+        jobs = []
+        real_generate = self.generate
+        self.generate = lambda key, graph, dest, seed: jobs.append((key, graph, dest, seed)) \
+            if not os.path.exists(dest) or key in self.force else None
+        try:
+            getattr(self, stage)()
+        finally:
+            self.generate = real_generate
+        started = time.time()
+        pending = {}
+        for key, graph, dest, seed in jobs:
+            pending[comfy.submit(graph)] = (key, graph, dest, seed, 0)
+        print(f"[queue] submitted {len(pending)} jobs to {comfy.BASE} at {time.strftime('%H:%M:%S')}", flush=True)
+        self.manifest.setdefault("runs", []).append({"stage": stage, "submitted": len(pending), "started": started})
+        self.save_manifest()
+        missing = {}
+        while pending:
+            queue = comfy.get_json("/queue")
+            live = {item[1] for k in ("queue_running", "queue_pending") for item in queue.get(k, [])}
+            for pid in list(pending):
+                key, graph, dest, seed, tries = pending[pid]
+                record = comfy.get_json(f"/history/{pid}").get(pid)
+                if record is None:
+                    missing[pid] = 0 if pid in live else missing.get(pid, 0) + 1
+                    if missing[pid] >= 3:  # lost in a backend restart: resubmit once
+                        del pending[pid]
+                        if tries < 1:
+                            comfy.wait_for_backend()
+                            pending[comfy.submit(graph)] = (key, graph, dest, seed, tries + 1)
+                            print(f"[{key}] lost by backend; resubmitted", flush=True)
+                        else:
+                            print(f"[{key}] lost twice; giving up", flush=True)
+                    continue
+                status = record.get("status", {})
+                if not status.get("completed") and status.get("status_str") != "error":
+                    continue
+                del pending[pid]
+                stamps = {m[0]: m[1].get("timestamp") for m in status.get("messages", []) if isinstance(m[1], dict)}
+                gpu_s = None
+                if stamps.get("execution_start") and (stamps.get("execution_success") or stamps.get("execution_error")):
+                    gpu_s = round(((stamps.get("execution_success") or stamps["execution_error"]) - stamps["execution_start"]) / 1000, 1)
+                files = comfy.output_files(record)
+                if status.get("status_str") == "error" or not files:
+                    print(f"[{key}] FAILED in backend", flush=True)
+                    self.manifest[key] = {"prompt_id": pid, "seed": seed, "status": "failed"}
+                else:
+                    comfy.download(files[0], dest)
+                    self.manifest[key] = {"prompt_id": pid, "seed": seed, "gpu_s": gpu_s, "backend": comfy.BASE,
+                                          "output": dest, "status": "generated_unverified"}
+                    print(f"[{key}] done, gpu {gpu_s}s -> {dest} ({len(pending)} left)", flush=True)
+                self.save_manifest()
+            time.sleep(5)
+        wall = round(time.time() - started, 1)
+        self.manifest["runs"][-1].update({"wall_s": wall})
+        self.save_manifest()
+        print(f"[queue] finished {stage}: wall {wall}s", flush=True)
+
     def shot_frames(self):
         return timing.shot_frames([s["bars"] for s in self.plan["shots"]], self.plan["song"]["bpm"])
 
@@ -347,6 +410,7 @@ def main(argv=None):
     parser.add_argument("stage", choices=(*STAGES, "all"))
     parser.add_argument("plan")
     parser.add_argument("--force", nargs="*", default=[], help="manifest keys to regenerate, e.g. keyframe:s03")
+    parser.add_argument("--queue", action="store_true", help="submit all jobs of a stage to the backend queue at once")
     args = parser.parse_args(argv)
     run = Run(args.plan, args.force)
     if args.stage not in ("cut", "check"):
@@ -356,7 +420,10 @@ def main(argv=None):
         stages = tuple(s for s in stages if s != "keyframes")  # Ref2V renders straight from the sheets.
     for stage in stages:
         print(f"== {stage}", flush=True)
-        getattr(run, stage)()
+        if args.queue and stage in ("sheets", "keyframes", "clips"):
+            run.queued(stage)
+        else:
+            getattr(run, stage)()
     return 0
 
 
