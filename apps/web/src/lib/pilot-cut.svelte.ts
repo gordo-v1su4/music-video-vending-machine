@@ -5,8 +5,9 @@ export type CutShot = {
   summary: string;
   startMs: number;
   endMs: number;
-  take: number;
-  pickNow: number;
+  /** null for shots from a spliced chunk render. */
+  take: number | null;
+  pickNow: number | null;
   source: string;
 };
 export type CutInfo =

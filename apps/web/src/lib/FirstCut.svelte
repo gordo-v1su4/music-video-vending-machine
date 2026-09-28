@@ -69,10 +69,10 @@
               class:current={i === current}
               class:changed={s.take !== s.pickNow}
               aria-current={i === current ? "true" : undefined}
-              title="{s.id.toUpperCase()} · take {s.take} · {time(s.startMs)} · {s.summary}"
+              title="{s.id.toUpperCase()}{s.take !== null ? ` · take ${s.take}` : ' · new render'} · {time(s.startMs)} · {s.summary}"
               onclick={() => studioClock.seek(s.startMs)}
             >
-              <strong>{s.id.toUpperCase()}</strong><span>t{s.take}</span>
+              <strong>{s.id.toUpperCase()}</strong>{#if s.take !== null}<span>t{s.take}</span>{:else}<span>new</span>{/if}
             </button>
           </li>
         {/each}
@@ -81,7 +81,7 @@
     </div>
     <p class="strip-caption">
       {#if current >= 0}
-        <strong>{cut.shots[current].id.toUpperCase()}</strong> · take {cut.shots[current].take} · {cut.shots[current].summary}
+        <strong>{cut.shots[current].id.toUpperCase()}</strong> · {cut.shots[current].take !== null ? `take ${cut.shots[current].take}` : 'new render'} · {cut.shots[current].summary}
       {:else}
         Click a shot to move the playhead there. The song plays from the transport below.
       {/if}

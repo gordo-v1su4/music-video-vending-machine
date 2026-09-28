@@ -76,7 +76,17 @@ class ReviewApp:
             return {"exists": False, "plan": run.name}
         start_ms = cut["start_s"] * 1000
         shots, at = [], start_ms
-        for shot, count in zip(run.plan["shots"], run.shot_frames()):
+        summaries = {s["id"]: s.get("summary", "") for s in run.plan["shots"]}
+        if cut.get("segments"):
+            # Assembled from picked takes plus spliced chunk renders: one entry per segment on the song.
+            for seg in cut["segments"]:
+                label = seg["label"]
+                sid, _, take = label.partition(" t")
+                pick = next((run.pick(s)[0] for s in run.plan["shots"] if s["id"] == sid), None)
+                shots.append({"id": sid, "summary": summaries.get(sid, f"New chunk render {sid}"), "startMs": seg["startMs"],
+                              "endMs": seg["endMs"], "take": int(take) if take else None,
+                              "pickNow": pick if take else None, "source": "reviewed" if take else "spliced"})
+        for shot, count in ([] if cut.get("segments") else zip(run.plan["shots"], run.shot_frames())):
             end = at + count * 1000 / timing.FPS
             take, source = run.pick(shot)
             shots.append({"id": shot["id"], "summary": shot.get("summary", ""), "startMs": round(at), "endMs": round(end),

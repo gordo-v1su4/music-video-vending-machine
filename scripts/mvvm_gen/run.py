@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -31,6 +32,13 @@ def gpu_memory_mib():
         return int(out.split()[0])
     except (OSError, ValueError, IndexError, subprocess.SubprocessError):
         return None
+
+
+def scene_cuts(path, threshold=0.12):
+    """Hard-cut times (s) in a render; 0.12 suits these dark night scenes (0.28 misses real cuts)."""
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-vf", f"select='gt(scene,{threshold})',showinfo",
+                          "-an", "-f", "null", "-"], capture_output=True, text=True).stderr
+    return [round(float(t), 3) for t in re.findall(r"pts_time:([0-9.]+)", out)]
 
 
 def seed_for(*parts):
@@ -418,22 +426,45 @@ class Run:
         return start
 
     def cut(self):
+        """Assemble the passage on the song: picked takes on the plan's bar grid, with any spliced chunk renders
+        (see splice) replacing their exact song span, partial overlaps trimmed."""
         out_w, out_h = self.plan.get("delivery_size", [1280, 720])
         frames = self.shot_frames()
         start = self.passage_start()
         total = sum(frames) / timing.FPS
-        inputs, filters, picks = [], [], {}
-        for i, (shot, count) in enumerate(zip(self.plan["shots"], frames)):
+        segments, picks, at = [], {}, start
+        for shot, count in zip(self.plan["shots"], frames):
             take, source = self.pick(shot)
             picks[shot["id"]] = take
             if source != "reviewed":
                 print(f"[cut] {shot['id']}: using {source}", flush=True)
-            clip = self.take_path(shot["id"], take)
-            inputs += ["-i", clip]
+            length = count / timing.FPS
+            segments.append({"song_s": at, "len_s": length, "path": self.take_path(shot["id"], take), "src_s": 0.0,
+                             "label": f"{shot['id']} t{take}"})
+            at += length
+        splices = sorted(self.manifest.get("splices", {}).values(), key=lambda x: x["song_s"])
+        for sp in splices:
+            a, b = sp["song_s"], sp["song_s"] + sp["len_s"]
+            kept = []
+            for seg in segments:
+                s0, s1 = seg["song_s"], seg["song_s"] + seg["len_s"]
+                if s1 <= a or s0 >= b:
+                    kept.append(seg)
+                    continue
+                if s0 < a:
+                    kept.append({**seg, "len_s": a - s0})
+                if s1 > b:
+                    kept.append({**seg, "song_s": b, "len_s": s1 - b, "src_s": seg["src_s"] + (b - s0)})
+            segments = kept + [{**x, "path": sp["render"]} for x in sp["shots"]]
+        segments = [x for x in sorted(segments, key=lambda x: x["song_s"]) if x["len_s"] > 1 / timing.FPS]
+        inputs, filters = [], []
+        for i, seg in enumerate(segments):
+            inputs += ["-i", seg["path"]]
             filters.append(
-                f"[{i}:v]fps={timing.FPS},scale={out_w}:{out_h}:force_original_aspect_ratio=increase,"
-                f"crop={out_w}:{out_h},setsar=1,trim=end_frame={count},setpts=PTS-STARTPTS[v{i}]")
-        n = len(frames)
+                f"[{i}:v]fps={timing.FPS},scale={out_w}:{out_h}:force_original_aspect_ratio=increase,crop={out_w}:{out_h},"
+                f"setsar=1,trim=start={seg['src_s']:.4f}:duration={min(seg['len_s'], seg.get('max_src_s', seg['len_s'])):.4f},setpts=PTS-STARTPTS,"
+                f"tpad=stop_mode=clone:stop_duration={seg['len_s']:.4f},trim=duration={seg['len_s']:.4f}[v{i}]")
+        n = len(segments)
         filters.append("".join(f"[v{i}]" for i in range(n)) + f"concat=n={n}:v=1:a=0[v]")
         inputs += ["-ss", f"{start:.4f}", "-t", f"{total:.4f}", "-i", self.plan["song"]["audio"]]
         dest = self.path("cut", f"{self.name}.mp4")
@@ -444,20 +475,60 @@ class Run:
                         "-shortest", "-movflags", "+faststart", dest], check=True)
         self.manifest["cut"] = {"output": dest, "start_s": round(start, 4), "duration_s": round(total, 4),
                                 "frames": sum(frames), "picks": picks, "built_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                                "segments": [{"startMs": round(x["song_s"] * 1000), "endMs": round((x["song_s"] + x["len_s"]) * 1000),
+                                              "label": x["label"]} for x in segments],
                                 "status": "assembled_unverified"}
         self.save_manifest()
-        print(f"[cut] {dest} ({total:.2f}s from {start:.2f}s)", flush=True)
+        print(f"[cut] {dest} ({total:.2f}s from {start:.2f}s, {n} segments, {len(splices)} spliced chunks)", flush=True)
 
+    def splice(self, chunk_index, render):
+        """Place one chunk render from the studio's edit plan into the cut: split it at its real hard cuts
+        (scene detection), trim each shot to its exact cut-map slot (from the start of the rendered shot,
+        freezing the last frame if a shot came out short), then rebuild the cut."""
+        with open(self.path("edit-plan.json"), encoding="utf-8") as fh:
+            chunk = next(c for c in json.load(fh)["chunks"] if c["index"] == chunk_index)
+        shots = chunk["shots"]
+        duration = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                         render], capture_output=True, text=True, check=True).stdout)
+        cuts = scene_cuts(render)
+        if len(cuts) != len(shots) - 1:
+            # Model gave a different shot count: fall back to the prompted positions.
+            print(f"[splice] chunk {chunk_index}: {len(cuts)} cuts detected for {len(shots)} shots; using planned offsets",
+                  flush=True)
+            cuts = [(x["startMs"] - chunk["startMs"]) / 1000 for x in shots[1:]]
+        bounds = [0.0, *cuts, duration]
+        placed = []
+        for i, shot in enumerate(shots):
+            # Skip 2 frames after a cut so a blended transition frame never leads the shot.
+            src = bounds[i] + (2 / timing.FPS if i else 0.0)
+            # Never read past this shot's own rendered cut (a flash of the next shot); hold its last frame instead.
+            max_src = max(1 / timing.FPS, bounds[i + 1] - src - 1 / timing.FPS)
+            placed.append({"song_s": shot["startMs"] / 1000, "len_s": shot["lengthMs"] / 1000, "src_s": round(src, 4),
+                           "max_src_s": round(max_src, 4),
+                           "label": f"c{chunk_index}.{i + 1}", "rendered_len_s": round(bounds[i + 1] - bounds[i], 3)})
+        self.manifest.setdefault("splices", {})[str(chunk_index)] = {
+            "render": render, "song_s": chunk["startMs"] / 1000, "len_s": (chunk["endMs"] - chunk["startMs"]) / 1000,
+            "detected_cuts": cuts, "shots": placed}
+        self.save_manifest()
+        print(f"[splice] chunk {chunk_index}: {len(shots)} shots from {render}", flush=True)
+        self.cut()
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("stage", choices=(*STAGES, "all"))
+    parser.add_argument("stage", choices=(*STAGES, "splice", "all"))
     parser.add_argument("plan")
     parser.add_argument("--force", nargs="*", default=[], help="manifest keys to regenerate, e.g. keyframe:s03")
     parser.add_argument("--queue", action="store_true", help="submit all jobs of a stage to the backend queue at once")
+    parser.add_argument("--chunk", type=int, help="splice: edit-plan chunk index")
+    parser.add_argument("--render", help="splice: path of the chunk render to place")
     args = parser.parse_args(argv)
     run = Run(args.plan, args.force)
-    if args.stage not in ("cut", "check", "review"):
+    if args.stage == "splice":
+        if args.chunk is None or not args.render:
+            parser.error("splice needs --chunk and --render")
+        run.splice(args.chunk, args.render)
+        return 0
+    if args.stage not in ("cut", "check", "review", "splice"):
         print("preflight:", comfy.preflight(), flush=True)
     stages = STAGES if args.stage == "all" else (args.stage,)
     if args.stage == "all" and run.plan.get("clip_mode") == "ref2v":

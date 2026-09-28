@@ -17,7 +17,7 @@ import sys
 from . import comfy, graphs, pk_v11
 from .run import Run, seed_for
 
-EARLY_CUT_S = 0.45  # H3 lands hard cuts ~0.3-0.7 s before the prompted time (docs/pilot/multicut-reference-prompt.md)
+EARLY_CUT_S = 0.0  # PK V11 lands hard cuts within ~0.1-0.2 s of the prompted time (c25 plain s0); the official graph cut 0.3-0.7 s early
 
 # Content for the chorus chunk at 3:49.3-3:58.1 (five slots: beat, beat, flash, flash, beat).
 CHORUS_SHOTS = [
@@ -57,7 +57,8 @@ def chunk_prompt(run, chunk, shots_text):
 
 
 def detected_cuts(path):
-    out = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-vf", "select='gt(scene,0.28)',showinfo",
+    # 0.12: these renders are dark; 0.28 missed every real cut in c25 plain s0.
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-vf", "select='gt(scene,0.12)',showinfo",
                           "-an", "-f", "null", "-"], capture_output=True, text=True).stderr
     return [round(float(t), 2) for t in re.findall(r"pts_time:([0-9.]+)", out)]
 
