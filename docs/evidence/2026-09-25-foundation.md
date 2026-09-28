@@ -4,7 +4,7 @@
 
 - Rust 1.95.0, Bun 1.3.14, FFmpeg/FFprobe available on Windows.
 - RTX 5090: 32607 MiB VRAM; 2952 MiB used during initial read-only inspection. No generation or memory benchmark run.
-- Created private GitHub repository gordo-v1su4/music-vending-machine; preserved research baseline on main. Implementation on feat/narrative-foundation.
+- Created private GitHub repository gordo-v1su4/music-vending-machine (since renamed to gordo-v1su4/music-video-vending-machine); preserved research baseline on main. Implementation on feat/narrative-foundation.
 - PostgreSQL 17.10 bookworm local development container bound only to 127.0.0.1:55439, dedicated mvm_dev/mvm_test databases. Image digest sha256:9b18b78397054fce88a9552e9d5a3ad5bb7fd258c5b3cc1c5028e46373d6ea8f. Docker Desktop was initially stopped and started for isolated development tests. No production database changed.
 - Rust domain tests cover optimistic conflicts, atomic invalid actions, bound approvals, complete-song gaps versus valid excerpts, candidate rejection, pin protection, revision activation, old-direction reapproval and audio insertion/cutout timing.
 - Explicit PostgreSQL integration test passed: concurrent same-revision updates produce one 200 and one 409; fresh connection/router reads committed state; generated one-second WAV inspected by FFprobe, uploaded and retrieved byte-identically; cross-project asset references return 404; forged duration returns 422; SSE resumes at next durable revision.

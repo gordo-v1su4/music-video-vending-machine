@@ -6,7 +6,7 @@ Inspected 2026-09-25 at `C:/Users/Gordo/Documents/Github/beatsmaxxer-pro`, branc
 
 This is the strongest inspected reference for the user's clarified editing model: **change musical behavior and compare variations, while the timeline explains the result**. The relevant building blocks already use Svelte and WebGPU. Prioritize its Timing workspace and musical trigger controls over copying conventional clip dragging as the primary workflow.
 
-Preserve music-vending-machine's independent story, character continuity, approvals, providers, and homelab production coordinator. Beatsmaxxer supplies a promising interactive timing/rendering layer, not the whole automated narrative generator.
+Preserve music-video-vending-machine's independent story, character continuity, approvals, providers, and homelab production coordinator. Beatsmaxxer supplies a promising interactive timing/rendering layer, not the whole automated narrative generator.
 
 ## What the operator changes, and what it changes
 
@@ -26,7 +26,7 @@ The timing compiler builds finite bursts on changes rather than rerolling each f
 
 - Arrangement owns song sections, bars, colors, per-section FX banks, and cut patterns. The defaults distinguish relatively sparse intro/verse patterns from denser choruses. [ArrangementSection](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/stores/arrangement.ts:27), lines 27–54; [default patterns](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/stores/arrangement.ts:69), lines 69–145.
 - Structure analysis maps labeled sections to bar-aligned spans and templates. [structure mapping](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/arrangement/seedFromStructure.ts:150), lines 150–177. This is a musical organization mechanism, not proof of narrative understanding.
-- Timeline UI can record program-lane occupancy and effect fires, quantize recorded triggers into cuts, arm playback of the arrangement, and recall section FX banks. [ArrangeView controls](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/components/ArrangeView.svelte:588), lines 588–615. It also supports manual cut painting; that need not become music-vending-machine's primary interface.
+- Timeline UI can record program-lane occupancy and effect fires, quantize recorded triggers into cuts, arm playback of the arrangement, and recall section FX banks. [ArrangeView controls](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/components/ArrangeView.svelte:588), lines 588–615. It also supports manual cut painting; that need not become music-video-vending-machine's primary interface.
 - The runtime resolves cuts against absolute song steps and the active loop region, then selects the target rack source. It does not repeat every cut as though all bars were one bar. [runSequencer](C:/Users/Gordo/Documents/Github/beatsmaxxer-pro/svelte/src/lib/runtime/AppLoop.ts:352), lines 352–394.
 
 For the new app, use the timeline to show sections, resulting shots/cuts, trigger events, variation changes, and QC flags. Put high-level musical choices and preview comparison ahead of manual placement.

@@ -23,7 +23,7 @@ Pick a dependency-ready bounded item, inspect source/instructions, implement, ru
 
 ## Required GitHub review gate
 
-User instruction, 2026-09-25: commit and push completed work through implementation PRs. Comment `@greptileai` to request review, fix actionable findings, push verified fixes and request review again. Merge automatically only after Greptile explicitly awards **5/5 for the current PR head**, required CI passes and review threads are addressed. Do not advance to the next implementation PR before this gate passes. No review, stale score, inaccessible reviewer, or lower score means blocked, never permission to bypass. Preserve independent preparatory work without representing a blocked milestone as accepted.
+User instruction, 2026-09-25, revised 2026-09-28: commit and push completed work through implementation PRs. Fix actionable review findings and push verified fixes. Merge only after required CI passes on the current PR head and review threads are addressed. Do not advance to the next implementation PR before this gate passes; red CI or an unaddressed finding means blocked, never permission to bypass. Greptile review is no longer part of the gate (2026-09-28). Preserve independent preparatory work without representing a blocked milestone as accepted.
 
 ## Verification matrix
 

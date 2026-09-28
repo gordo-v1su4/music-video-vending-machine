@@ -121,7 +121,7 @@ The dark zinc workspace is implemented. Browser testing must stay in the user's 
 
 ## Rules that stay in force
 
-- Every implementation PR needs exact-head Greptile 5/5, green CI, and addressed findings before merge and the next implementation PR.
+- Every implementation PR needs green CI on its current head and addressed findings before merge and the next implementation PR. Greptile is no longer used (2026-09-28).
 - Creative approval belongs to the user. Paid calls require a separately approved quote.
 - Update this checklist at each completed work item or changed blocker, and keep the current and next task at the top accurate.
 - Full completion means both the private pilot and the complete-song acceptance pass. A fixture, passing unit tests, or a working service alone is not completion.

@@ -4,7 +4,7 @@ Updated: 2026-09-28. Overall: in progress, not a release.
 
 | Milestone | Status | Evidence / next action |
 | --- | --- | --- |
-| M0 | Accepted | PRD/backlog, private GitHub baseline and CI; [PR #1](https://github.com/gordo-v1su4/music-vending-machine/pull/1) merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
+| M0 | Accepted | PRD/backlog, private GitHub baseline and CI; [PR #1](https://github.com/gordo-v1su4/music-video-vending-machine/pull/1) merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
 | M1 | Partial | [Live probes](evidence/2026-09-25-capabilities.md): private RustFS round-trip and Essentia fixture passed. Earlier standalone ComfyUI image/video probes are exploratory only and do not satisfy the gate; SwarmUI-submitted image/video workflows, reviewer-model comparison on shared clips (Gemini only under an approved quote), WebGPU/WebView2, Jcode and Ableton remain pending |
 | M2 | Partial | [Private storage/recovery](evidence/2026-09-25-private-recovery.md) passed; [operator session checks](evidence/2026-09-26-operator-sessions.md) passed; PR #4 merged at `c924765` after exact-head Greptile 5/5 on `d00c371`, green CI and resolved findings. Windows sharing and pending-upload backup acceptance remain |
 | M3 | Pending, dependency-ready | Trigger/worker integration not implemented; M1 and M2 have started, so this is the next unblocked item for M6 |
@@ -18,7 +18,7 @@ Current user-facing checklist: [PROGRESS.md](PROGRESS.md). Next priority is the 
 
 ## Known external constraints
 
-- [PR #2](https://github.com/gordo-v1su4/music-vending-machine/pull/2) merged at `e97ed9e` after Greptile 5/5 on `53ec733` and passing CI. Its generation probes do not enable unverified production capabilities.
+- [PR #2](https://github.com/gordo-v1su4/music-video-vending-machine/pull/2) merged at `e97ed9e` after Greptile 5/5 on `53ec733` and passing CI. Its generation probes do not enable unverified production capabilities.
 
 - Linear project P-V1S-5 mirrors the backlog as V1S-102 to V1S-112 with matching dependency relations. The repository remains authoritative.
 - No application existed at implementation start. Research and model-file inventories do not prove successful generation.
