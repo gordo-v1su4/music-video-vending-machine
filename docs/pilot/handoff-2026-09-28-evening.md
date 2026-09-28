@@ -37,9 +37,25 @@ Branch `feat/local-gen-pipeline`, pushed; no PR yet (user: not yet). Earlier not
 Heavy Enforcement, protect_audio, reference audio + lock, audio-driving prompt; variants v2 s0, v2 s1, v2dense s1
 (sparsity 0). Re-running the command skips renders that already exist and re-scores them.
 
+### Identity test result (finished after this note was first written)
+
+| Variant | Face median (same person >= 0.45) | Cut error vs prompt (s) |
+|---|---|---|
+| v2 s0 (anchor+closeup, Heavy, protect_audio, ref audio) | 0.24 | 0.09 / 0.31 / 0.28 / 0.31 |
+| v2 s1 | 0.17 | 0.04 / 0.48 / 0.30 / 0.22 |
+| v2dense s1 (sparsity 0) | 0.26 | 0.04 / 0.48 / 0.30 / 0.22 |
+
+Protection settings, better panels and dense attention do **not** fix identity: H3 ref2v does not hold Lune (old
+single-shot clips were only 0.31-0.40). This time later cuts landed 0.2-0.5 s after the prompt, so the splice step is
+essential. Options to try next (measure each with face_check.py):
+- first/last-frame route (`pk_v11_fl2v_refs`): a Qwen 2.1 keyframe with her face as the first frame of each shot;
+- a face-swap / face-restore pass on rendered takes against her identity image (common production fix);
+- shorter, image-first identity text (long text descriptions can outweigh the reference pictures);
+- fewer shots per generation when she is on screen (the montage format scored worst).
+
 ## Next
 
-1. Read the identity test results; pick refs + protection settings that score >= 0.45; make them the plan default.
+1. Fix identity first (options above); make the winner the plan default. Face score >= 0.45 before any batch.
 2. Write the v2 chunk prompts for the pilot window (chunks 23-30) from `story-v2-beats.md`: crowd reach and
    almost-touch on the 3:47 hit, rope-bridge dream, the fall (strobe on the beat), the stutter landing, the stranger
    reveal that reads, fire / escape; movement hits at impact times; ramp shots generated slow.
