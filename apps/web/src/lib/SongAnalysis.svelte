@@ -5,7 +5,8 @@
   import { time } from './timing';
   import { sampledWaveform } from './waveform';
   import { studioClock } from './studio-clock.svelte';
-  import { buildCutMap, energyAt, type CutSource } from './cut-map';
+  import { buildCutMap, energyAt, hitCurve, type CutSource } from './cut-map';
+  import { beatMsFrom, findImpacts, findStutters, planChunks } from './edit-plan';
 
   let { client, projectId, asset, source, lyrics = [], available, locked, hasSections, onUse, onError }: {
     client: StudioApi; projectId: string; asset: Asset; source?: string;
@@ -69,6 +70,33 @@
     sections: result.sections.map((s) => ({ startMs: s.startMs, endMs: s.endMs, label: s.originalLabel, energy: s.energy })),
     onsetsMs: result.onsetsMs, beatsMs: result.beatsMs, energy: result.energy, density,
   }) : null);
+  // Edit effects and prompt chunks on top of the cut map (edit-plan.ts).
+  const editPlan = $derived.by(() => {
+    if (!result || !cutMap) return null;
+    const beatMs = beatMsFrom(result.beatsMs, result.bpm);
+    const hits = hitCurve(result.energy);
+    const stutters = findStutters(result.onsetsMs, result.energy, beatMs, hits);
+    const impacts = findImpacts(result.energy, beatMs, hits);
+    return { beatMs, stutters, impacts, chunks: planChunks(cutMap, result.energy, { stutters, impacts }) };
+  });
+  let exportState = $state('');
+  async function exportEditPlan() {
+    if (!result || !editPlan) return;
+    exportState = 'Saving…';
+    try {
+      const res = await fetch('/pilot-api/edit-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: 1, createdAt: new Date().toISOString(), source: asset.name, bpm: result.bpm, beatMs: editPlan.beatMs,
+          durationMs: result.durationMs, density, chunks: editPlan.chunks, stutters: editPlan.stutters, impacts: editPlan.impacts,
+          builds: cutMap?.builds ?? [],
+        }),
+      });
+      const data = await res.json();
+      exportState = res.ok ? `Saved ${data.chunks} chunks for the pipeline` : (data.error ?? 'Could not save');
+    } catch { exportState = 'Review server not running'; }
+  }
   const cutColor: Record<CutSource, string> = { section: '#f4f4f5', onset: '#c4b5fd', energy: '#f0abfc', lyric: '#c4b5fd', split: '#71717a' };
   const cutStats = $derived.by(() => {
     if (!cutMap) return null;
@@ -241,7 +269,9 @@
           style:--pct={`${((density - 0.1) / 0.9) * 100}%`}
           aria-valuetext={`${Math.round(density * 100)} percent, ${cutStats.total} cuts`}
           oninput={(e) => setDensity(Number(e.currentTarget.value))} />
-        <span class="cut-summary">{cutStats.total} shots across the song · {zoomed ? `${cutStats.inView} in view · ` : ''}average {cutStats.avgS.toFixed(1)} s</span>
+        <span class="cut-summary">{cutStats.total} shots across the song · {zoomed ? `${cutStats.inView} in view · ` : ''}average {cutStats.avgS.toFixed(1)} s{#if editPlan}{' · '}{editPlan.chunks.length} prompt chunks · {editPlan.stutters.length} stutters · {editPlan.impacts.length} impacts · {cutMap?.builds.length ?? 0} builds{/if}</span>
+        <button class="quiet export" onclick={exportEditPlan} disabled={!editPlan}>Export edit plan</button>
+        {#if exportState}<span class="cut-summary" role="status">{exportState}</span>{/if}
       </div>
     {/if}
     <div class="map-tools">
@@ -276,6 +306,11 @@
       {#each result.onsetsMs as onset,i(i)}<line x1={onset / result.durationMs * 1000} x2={onset / result.durationMs * 1000} y1="88" y2="93" stroke="#a1a1aa" stroke-opacity={zoomed ? 0.6 : 0.3} stroke-width="1" vector-effect="non-scaling-stroke"/>{/each}
       {#each lyrics as chunk,i(i)}<rect x={chunk.startMs / result.durationMs * 1000} width={Math.max(1,(chunk.endMs-chunk.startMs)/result.durationMs*1000)} y="4" height="6" fill="#c4b5fd" fill-opacity="0.7" />{/each}
       {#each result.beatsMs as beat, i (i)}<line x1={beat / result.durationMs * 1000} x2={beat / result.durationMs * 1000} y1="94" y2="100" stroke="#d4d4d8" stroke-opacity="0.55" stroke-width="1" vector-effect="non-scaling-stroke" />{/each}
+      {#if editPlan}
+        {#each editPlan.chunks as chunk, i (chunk.index)}<rect x={chunk.startMs / result.durationMs * 1000} y="0" width={(chunk.endMs - chunk.startMs) / result.durationMs * 1000} height="3.5" fill={i % 2 ? '#a78bfa' : '#6366f1'} fill-opacity="0.75" />{/each}
+        {#each editPlan.impacts as impact, i (i)}<line x1={impact.ms / result.durationMs * 1000} x2={impact.ms / result.durationMs * 1000} y1="5" y2="10" stroke="#fafafa" stroke-opacity="0.85" stroke-width="1.5" vector-effect="non-scaling-stroke" />{/each}
+        {#each editPlan.stutters as stutter, i (i)}{#each stutter.onsetsMs as ms, j (j)}<line x1={ms / result.durationMs * 1000} x2={ms / result.durationMs * 1000} y1="11" y2="19" stroke="#a6cbbb" stroke-width="1.5" vector-effect="non-scaling-stroke" />{/each}{/each}
+      {/if}
       {#if cutMap}
         {#each cutMap.builds as build, i (i)}<polygon points="{build.startMs / result.durationMs * 1000},90 {build.endMs / result.durationMs * 1000},90 {build.endMs / result.durationMs * 1000},{90 - build.rise * 60}" fill="#f59e0b" fill-opacity="0.16" stroke="#f59e0b" stroke-opacity="0.5" stroke-width="1" vector-effect="non-scaling-stroke" />{/each}
         {#each cutMap.cuts as cut, i (i)}<line x1={cut.ms / result.durationMs * 1000} x2={cut.ms / result.durationMs * 1000} y1={cut.source === 'section' ? 12 : 90} y2={cut.source === 'section' ? 92 : 88 - Math.min(1, energyAt(result.energy, cut.ms)) * 80} stroke={cutColor[cut.source]} stroke-opacity={cut.source === 'section' ? 0.55 : 0.45 + cut.score * 0.45} stroke-width="1" stroke-dasharray={cut.source === 'split' ? '3 3' : undefined} vector-effect="non-scaling-stroke" />{/each}
@@ -288,7 +323,7 @@
     </div>
     <div class="time-axis"><span>{time(viewStart)}</span><span>Energy{waveform ? ' · waveform' : ''} · onsets · beats{lyrics.length ? ' · lyric phrases' : ''}</span><span>{time(viewStart + span)}</span></div>
     {#if waveformProblem}<p class="small-note">{waveformProblem}</p>{/if}
-    <div class="map-legend" aria-label="Section duration color legend"><span><i class="short"></i>Under 16s</span><span><i class="medium"></i>16–28s</span><span><i class="long"></i>28s and longer</span>{#if lyrics.length}<span><i class="lyrics"></i>Lyric phrases</span>{/if}<span><i class="cut-onset"></i>Cut on an onset</span><span><i class="cut-energy"></i>Cut on an energy jump</span><span><i class="cut-section"></i>Cut at a section change</span><span><i class="build"></i>Build (speed-ramp candidate)</span><span><i class="tick-onset"></i>Onsets (grey row)</span><span><i class="tick-beat"></i>Beats (bottom row)</span></div>
+    <div class="map-legend" aria-label="Section duration color legend"><span><i class="short"></i>Under 16s</span><span><i class="medium"></i>16–28s</span><span><i class="long"></i>28s and longer</span>{#if lyrics.length}<span><i class="lyrics"></i>Lyric phrases</span>{/if}<span><i class="cut-onset"></i>Cut on an onset</span><span><i class="cut-energy"></i>Cut on an energy jump</span><span><i class="cut-section"></i>Cut at a section change</span><span><i class="build"></i>Build (speed-ramp candidate)</span><span><i class="chunk-band"></i>Prompt chunk (one generation)</span><span><i class="stutter-mark"></i>Stutter (roll / triplet)</span><span><i class="impact-mark"></i>Impact (flash / pulse)</span><span><i class="tick-onset"></i>Onsets (grey row)</span><span><i class="tick-beat"></i>Beats (bottom row)</span></div>
     <div class="detected-sections" aria-label="Detected musical sections">
       {#each result.sections as section, i (`${section.startMs}:${section.endMs}`)}
         <button class="section-cue" class:current={currentCue === i} aria-current={currentCue === i ? 'true' : undefined} disabled={!studioClock.available} onclick={() => audition(section.startMs)} aria-label={`Play from ${section.originalLabel}, ${time(section.startMs)} to ${time(section.endMs)}`}>
@@ -313,14 +348,16 @@
   p { line-height: 1.6; }
   .source-name { overflow-wrap: anywhere; color: var(--muted); margin: 8px 0 20px; }
   .analysis-facts { justify-content: flex-start; column-gap: 22px; font-variant-numeric: tabular-nums; }
-  .cut-controls { display: grid; grid-template-columns: auto minmax(160px, 320px) 1fr; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .cut-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; }
+  .cut-controls .density { width: min(320px, 100%); }
   .cut-controls label { font-size: 12px; color: var(--muted); white-space: nowrap; }
   .cut-controls label strong { color: #f4f4f5; font-weight: 600; font-variant-numeric: tabular-nums; margin-left: 4px; }
   .cut-controls .density { margin: 0; height: 24px; }
   .cut-summary { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chunk-band { background: linear-gradient(90deg, #6366f1 50%, #a78bfa 50%); height: 4px !important; } .stutter-mark { background: #a6cbbb; width: 2px !important; } .impact-mark { background: #fafafa; width: 2px !important; height: 6px !important; }
+  .cut-controls .export { padding: 6px 10px; }
   .build { background: rgb(245 158 11 / 45%); } .tick-onset { background: #a1a1aa; width: 2px !important; } .tick-beat { background: #d4d4d8; width: 2px !important; height: 6px !important; }
   .cut-onset { background: #c4b5fd; width: 2px !important; } .cut-energy { background: #f0abfc; width: 2px !important; } .cut-section { background: #f4f4f5; width: 2px !important; }
-  @media (max-width: 700px) { .cut-controls { grid-template-columns: 1fr; } }
   .map-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
   .map-hint { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .map-buttons { display: flex; gap: 6px; }

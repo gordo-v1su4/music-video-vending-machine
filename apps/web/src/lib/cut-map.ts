@@ -99,7 +99,7 @@ export function hitCurve(energy: EnergyCurve): Float32Array {
   return rise;
 }
 
-function hitNear(hits: Float32Array, energy: EnergyCurve, ms: number, windowMs = 50) {
+export function hitNear(hits: Float32Array, energy: EnergyCurve, ms: number, windowMs = 50) {
   const a = index(energy, ms - windowMs), b = index(energy, ms + windowMs);
   let best = 0;
   for (let i = a; i <= b; i++) best = Math.max(best, hits[i]);

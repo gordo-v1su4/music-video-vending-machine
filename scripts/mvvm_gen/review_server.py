@@ -21,6 +21,7 @@ from .run import Run
 
 PORT = 5197
 MAX_BODY = 64 * 1024
+MAX_PLAN_BODY = 8 * 1024 * 1024
 
 
 class ReviewApp:
@@ -85,6 +86,19 @@ class ReviewApp:
                 "songStartMs": round(start_ms), "durationMs": round(cut["duration_s"] * 1000),
                 "builtAt": cut.get("built_at"), "shots": shots,
                 "stale": any(s["take"] != s["pickNow"] for s in shots)}
+
+    def save_edit_plan(self, body):
+        """The studio's music-driven edit plan (chunks, stutters, impacts, builds) for prompt writing."""
+        if not isinstance(body.get("chunks"), list) or not body["chunks"]:
+            raise ValueError("edit plan has no chunks")
+        run = self.run()
+        path = run.path("edit-plan.json")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with self.lock:
+            with open(path + ".part", "w", encoding="utf-8") as fh:
+                json.dump(body, fh, indent=1)
+            os.replace(path + ".part", path)
+        return {"saved": path, "chunks": len(body["chunks"])}
 
     def build_cut(self):
         with self.lock:
@@ -154,6 +168,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path == "/pilot-api/edit-plan":
+            length = int(self.headers.get("Content-Length") or 0)
+            if length > MAX_PLAN_BODY:
+                return self.send_json(413, {"error": "edit plan too large"})
+            try:
+                return self.send_json(200, self.app.save_edit_plan(json.loads(self.rfile.read(length) or b"{}")))
+            except (ValueError, TypeError) as exc:
+                return self.send_json(400, {"error": str(exc)})
         if self.path == "/pilot-api/cut/build":
             try:
                 return self.send_json(200, self.app.build_cut())
