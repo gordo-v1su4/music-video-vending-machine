@@ -19,7 +19,7 @@ import time
 
 from . import comfy, graphs, pk_v11, timing
 
-STAGES = ("sheets", "keyframes", "clips", "check", "cut")
+STAGES = ("sheets", "keyframes", "clips", "check", "review", "cut")
 SWARM_HISTORY = os.environ.get("MVVM_SWARM_HISTORY", r"D:\output\local\MVVM")
 
 
@@ -300,6 +300,32 @@ class Run:
         flagged = {k: v.get("problems", v["status"]) for k, v in report.items() if v["status"] != "pass"}
         print(f"[check] {len(report) - len(flagged)}/{len(report)} pass; flagged: {flagged or 'none'}", flush=True)
 
+    def review(self):
+        """One contact sheet per shot: every rendered take, three frames each, for choosing `pick`."""
+        seeds = self.plan.get("seeds_per_prompt", 1)
+        out_dir = self.path("review")
+        os.makedirs(out_dir, exist_ok=True)
+        for shot, count in zip(self.plan["shots"], self.shot_frames()):
+            sid = shot["id"]
+            n = (1 + len(shot.get("alts", []))) * seeds
+            rows = []
+            for take in range(n):
+                clip = self.take_path(sid, take)
+                if not os.path.exists(clip):
+                    continue
+                row = os.path.join(out_dir, f"{sid}-t{take}.png")
+                picks = "+".join(f"eq(n\\,{int(count * f)})" for f in (0.1, 0.5, 0.9))
+                subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", clip, "-vf",
+                                f"select='{picks}',scale=320:-2,tile=3x1", "-frames:v", "1", row], check=True)
+                rows.append(row)
+            if rows:
+                args = [a for r in rows for a in ("-i", r)]
+                sheet = os.path.join(out_dir, f"{sid}.jpg")
+                subprocess.run(["ffmpeg", "-y", "-v", "error", *args, "-filter_complex",
+                                "".join(f"[{i}:v]" for i in range(len(rows))) + f"vstack=inputs={len(rows)}", sheet], check=True)
+                print(f"[review] {sid}: {len(rows)}/{n} takes -> {sheet} (rows top to bottom: take 0..{n - 1}; "
+                      f"setup = take // {seeds}, seed = take % {seeds})", flush=True)
+
     def queued(self, stage):
         """Run a stage by submitting every missing job to the backend queue at once, then collecting.
 
@@ -413,7 +439,7 @@ def main(argv=None):
     parser.add_argument("--queue", action="store_true", help="submit all jobs of a stage to the backend queue at once")
     args = parser.parse_args(argv)
     run = Run(args.plan, args.force)
-    if args.stage not in ("cut", "check"):
+    if args.stage not in ("cut", "check", "review"):
         print("preflight:", comfy.preflight(), flush=True)
     stages = STAGES if args.stage == "all" else (args.stage,)
     if args.stage == "all" and run.plan.get("clip_mode") == "ref2v":
