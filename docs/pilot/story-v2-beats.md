@@ -10,7 +10,7 @@ shot slots, impacts, stutters and builds are from the song analysis, not hand ti
 | Chunk | Song | Music | Beat |
 |---|---|---|---|
 | 23 | 3:32-3:40 | break, quiet | Lune alone in the crowd, still, searching; held close-up where the longing reads. One flash insert of Rafa (memory). |
-| 24 | 3:40-3:49 | break -> chorus, impact 3:47.1 | She glimpses Rafa across the crowd, reaches toward camera ("wait... let me through"). Speed ramp up; on the 3:47 hit the crowd swallows her: fast push-in / whip. |
+| 24 | 3:40-3:49 | break -> chorus, impact 3:47.1 | She glimpses Rafa across the crowd, reaches toward camera ("wait... let me through"). Speed ramp up; on the 3:47 hit the crowd swallows her with a **dolly zoom** (Vertigo / Jaws effect: camera pulls back while the lens zooms in, so she holds her size while the crowd behind her stretches and warps), then a fast whip as she's pulled under. |
 | 25 | 3:49-3:58 | chorus, hits | Jungle run montage: POV through palms -> her running looking back -> flash eyes -> flash boots in mud -> bursting onto the festival ridge under the moon. (Plain-vs-song A/B test chunk.) |
 | 26 | 3:58-4:06 | chorus, build from 4:05.5 | Dream: the rope bridge. They kiss on the edge under the moon; the bridge sways into slow motion; flash inserts of her foot slipping as the build starts. |
 | 27 | 4:06-4:14 | inst, impact on every beat | The fall: freefall through mist and lasers, strobe-cut on every beat (flash/pulse), her face between terror and bliss. |
