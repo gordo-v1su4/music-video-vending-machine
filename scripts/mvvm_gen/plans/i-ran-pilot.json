@@ -37,19 +37,32 @@
       "prompt": "a packed night-time jungle rave rendered as soft out-of-focus bokeh behind the subject: blurred silhouetted dancers, glowing teal stage lights, green laser haze and warm bulb strings through palm fronds."
     },
     "lagoon_edge": {
-      "prompt": "the dark edge of a jungle lagoon, softly defocused, orange fire reflections rippling on black water, big leaves in the near foreground, pale moonlit mist far behind."
+      "prompt": "the dark edge of a jungle lagoon, softly defocused, orange fire reflections rippling on black water, big leaves in the near foreground, pale moonlit mist far behind.",
+      "crowd": false
     },
     "jungle_trail": {
-      "prompt": "a moonlit jungle trail between giant leaves and hanging vines, silver-blue moonlight shafts through mist, softly defocused."
+      "prompt": "a moonlit jungle trail between giant leaves and hanging vines, silver-blue moonlight shafts through mist, softly defocused.",
+      "crowd": false
     },
     "rope_bridge": {
-      "prompt": "a swaying wooden rope bridge over dark jungle lined with small torches, the glowing futuristic festival city and a huge full moon far behind, softly defocused."
+      "prompt": "a swaying wooden rope bridge over dark jungle lined with small torches, the glowing futuristic festival city and a huge full moon far behind, softly defocused.",
+      "crowd": false
     },
     "cliff_top": {
-      "prompt": "a rocky jungle clifftop high above a moonlit lagoon, a huge full moon in drifting mist, the glowing festival city far off, softly defocused."
+      "prompt": "a rocky jungle clifftop high above a moonlit lagoon, a huge full moon in drifting mist, the glowing festival city far off, softly defocused.",
+      "crowd": false
     },
     "lagoon_underwater": {
-      "prompt": "deep teal water under the lagoon surface, shafts of moonlight, rising silver bubbles, floating leaves."
+      "prompt": "deep teal water under the lagoon surface, shafts of moonlight, rising silver bubbles, floating leaves.",
+      "crowd": false
+    },
+    "cliff_moon": {
+      "prompt": "a dark jungle cliff edge in silhouette on the right, an enormous warm amber full moon filling the night sky behind, thin mist below.",
+      "crowd": false
+    },
+    "lagoon_moon": {
+      "prompt": "calm dark lagoon water at night, an enormous warm amber full moon low on the horizon behind, its golden reflection rippling on the water, dark jungle silhouettes at the edges.",
+      "crowd": false
     }
   },
   "shots": [
@@ -72,10 +85,10 @@
         "lune"
       ],
       "summary": "Present day: Lune is lost in the song in the middle of the crowd.",
-      "framing": "Eye-level medium close-up from the chest up, 85mm lens, shallow depth of field, other ravers soft on both sides.",
+      "framing": "Eye-level medium close-up from the chest up, 85mm lens, shallow depth of field, other ravers soft on both sides. Tight framing: the face fills the upper third of the frame, cropped at the chest.",
       "still": "Lune sings along with her eyes closed, face lifted, a warm orange firelight key on her face and teal laser spill on her shoulder.",
       "motion": "She sways, mouths the words, and slowly turns her head to her left.",
-      "camera": "Handheld drift toward her.",
+      "camera": "Fast handheld 180-degree orbit around her, ravers sliding past in the foreground.",
       "takes": 2
     },
     {
@@ -86,7 +99,7 @@
         "lune"
       ],
       "summary": "Flashback: the same head turn, now in the moonlit jungle, laughing.",
-      "framing": "Eye-level medium close-up, 85mm lens, shallow depth of field. Flashback grade: cooler moonlit blue-teal, dreamy haze, soft halation.",
+      "framing": "Eye-level medium close-up, 85mm lens, shallow depth of field. Flashback grade: cooler moonlit blue-teal, dreamy haze, soft halation. Tight framing: the face fills the upper third of the frame, cropped at the chest.",
       "still": "Lune, hair swinging, turns her head to her left and breaks into a laugh, looking back over her shoulder at someone chasing her.",
       "motion": "She completes the turn, laughs, and starts to run out of frame left.",
       "camera": "Handheld, follows her turn."
@@ -102,7 +115,7 @@
       "framing": "Medium shot from the waist up, 50mm lens, moonlit blue-teal flashback grade, motion blur in the background.",
       "still": "Rafa runs toward camera through big leaves, grinning, his bandana and open shirt flying.",
       "motion": "He runs toward camera and pushes a large leaf aside that sweeps across the lens.",
-      "camera": "Backward tracking shot in front of him."
+      "camera": "Low fast backward tracking shot, leaves whipping past the lens."
     },
     {
       "id": "s05",
@@ -118,19 +131,6 @@
       "camera": "Very slow push-in."
     },
     {
-      "id": "s06",
-      "bars": 2,
-      "location": "canopy_floor",
-      "characters": [
-        "lune"
-      ],
-      "summary": "Present day: she slips through the dancers looking for him.",
-      "framing": "Medium shot over her shoulder from behind, 85mm lens, shallow depth of field.",
-      "still": "Lune threads between dancing ravers, glancing back over her shoulder, lasers overhead.",
-      "motion": "She weaves forward through the crowd and glances back once.",
-      "camera": "Follows behind her at shoulder height."
-    },
-    {
       "id": "s07",
       "bars": 2,
       "location": "rope_bridge",
@@ -142,7 +142,7 @@
       "framing": "Medium two-shot from behind, 35mm lens, moonlit blue-teal flashback grade with warm torch points.",
       "still": "Lune pulls Rafa by the hand across a swaying rope bridge toward the glowing festival city, both laughing.",
       "motion": "They run away from camera; she looks back at him.",
-      "camera": "Handheld tracking behind them.",
+      "camera": "Drone-like sweep from low behind them rising up over the bridge ropes.",
       "takes": 2
     },
     {
@@ -153,7 +153,7 @@
         "rafa"
       ],
       "summary": "Flashback: Rafa, breathless, looks at her with wonder.",
-      "framing": "Medium close-up, 85mm lens, flashback grade, torch bokeh.",
+      "framing": "Medium close-up, 85mm lens, flashback grade, torch bokeh. Tight framing: the face fills the upper third of the frame, cropped at the chest.",
       "still": "Rafa catches his breath on the bridge, hair damp, looking at her just off camera with a soft smile.",
       "motion": "He exhales, laughs, and reaches his hand toward the camera.",
       "camera": "Slow orbit to the right."
@@ -166,10 +166,10 @@
         "lune"
       ],
       "summary": "Present day: an outstretched hand from the crowd; Lune reaches back into nothing.",
-      "framing": "Medium close-up, 85mm lens, shallow depth of field.",
+      "framing": "Medium close-up, 85mm lens, shallow depth of field. Tight framing: the face fills the upper third of the frame, cropped at the chest.",
       "still": "Lune reaches her hand out into the crowd, fingers open, eyes wet, green laser light across her.",
       "motion": "Her hand closes on empty air and slowly falls.",
-      "camera": "Handheld, gentle drift."
+      "camera": "Push-in with a rack focus from her reaching hand to her face."
     },
     {
       "id": "s10",
@@ -180,25 +180,25 @@
         "rafa"
       ],
       "summary": "Flashback: running hand in hand toward the cliff edge above the moonlit lagoon.",
-      "framing": "Medium two-shot from behind, 35mm lens, moonlit blue-teal flashback grade.",
-      "still": "Lune and Rafa sprint hand in hand across a rocky jungle clifftop toward the edge, the moonlit lagoon far below, her hair streaming.",
+      "framing": "Medium-wide shot from behind, 24mm lens, deep shadows, moonlit amber backlight.",
+      "still": "Silhouettes of Lune and Rafa running hand in hand from behind through a curtain of hanging jungle roots and vines toward a glowing cliff edge, moonlight blazing through the gaps.",
       "motion": "They run flat out toward the edge and push off together.",
-      "camera": "Handheld tracking behind them at running speed.",
+      "camera": "Fast low handheld tracking shot right behind their heels, the roots whipping past the lens.",
       "takes": 2
     },
     {
       "id": "s11",
-      "bars": 2,
-      "location": "cliff_top",
+      "bars": 4,
+      "location": "cliff_moon",
       "characters": [
         "lune",
         "rafa"
       ],
-      "summary": "Flashback: they leap off the cliff, silhouetted against the full moon.",
-      "framing": "Wide low-angle shot, 24mm lens, the huge full moon behind them, blue-teal flashback grade.",
-      "still": "Lune and Rafa leap off the cliff edge hand in hand, bodies arched mid-air, silhouetted against the moon and mist.",
-      "motion": "They fly outward and begin to fall toward the water below.",
-      "camera": "Low angle, slight upward tilt following the leap.",
+      "summary": "Flashback, slow motion: they leap off the cliff hand in hand across a giant full moon.",
+      "framing": "Wide side-profile shot, 135mm telephoto compression: a giant amber full moon fills most of the frame behind the cliff edge on the right.",
+      "still": "Lune and Rafa, pure black silhouettes in side profile, leap off the jungle cliff edge hand in hand, legs mid-stride, arms outstretched, crossing the face of the enormous glowing moon.",
+      "motion": "In graceful slow motion they sail across the moon and begin to arc downward.",
+      "camera": "Locked-off telephoto with a slow drift to follow the arc.",
       "takes": 2
     },
     {
@@ -211,9 +211,9 @@
       ],
       "summary": "Flashback: they plunge into the lagoon in an explosion of bubbles.",
       "framing": "Underwater medium shot, 24mm lens, moonlight rays from the surface, teal water.",
-      "still": "Lune and Rafa plunge into the dark lagoon still holding hands, an explosion of silver bubbles around them, moonlight shafts from above.",
-      "motion": "They sink through the bubbles, then kick and rise toward the light.",
-      "camera": "Underwater, slowly drifting upward with them.",
+      "still": "Underwater, Lune and Rafa plunge into the dark lagoon side by side in an explosion of churning white bubbles, moonlight shafts from the surface above.",
+      "motion": "In slow motion the bubbles burst around them, then they kick upward toward the light.",
+      "camera": "Underwater, drifting upward with them through the bubbles.",
       "takes": 2
     },
     {
@@ -240,7 +240,7 @@
       "framing": "Medium shot from the waist up, 85mm lens, shallow depth of field.",
       "still": "Rafa pushes giant leaves aside and steps onto the lagoon edge, orange glow on his face.",
       "motion": "He steps forward and stops, eyes locked on her.",
-      "camera": "Static, then a slight push."
+      "camera": "Low-angle push-in as he steps through, leaves sweeping across the lens."
     },
     {
       "id": "s15",
@@ -254,21 +254,21 @@
       "framing": "Intimate close two-shot, 85mm lens, background melted into bokeh.",
       "still": "Lune rests her hand on Rafa's chest as they sway together, foreheads nearly touching, teal and orange light mixing on their faces.",
       "motion": "They sway to the beat; she laughs softly.",
-      "camera": "Handheld, slow circling."
+      "camera": "Handheld 360-degree orbit around the couple, firelight flaring through."
     },
     {
       "id": "s16",
-      "bars": 2,
-      "location": "lagoon_edge",
+      "bars": 4,
+      "location": "lagoon_moon",
       "characters": [
         "lune",
         "rafa"
       ],
-      "summary": "The kiss.",
-      "framing": "Intimate close-up of the kiss, 100mm lens, dark leaves soft in the foreground.",
-      "still": "Rafa and Lune kiss, framed by dark palm leaves, warm orange rim light, drifting mist.",
-      "motion": "They kiss slowly while the leaves sway in front of them.",
-      "camera": "Very slow push through the leaves.",
+      "summary": "They surface and kiss waist-deep in the lagoon before the giant moon.",
+      "framing": "Medium two-shot at water level, 135mm telephoto, the giant amber full moon filling the background, its reflection rippling on the water.",
+      "still": "Lune and Rafa, wet hair slicked back, hold each other waist-deep in the dark water and kiss, silhouetted against the enormous glowing moon.",
+      "motion": "Slow motion: they pull close and kiss, water dripping, ripples spreading.",
+      "camera": "Slow push-in at water level, a gentle rack focus onto their faces.",
       "takes": 2
     }
   ],
@@ -300,7 +300,8 @@
   "soundscape": "Muffled heavy festival bass, crowd cheering, humid jungle night ambience, no dialogue.",
   "takes": 1,
   "variation_hints": [
-    "Alternate take: the camera moves the opposite way and the action is a beat faster.",
-    "Alternate take: a slightly tighter framing and a slower, more intimate performance."
-  ]
+    "Alternate take: a more dynamic camera, a faster orbit or tracking move with foreground elements sweeping past the lens.",
+    "Alternate take: slow motion, a tighter lens and a gentle rack focus, more intimate performance."
+  ],
+  "max_clip_seconds": 12
 }

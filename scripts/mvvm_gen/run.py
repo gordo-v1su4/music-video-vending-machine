@@ -190,10 +190,12 @@ class Run:
                 refs += [self.upload(self.panel(cid, p)) for p in panels]
                 subjects.append((f"{char['name']}. {char['identity']} Outfit: {char['look']}",
                                  list(range(start, len(refs) + 1))))
-            background = self.plan["locations"][shot["location"]]["prompt"]
+            location = self.plan["locations"][shot["location"]]
+            background = location["prompt"]
+            crowd = extras if location.get("crowd", True) else "No other people are anywhere in the shot."
             summary = f"One uninterrupted music-video shot. {shot['summary']}"
             description = (f"{shot['framing']} {shot['still']} {shot['motion']} {shot['camera']} "
-                           f"Background: {background} {extras if subjects else ''} "
+                           f"Background: {background} {crowd if subjects else ''} "
                            "There is no cut, zoom, scene change, text overlay or logo.")
             hints = [""] + self.plan.get("variation_hints", [])
             for take in range(shot.get("takes", self.plan.get("takes", 1))):
@@ -201,8 +203,9 @@ class Run:
                 prompt = graphs.h3_ref2v_prompt(
                     subjects, summary, self.plan["style"], f"{description} {hints[take % len(hints)]}".strip(),
                     self.plan.get("soundscape", "Muffled festival bass and crowd ambience, no dialogue."))
+                seconds = min(count / timing.FPS + 0.5, self.plan.get("max_clip_seconds", 12))
                 graph = graphs.h3_ref2v(refs, prompt, seed + take, f"mvvm/{self.name}/clip-{sid}-t{take}", w, h,
-                                        count / timing.FPS + 0.5, steps=self.plan.get("clip_steps", 20))
+                                        seconds, steps=self.plan.get("clip_steps", 20))
                 self.generate(self.take_key(sid, take), graph, self.take_path(sid, take), seed + take)
 
     @staticmethod
