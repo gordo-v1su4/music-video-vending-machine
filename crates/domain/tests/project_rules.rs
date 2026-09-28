@@ -325,3 +325,304 @@ fn reapproval_does_not_authorize_old_direction_candidates() {
         .is_err()
     );
 }
+
+fn reference(p: Project, role: ReferenceRole) -> (Project, Uuid) {
+    let id = Uuid::new_v4();
+    let p = step(
+        p,
+        Action::AddReference {
+            reference: Reference {
+                id,
+                asset_id: Uuid::new_v4(),
+                name: "Sheet".into(),
+                role,
+                description: String::new(),
+            },
+        },
+    );
+    (p, id)
+}
+fn look(sheet: Uuid, costume: &str) -> Look {
+    Look {
+        id: Uuid::new_v4(),
+        name: costume.into(),
+        hair: "Short black".into(),
+        costume: costume.into(),
+        sheet_reference_ids: vec![sheet],
+        approved: false,
+    }
+}
+fn traveller(looks: Vec<Look>) -> Character {
+    Character {
+        id: Uuid::new_v4(),
+        name: "Traveller".into(),
+        description: "Returns home".into(),
+        looks,
+    }
+}
+fn err(p: &Project, action: Action) -> String {
+    p.apply(p.revision, action).unwrap_err().to_string()
+}
+fn approve_production(p: &Project) -> std::result::Result<Project, DomainError> {
+    p.apply(
+        p.revision,
+        Action::ApproveProduction {
+            local_attempts_per_shot: 3,
+        },
+    )
+}
+
+#[test]
+fn legacy_projects_without_characters_keep_their_approval() {
+    let mut legacy = serde_json::to_value(approved()).unwrap();
+    let object = legacy.as_object_mut().unwrap();
+    object.remove("characters");
+    object.remove("lookAssignments");
+    let restored: Project = serde_json::from_value(legacy).unwrap();
+    assert!(restored.production_approved());
+    assert!(restored.characters.is_empty());
+}
+
+#[test]
+fn looks_need_exact_sheet_and_separate_approval() {
+    let (p, inspiration) = reference(approved(), ReferenceRole::Inspiration);
+    let (p, exact) = reference(p, ReferenceRole::Exact);
+    let mut coat = look(inspiration, "Grey coat");
+    coat.approved = true;
+    assert!(
+        err(
+            &p,
+            Action::SetCharacters {
+                characters: vec![traveller(vec![coat.clone()])]
+            }
+        )
+        .contains("own approval")
+    );
+    coat.approved = false;
+    let c = traveller(vec![coat.clone()]);
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: vec![c.clone()],
+        },
+    );
+    assert!(err(&p, Action::ApproveLook { look_id: coat.id }).contains("exact-match"));
+
+    coat.sheet_reference_ids = vec![exact];
+    let c = Character {
+        looks: vec![coat.clone()],
+        ..c
+    };
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: vec![c.clone()],
+        },
+    );
+    let p = step(p, Action::ApproveLook { look_id: coat.id });
+    assert!(p.characters[0].looks[0].approved);
+
+    // Resubmitting the unchanged approved Look keeps approval; changing its costume needs a new one.
+    let characters = p.characters.clone();
+    let p = step(p, Action::SetCharacters { characters });
+    assert!(p.characters[0].looks[0].approved);
+    let mut changed = p.characters.clone();
+    changed[0].looks[0].costume = "Red coat".into();
+    assert!(
+        err(
+            &p,
+            Action::SetCharacters {
+                characters: changed.clone()
+            }
+        )
+        .contains("own approval")
+    );
+    changed[0].looks[0].approved = false;
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: changed,
+        },
+    );
+    assert!(!p.characters[0].looks[0].approved);
+}
+
+#[test]
+fn production_approval_requires_approved_looks_assigned_to_every_section() {
+    let (p, exact) = reference(approved(), ReferenceRole::Exact);
+    let coat = look(exact, "Grey coat");
+    let dress = look(exact, "Blue dress");
+    let c = traveller(vec![coat.clone(), dress.clone()]);
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: vec![c],
+        },
+    );
+    let section = p.sections[0].id;
+    assert!(
+        approve_production(&p)
+            .unwrap_err()
+            .to_string()
+            .contains("every section")
+    );
+
+    assert!(
+        err(
+            &p,
+            Action::SetLookAssignments {
+                assignments: vec![LookAssignment {
+                    section_id: section,
+                    look_ids: vec![coat.id, dress.id]
+                }],
+            }
+        )
+        .contains("one Look per Character")
+    );
+    assert!(
+        err(
+            &p,
+            Action::SetLookAssignments {
+                assignments: vec![LookAssignment {
+                    section_id: Uuid::new_v4(),
+                    look_ids: vec![]
+                }],
+            }
+        )
+        .contains("known section")
+    );
+
+    let p = step(
+        p,
+        Action::SetLookAssignments {
+            assignments: vec![LookAssignment {
+                section_id: section,
+                look_ids: vec![coat.id],
+            }],
+        },
+    );
+    assert!(
+        approve_production(&p)
+            .unwrap_err()
+            .to_string()
+            .contains("must be approved")
+    );
+    let p = step(p, Action::ApproveLook { look_id: coat.id });
+    let p = approve_production(&p).unwrap();
+    assert!(p.production_approved());
+
+    // An assigned Look cannot be removed out from under the plan.
+    let mut removed = p.characters.clone();
+    removed[0].looks.retain(|l| l.id != coat.id);
+    assert!(
+        err(
+            &p,
+            Action::SetCharacters {
+                characters: removed
+            }
+        )
+        .contains("Unassign")
+    );
+}
+
+#[test]
+fn changed_look_or_assignment_invalidates_production_approval() {
+    let (p, exact) = reference(approved(), ReferenceRole::Exact);
+    let coat = look(exact, "Grey coat");
+    let dress = look(exact, "Blue dress");
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: vec![traveller(vec![coat.clone(), dress.clone()])],
+        },
+    );
+    let p = step(p, Action::ApproveLook { look_id: coat.id });
+    let p = step(p, Action::ApproveLook { look_id: dress.id });
+    let section = p.sections[0].id;
+    let p = step(
+        p,
+        Action::SetLookAssignments {
+            assignments: vec![LookAssignment {
+                section_id: section,
+                look_ids: vec![coat.id],
+            }],
+        },
+    );
+    let p = approve_production(&p).unwrap();
+
+    let swapped = step(
+        p.clone(),
+        Action::SetLookAssignments {
+            assignments: vec![LookAssignment {
+                section_id: section,
+                look_ids: vec![dress.id],
+            }],
+        },
+    );
+    assert!(swapped.production_approval.is_none());
+
+    let mut renamed = p.characters.clone();
+    renamed[0].looks[1].name = "Evening dress".into();
+    renamed[0].looks[1].approved = false;
+    let renamed = step(
+        p,
+        Action::SetCharacters {
+            characters: renamed,
+        },
+    );
+    assert!(renamed.production_approval.is_none());
+}
+
+#[test]
+fn looks_stay_with_their_character_and_sections_drop_stale_assignments() {
+    let (p, exact) = reference(approved(), ReferenceRole::Exact);
+    let coat = look(exact, "Grey coat");
+    let first = traveller(vec![coat.clone()]);
+    let second = Character {
+        id: Uuid::new_v4(),
+        name: "Guard".into(),
+        looks: vec![],
+        ..first.clone()
+    };
+    let p = step(
+        p,
+        Action::SetCharacters {
+            characters: vec![first.clone(), second.clone()],
+        },
+    );
+    let moved = vec![
+        Character {
+            looks: vec![],
+            ..first
+        },
+        Character {
+            looks: vec![coat.clone()],
+            ..second
+        },
+    ];
+    assert!(err(&p, Action::SetCharacters { characters: moved }).contains("different Character"));
+
+    let section = p.sections[0].id;
+    let p = step(
+        p,
+        Action::SetLookAssignments {
+            assignments: vec![LookAssignment {
+                section_id: section,
+                look_ids: vec![coat.id],
+            }],
+        },
+    );
+    let p = step(
+        p,
+        Action::SetSections {
+            sections: vec![Section {
+                id: Uuid::new_v4(),
+                name: "Rewritten".into(),
+                start_ms: 0,
+                end_ms: 60_000,
+                intent: "New structure".into(),
+            }],
+        },
+    );
+    assert!(p.look_assignments.is_empty());
+}

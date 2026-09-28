@@ -57,8 +57,8 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 - [x] Provide timed audio preview and insertion/cutout timing primitives.
 - [ ] Integrate the director to propose story parts grounded in the song and treatment.
 - [ ] Keep stable Character, location and visual-style anchors and reference constraints.
-- [ ] Approve each Character's Looks: every hair/costume combination gets its own Character sheet.
-- [ ] Assign an approved Look to every scene or sequence before generation, favoring fewer changes.
+- [ ] Approve each Character's Looks: every hair/costume combination gets its own Character sheet. Domain rules and API actions exist (a changed Look loses approval; approval needs an exact-match reference); the UI is not built.
+- [ ] Assign an approved Look to every scene or sequence before generation, favoring fewer changes. Production approval now requires an explicit per-section assignment of approved Looks and its fingerprint covers them; the UI is not built.
 - [ ] Show the whole song as timed story parts with stills or clearly marked placeholders.
 - [ ] Let the user revise and approve master, treatment, references, Looks and their assignments, breaks, route, and attempt allowance; any change invalidates that approval.
 - [ ] Verify the complete-song preview against the production master before starting video production.

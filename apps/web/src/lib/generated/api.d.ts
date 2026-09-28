@@ -211,6 +211,19 @@ export interface components {
             /** @enum {string} */
             type: "addReference";
         } | {
+            characters: components["schemas"]["Character"][];
+            /** @enum {string} */
+            type: "setCharacters";
+        } | {
+            /** Format: uuid */
+            lookId: string;
+            /** @enum {string} */
+            type: "approveLook";
+        } | {
+            assignments: components["schemas"]["LookAssignment"][];
+            /** @enum {string} */
+            type: "setLookAssignments";
+        } | {
             breaks: components["schemas"]["AudioBreak"][];
             /** @enum {string} */
             type: "setBreaks";
@@ -297,6 +310,14 @@ export interface components {
         };
         /** @enum {string} */
         BreakKind: "insertion" | "cutout";
+        /** @description A persistent visual identity whose recognizable features stay stable across the video. */
+        Character: {
+            description: string;
+            /** Format: uuid */
+            id: string;
+            looks: components["schemas"]["Look"][];
+            name: string;
+        };
         CreateProject: {
             name: string;
         };
@@ -319,6 +340,26 @@ export interface components {
             /** Format: int64 */
             startMs: number;
             values: number[];
+        };
+        /**
+         * @description An appearance variant of a Character. Each hair/costume combination is its own Look,
+         *     approved separately against its Character sheet before it can enter production.
+         */
+        Look: {
+            approved: boolean;
+            costume: string;
+            hair: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Character sheet: project references anchoring this Look for generation. */
+            sheetReferenceIds: string[];
+        };
+        /** @description The Looks planned for one timed story section; empty means intentionally no Character. */
+        LookAssignment: {
+            lookIds: string[];
+            /** Format: uuid */
+            sectionId: string;
         };
         LyricChunk: {
             /** Format: double */
@@ -359,10 +400,12 @@ export interface components {
             /** Format: uuid */
             activeRevisionId?: string | null;
             breaks: components["schemas"]["AudioBreak"][];
+            characters?: components["schemas"]["Character"][];
             /** Format: date-time */
             createdAt: string;
             /** Format: uuid */
             id: string;
+            lookAssignments?: components["schemas"]["LookAssignment"][];
             lyrics?: null | components["schemas"]["LyricsContext"];
             master?: null | components["schemas"]["Master"];
             name: string;

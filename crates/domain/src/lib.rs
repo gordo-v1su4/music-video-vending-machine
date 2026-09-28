@@ -53,6 +53,35 @@ pub struct Reference {
     pub role: ReferenceRole,
     pub description: String,
 }
+/// A persistent visual identity whose recognizable features stay stable across the video.
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Character {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub looks: Vec<Look>,
+}
+/// An appearance variant of a Character. Each hair/costume combination is its own Look,
+/// approved separately against its Character sheet before it can enter production.
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Look {
+    pub id: Uuid,
+    pub name: String,
+    pub hair: String,
+    pub costume: String,
+    /// Character sheet: project references anchoring this Look for generation.
+    pub sheet_reference_ids: Vec<Uuid>,
+    pub approved: bool,
+}
+/// The Looks planned for one timed story section; empty means intentionally no Character.
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LookAssignment {
+    pub section_id: Uuid,
+    pub look_ids: Vec<Uuid>,
+}
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum BreakKind {
@@ -124,6 +153,10 @@ pub struct Project {
     pub lyrics: Option<LyricsContext>,
     pub sections: Vec<Section>,
     pub references: Vec<Reference>,
+    #[serde(default)]
+    pub characters: Vec<Character>,
+    #[serde(default)]
+    pub look_assignments: Vec<LookAssignment>,
     pub breaks: Vec<AudioBreak>,
     pub shots: Vec<Shot>,
     pub revisions: Vec<EditRevision>,
@@ -168,6 +201,16 @@ pub enum Action {
     },
     AddReference {
         reference: Reference,
+    },
+    SetCharacters {
+        characters: Vec<Character>,
+    },
+    ApproveLook {
+        #[serde(rename = "lookId")]
+        look_id: Uuid,
+    },
+    SetLookAssignments {
+        assignments: Vec<LookAssignment>,
     },
     SetBreaks {
         breaks: Vec<AudioBreak>,
@@ -218,6 +261,8 @@ impl Project {
             lyrics: None,
             sections: vec![],
             references: vec![],
+            characters: vec![],
+            look_assignments: vec![],
             breaks: vec![],
             shots: vec![],
             revisions: vec![],
@@ -233,10 +278,14 @@ impl Project {
     pub fn approval_fingerprint(&self) -> String {
         let mut content = serde_json::json!({"master":self.master,"treatment":self.treatment,
             "sections":self.sections,"references":self.references,"breaks":self.breaks,"route":"local"});
-        // Characters, Looks and sequence assignments must join this fingerprint once modeled (R05, M5).
         // Preserve existing approvals for projects created before lyric context existed.
         if let Some(lyrics) = &self.lyrics {
             content["lyrics"] = serde_json::json!(lyrics);
+        }
+        // Likewise for projects created before Characters and Looks were modeled (R05, R19).
+        if !self.characters.is_empty() || !self.look_assignments.is_empty() {
+            content["characters"] = serde_json::json!(self.characters);
+            content["lookAssignments"] = serde_json::json!(self.look_assignments);
         }
         format!("{:x}", Sha256::digest(content.to_string().as_bytes()))
     }
@@ -302,6 +351,7 @@ impl Project {
                     lyrics.aligned_asset_id = None;
                 }
                 self.sections.clear();
+                self.look_assignments.clear();
                 self.breaks.clear();
                 self.shots.clear();
             }
@@ -318,6 +368,9 @@ impl Project {
                     "Section restructuring after shot planning requires a new project in this foundation release.",
                 )?;
                 validate_sections(&sections, self.duration_ms())?;
+                // Surviving sections keep their Looks; new sections need an explicit assignment.
+                self.look_assignments
+                    .retain(|a| sections.iter().any(|s| s.id == a.section_id));
                 self.sections = sections;
             }
             Action::AddReference { reference } => {
@@ -336,6 +389,36 @@ impl Project {
                     "At most 100 references are supported.",
                 )?;
                 self.references.push(reference);
+            }
+            Action::SetCharacters { characters } => {
+                self.validate_characters(&characters)?;
+                self.characters = characters;
+            }
+            Action::ApproveLook { look_id } => {
+                let references = &self.references;
+                let look = self
+                    .characters
+                    .iter_mut()
+                    .flat_map(|c| c.looks.iter_mut())
+                    .find(|l| l.id == look_id)
+                    .ok_or_else(|| DomainError::Invalid("Unknown Look.".into()))?;
+                require(
+                    !look.hair.trim().is_empty() && !look.costume.trim().is_empty(),
+                    "Describe the Look's hair and costume before approval.",
+                )?;
+                require(
+                    look.sheet_reference_ids.iter().any(|id| {
+                        references
+                            .iter()
+                            .any(|r| r.id == *id && r.role == ReferenceRole::Exact)
+                    }),
+                    "A Look's Character sheet needs at least one exact-match reference.",
+                )?;
+                look.approved = true;
+            }
+            Action::SetLookAssignments { assignments } => {
+                self.validate_look_assignments(&assignments)?;
+                self.look_assignments = assignments;
             }
             Action::SetBreaks { breaks } => {
                 validate_breaks(&breaks, self.duration_ms())?;
@@ -365,6 +448,7 @@ impl Project {
                         .all(|w| w[0].end_ms == w[1].start_ms),
                     "Sections contain a gap.",
                 )?;
+                self.validate_look_plan()?;
                 require(
                     local_attempts_per_shot == 3,
                     "The local allowance is one attempt plus two replacements.",
@@ -473,6 +557,119 @@ impl Project {
             shots,
         });
         Ok(())
+    }
+    fn looks(&self) -> impl Iterator<Item = (&Character, &Look)> {
+        self.characters
+            .iter()
+            .flat_map(|c| c.looks.iter().map(move |l| (c, l)))
+    }
+    fn validate_characters(&self, characters: &[Character]) -> Result<()> {
+        require(
+            characters.len() <= 50,
+            "At most 50 Characters are supported.",
+        )?;
+        let mut ids = HashSet::new();
+        for c in characters {
+            require(ids.insert(c.id), "Duplicate Character or Look ID.")?;
+            require(
+                !c.name.trim().is_empty() && c.name.len() <= 160 && c.description.len() <= 10_000,
+                "Invalid Character text.",
+            )?;
+            require(c.looks.len() <= 20, "At most 20 Looks per Character.")?;
+            for look in &c.looks {
+                require(ids.insert(look.id), "Duplicate Character or Look ID.")?;
+                require(
+                    !look.name.trim().is_empty()
+                        && look.name.len() <= 160
+                        && look.hair.len() <= 10_000
+                        && look.costume.len() <= 10_000,
+                    "Invalid Look text.",
+                )?;
+                require(
+                    look.sheet_reference_ids.len() <= 20
+                        && look
+                            .sheet_reference_ids
+                            .iter()
+                            .collect::<HashSet<_>>()
+                            .len()
+                            == look.sheet_reference_ids.len()
+                        && look
+                            .sheet_reference_ids
+                            .iter()
+                            .all(|id| self.references.iter().any(|r| r.id == *id)),
+                    "A Character sheet must list up to 20 distinct project references.",
+                )?;
+                // Approval cannot be written directly: only an unchanged approved Look keeps it.
+                require(
+                    !look.approved
+                        || self
+                            .looks()
+                            .any(|(old_c, old)| old_c.id == c.id && old == look),
+                    "A new or changed Look needs its own approval.",
+                )?;
+            }
+        }
+        for a in &self.look_assignments {
+            for look_id in &a.look_ids {
+                require(
+                    characters
+                        .iter()
+                        .any(|c| c.looks.iter().any(|l| l.id == *look_id)),
+                    "Unassign a Look before removing it.",
+                )?;
+            }
+        }
+        // A Look moved to another Character would silently change assigned identities.
+        for (c, look) in self.looks() {
+            require(
+                characters
+                    .iter()
+                    .all(|nc| nc.id == c.id || nc.looks.iter().all(|l| l.id != look.id)),
+                "A Look cannot move to a different Character.",
+            )?;
+        }
+        Ok(())
+    }
+    fn validate_look_assignments(&self, assignments: &[LookAssignment]) -> Result<()> {
+        let mut sections = HashSet::new();
+        for a in assignments {
+            require(
+                sections.insert(a.section_id) && self.sections.iter().any(|s| s.id == a.section_id),
+                "Each assignment needs a distinct known section.",
+            )?;
+            let mut characters = HashSet::new();
+            for look_id in &a.look_ids {
+                let (c, _) = self
+                    .looks()
+                    .find(|(_, l)| l.id == *look_id)
+                    .ok_or_else(|| DomainError::Invalid("Unknown Look.".into()))?;
+                // Identity, hair and costume stay continuous within a planned section.
+                require(
+                    characters.insert(c.id),
+                    "Assign at most one Look per Character in a section.",
+                )?;
+            }
+        }
+        Ok(())
+    }
+    fn validate_look_plan(&self) -> Result<()> {
+        if self.characters.is_empty() {
+            return Ok(());
+        }
+        require(
+            self.sections
+                .iter()
+                .all(|s| self.look_assignments.iter().any(|a| a.section_id == s.id)),
+            "Assign Looks, or explicitly none, to every section before approval.",
+        )?;
+        require(
+            self.look_assignments.iter().all(|a| {
+                a.look_ids
+                    .iter()
+                    .all(|id| self.looks().any(|(_, l)| l.id == *id && l.approved))
+            }),
+            "Every assigned Look must be approved.",
+        )
     }
     fn protect_pins(&self, shots: &[Shot]) -> Result<()> {
         for pinned in self.shots.iter().filter(|s| s.pinned) {
