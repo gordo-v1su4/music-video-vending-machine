@@ -14,9 +14,9 @@ import re
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
-from . import review
+from . import review, timing
 from .run import Run
 
 PORT = 5197
@@ -66,6 +66,32 @@ class ReviewApp:
         return {"plan": run.name, "seedsPerPrompt": run.plan.get("seeds_per_prompt", 1),
                 "shots": [self.shot_payload(run, store, s) for s in run.plan["shots"]]}
 
+    def cut_payload(self, run=None):
+        """The assembled pilot cut: where it sits in the song, each shot's span, and whether picks changed since."""
+        run = run or self.run()
+        cut = run.manifest.get("cut")
+        path = run.path("cut", f"{run.name}.mp4")
+        if not cut or not os.path.exists(path):
+            return {"exists": False, "plan": run.name}
+        start_ms = cut["start_s"] * 1000
+        shots, at = [], start_ms
+        for shot, count in zip(run.plan["shots"], run.shot_frames()):
+            end = at + count * 1000 / timing.FPS
+            take, source = run.pick(shot)
+            shots.append({"id": shot["id"], "summary": shot.get("summary", ""), "startMs": round(at), "endMs": round(end),
+                          "take": cut.get("picks", {}).get(shot["id"], take), "pickNow": take, "source": source})
+            at = end
+        return {"exists": True, "plan": run.name, "url": f"/pilot-api/cut.mp4?v={int(os.path.getmtime(path))}",
+                "songStartMs": round(start_ms), "durationMs": round(cut["duration_s"] * 1000),
+                "builtAt": cut.get("built_at"), "shots": shots,
+                "stale": any(s["take"] != s["pickNow"] for s in shots)}
+
+    def build_cut(self):
+        with self.lock:
+            run = self.run()
+            run.cut()
+            return self.cut_payload(Run(self.plan_path))
+
     def shot(self, run, sid):
         for s in run.plan["shots"]:
             if s["id"] == sid:
@@ -114,14 +140,25 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
-        if self.path == "/pilot-api/review":
+        path = urlparse(self.path).path
+        if path == "/pilot-api/review":
             return self.send_json(200, self.app.payload())
-        match = re.fullmatch(r"/pilot-api/media/([A-Za-z0-9_-]+\.mp4)", self.path)
+        if path == "/pilot-api/cut":
+            return self.send_json(200, self.app.cut_payload())
+        if path == "/pilot-api/cut.mp4":
+            run = self.app.run()
+            return self.send_media(run.path("cut", f"{run.name}.mp4"))
+        match = re.fullmatch(r"/pilot-api/media/([A-Za-z0-9_-]+\.mp4)", path)
         if match:
             return self.send_media(os.path.join(self.app.run().root, "clips", unquote(match.group(1))))
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        if self.path == "/pilot-api/cut/build":
+            try:
+                return self.send_json(200, self.app.build_cut())
+            except Exception as exc:  # ffmpeg or missing clips: report, keep serving
+                return self.send_json(500, {"error": f"Cut failed: {exc}"})
         match = re.fullmatch(r"/pilot-api/review/([A-Za-z0-9_-]+)/(decide|undo|redo|reset)", self.path)
         if not match:
             return self.send_json(404, {"error": "not found"})

@@ -74,6 +74,7 @@
   $effect(() => {
     studioClock.songMs = position.songMs;
     studioClock.playing = playing;
+    studioClock.waiting = waiting;
   });
   onMount(() => studioClock.attach({
     seekSong: (songMs) => void seek(songToVideo(songMs, project.breaks)),

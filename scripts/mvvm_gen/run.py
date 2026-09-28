@@ -422,9 +422,10 @@ class Run:
         frames = self.shot_frames()
         start = self.passage_start()
         total = sum(frames) / timing.FPS
-        inputs, filters = [], []
+        inputs, filters, picks = [], [], {}
         for i, (shot, count) in enumerate(zip(self.plan["shots"], frames)):
             take, source = self.pick(shot)
+            picks[shot["id"]] = take
             if source != "reviewed":
                 print(f"[cut] {shot['id']}: using {source}", flush=True)
             clip = self.take_path(shot["id"], take)
@@ -442,7 +443,8 @@ class Run:
                         "-pix_fmt", "yuv420p", "-r", str(timing.FPS), "-c:a", "aac", "-b:a", "320k",
                         "-shortest", "-movflags", "+faststart", dest], check=True)
         self.manifest["cut"] = {"output": dest, "start_s": round(start, 4), "duration_s": round(total, 4),
-                                "frames": sum(frames), "status": "assembled_unverified"}
+                                "frames": sum(frames), "picks": picks, "built_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+                                "status": "assembled_unverified"}
         self.save_manifest()
         print(f"[cut] {dest} ({total:.2f}s from {start:.2f}s)", flush=True)
 

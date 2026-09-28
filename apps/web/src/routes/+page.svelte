@@ -15,6 +15,9 @@
   } from "$lib/api";
   import Transport from "$lib/Transport.svelte";
   import TakeReview from "$lib/TakeReview.svelte";
+  import FirstCut from "$lib/FirstCut.svelte";
+  import CutVideo from "$lib/CutVideo.svelte";
+  import { pilotCut } from "$lib/pilot-cut.svelte";
   import SongAnalysis from "$lib/SongAnalysis.svelte";
   import ProcessingStack from "$lib/ProcessingStack.svelte";
   import LyricsAnalysis from "$lib/LyricsAnalysis.svelte";
@@ -68,6 +71,11 @@
       (s) => position.songMs >= s.startMs && position.songMs < s.endMs,
     ),
   );
+  // Review opens on the first cut; the pilot cut also feeds the Preview panel.
+  let reviewTab = $state<"cut" | "takes" | "revisions">("cut");
+  $effect(() => {
+    if (project && (view === "Review" || !pilotCut.info)) void pilotCut.load();
+  });
   // Collapsible right inspector; remembered per browser.
   let inspectorCollapsed = $state(
     (() => { try { return localStorage.getItem("mvvm.inspectorCollapsed") === "1"; } catch { return false; } })(),
@@ -104,8 +112,17 @@
     !!project && (project.shots.length > 0 || project.revisions.length > 0),
   );
 
+  // The last opened project reopens after a reload or reconnect; per browser, cleared on returning to the library.
+  const LAST_PROJECT = "mvvm.lastProject";
+  function rememberProject(id: string | null) {
+    try {
+      if (id) localStorage.setItem(LAST_PROJECT, id);
+      else localStorage.removeItem(LAST_PROJECT);
+    } catch { /* storage unavailable */ }
+  }
   function showLibrary() {
     if (dirty || busy) return;
+    rememberProject(null);
     project = null;
     assets = [];
     videoMs = 0;
@@ -227,6 +244,11 @@
     } finally {
       connecting = false;
     }
+    if (connected && !project && epoch === connectionEpoch) {
+      let last: string | null = null;
+      try { last = localStorage.getItem(LAST_PROJECT); } catch { /* storage unavailable */ }
+      if (last && projects.some((p) => p.id === last)) await openProject(last);
+    }
   }
   function releaseUrls() {
     Object.values(urls).forEach((url) => URL.revokeObjectURL(url));
@@ -280,6 +302,7 @@
       transcript = null;
       transcriptSource = '';
       adopt(saved);
+      rememberProject(saved.id);
       assets = list;
       upload = null;
       // Restore the best persisted lyric result without changing the production master.
@@ -1096,7 +1119,21 @@
                   </article>{/each}
               </div>{/if}
           {:else}
-            <TakeReview embedded />
+            <div class="review-tabs" role="tablist" aria-label="Review">
+              {#each [["cut", "First cut"], ["takes", "Take review"], ["revisions", "Revisions"]] as [id, label] (id)}
+                <button
+                  role="tab"
+                  aria-selected={reviewTab === id}
+                  class:active={reviewTab === id}
+                  onclick={() => (reviewTab = id as typeof reviewTab)}>{label}</button
+                >
+              {/each}
+            </div>
+            {#if reviewTab === "cut"}
+              <FirstCut onReviewTakes={() => (reviewTab = "takes")} />
+            {:else if reviewTab === "takes"}
+              <TakeReview embedded />
+            {:else}
             <article class="panel review-summary">
               <div>
                 <h2>
@@ -1171,6 +1208,7 @@
               </p>
               <span class="tag">1280 × 720 · 24 fps · H.264 / AAC</span>
             </div>
+            {/if}
           {/if}
         </section>
 
@@ -1184,6 +1222,14 @@
             ><Icon name="chevron" size={16} /><span class="sr-only">Hide preview panel</span></button
           >
           <div class="inspector-body" id="inspector-body" hidden={inspectorCollapsed}>
+          {#if pilotCut.info?.exists}
+            {@const cut = pilotCut.info}
+            <div class="preview-heading">
+              <h2>Preview</h2>
+              <span class="tag">Pilot cut</span>
+            </div>
+            <CutVideo compact url={cut.url} songStartMs={cut.songStartMs} durationMs={cut.durationMs} />
+          {:else}
           <div class="preview-heading">
             <h2>Preview</h2>
             <span class="tag">Story placeholder</span>
@@ -1199,6 +1245,7 @@
             </p>
             <small>Unrendered story frame</small>
           </div>
+          {/if}
           <section class="master-panel">
             <div class="section-heading">
               <h2>Song master</h2>

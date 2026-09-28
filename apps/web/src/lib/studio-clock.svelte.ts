@@ -5,6 +5,8 @@ type Controls = { seekSong: (songMs: number) => void; play: () => void; pause: (
 class StudioClock {
   songMs = $state(0);
   playing = $state(false);
+  /** Playing but the song audio is still buffering; song time is holding. */
+  waiting = $state(false);
   available = $state(false);
   #controls: Controls | null = null;
 

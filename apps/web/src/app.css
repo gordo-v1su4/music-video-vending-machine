@@ -1823,3 +1823,24 @@ html {
 .section-lyrics strong { font-size:13px; font-weight:600; }
 .section-lyrics p { margin:8px 0; }
 .section-lyrics small { color:var(--muted); }
+
+.review-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 22px;
+  border-bottom: 1px solid #27272a;
+}
+.review-tabs button {
+  padding: 10px 14px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+.review-tabs button:hover {
+  color: #f4f4f5;
+}
+.review-tabs button.active {
+  color: #f4f4f5;
+  border-bottom-color: #a78bfa;
+}
