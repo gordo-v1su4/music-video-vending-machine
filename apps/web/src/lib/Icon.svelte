@@ -10,7 +10,14 @@
     | "audio"
     | "play"
     | "pause"
-    | "upload";
+    | "upload"
+    | "undo"
+    | "restart"
+    | "volume"
+    | "mute"
+    | "check"
+    | "note"
+    | "chevron";
   let { name, size = 20 }: { name: IconName; size?: number } = $props();
   const paths: Record<IconName, string> = {
     story: "M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h5",
@@ -26,6 +33,13 @@
     play: "M7 4l14 8-14 8z",
     pause: "M8 4v16 M16 4v16",
     upload: "M12 16V3 M7 8l5-5 5 5 M4 16v5h16v-5",
+    undo: "M9 14 4 9l5-5 M4 9h10.5a5.5 5.5 0 0 1 0 11H11",
+    restart: "M3 12a9 9 0 1 0 2.64-6.36L3 8 M3 3v5h5",
+    volume: "M11 5 6 9H2v6h4l5 4z M15.5 8.5a5 5 0 0 1 0 7 M19 5a10 10 0 0 1 0 14",
+    mute: "M11 5 6 9H2v6h4l5 4z M22 9l-6 6 M16 9l6 6",
+    check: "M20 6 9 17l-5-5",
+    note: "M4 5h16v11H10l-6 4z M8 9h8 M8 12h5",
+    chevron: "M9 6l6 6-6 6",
   };
 </script>
 

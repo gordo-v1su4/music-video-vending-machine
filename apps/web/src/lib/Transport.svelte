@@ -2,8 +2,9 @@
   import Icon from "./Icon.svelte";
   import { onDestroy, onMount } from "svelte";
   import type { Project } from "./api";
-  import { time, videoDuration, videoPosition } from "./timing";
+  import { songToVideo, time, videoDuration, videoPosition } from "./timing";
   import { PreviewPlayback } from "./preview-playback";
+  import { studioClock } from "./studio-clock.svelte";
   let {
     project,
     urls,
@@ -69,6 +70,16 @@
     if (playing && generation === loop)
       frame = requestAnimationFrame(() => tick(generation));
   }
+  // Publish the one studio playhead; other views seek and play through these controls.
+  $effect(() => {
+    studioClock.songMs = position.songMs;
+    studioClock.playing = playing;
+  });
+  onMount(() => studioClock.attach({
+    seekSong: (songMs) => void seek(songToVideo(songMs, project.breaks)),
+    play: () => { if (!playing) void toggle(); },
+    pause: () => { if (playing) stop(); },
+  }));
   onMount(() => {
     const pauseForAudition = (event: Event) => { if ((event as CustomEvent).detail === 'audition') stop(); };
     window.addEventListener('studio-playback', pauseForAudition);
@@ -120,6 +131,7 @@
   <input
     id="playhead"
     class="playhead"
+    style:--pct={`${duration ? (videoMs / duration) * 100 : 0}%`}
     type="range"
     min="0"
     max={duration || 1}
@@ -138,15 +150,7 @@
         class:long-section={section.endMs-section.startMs >= 28000}
         aria-current={position.songMs >= section.startMs && position.songMs < section.endMs ? 'true' : undefined}
         onclick={() =>
-          seek(
-            section.startMs +
-              project.breaks
-                .filter(
-                  (b) =>
-                    b.kind === "insertion" && b.songStartMs <= section.startMs,
-                )
-                .reduce((n, b) => n + b.durationMs, 0),
-          )}
+          seek(songToVideo(section.startMs, project.breaks))}
         title={`${section.name}: ${time(section.startMs)}–${time(section.endMs)}`}
         ><span>{section.name}</span><small>{time(section.startMs)}</small
         ></button

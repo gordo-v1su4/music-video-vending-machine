@@ -12,6 +12,15 @@ export function videoDuration(
       .reduce((sum, b) => sum + b.durationMs, 0)
   );
 }
+// Video time at a song position: song time plus every insertion break that starts at or before it.
+export function songToVideo(songMs: number, breaks: AudioBreak[]): number {
+  return (
+    songMs +
+    breaks
+      .filter((b) => b.kind === "insertion" && b.songStartMs <= songMs)
+      .reduce((sum, b) => sum + b.durationMs, 0)
+  );
+}
 export function videoPosition(videoMs: number, breaks: AudioBreak[]) {
   let offset = 0;
   for (const item of [...breaks]

@@ -14,6 +14,7 @@
     type TranscriptionJob,
   } from "$lib/api";
   import Transport from "$lib/Transport.svelte";
+  import TakeReview from "$lib/TakeReview.svelte";
   import SongAnalysis from "$lib/SongAnalysis.svelte";
   import ProcessingStack from "$lib/ProcessingStack.svelte";
   import LyricsAnalysis from "$lib/LyricsAnalysis.svelte";
@@ -67,6 +68,14 @@
       (s) => position.songMs >= s.startMs && position.songMs < s.endMs,
     ),
   );
+  // Collapsible right inspector; remembered per browser.
+  let inspectorCollapsed = $state(
+    (() => { try { return localStorage.getItem("mvvm.inspectorCollapsed") === "1"; } catch { return false; } })(),
+  );
+  function toggleInspector() {
+    inspectorCollapsed = !inspectorCollapsed;
+    try { localStorage.setItem("mvvm.inspectorCollapsed", inspectorCollapsed ? "1" : "0"); } catch { /* storage unavailable */ }
+  }
   const masterAsset = $derived(
     assets.find((a) => a.id === project?.master?.assetId),
   );
@@ -643,7 +652,7 @@
           </div>
         </section>{/if}
     {:else}
-      <div class="workspace">
+      <div class="workspace" class:inspector-collapsed={inspectorCollapsed}>
         <section class="canvas-column">
           <div class="view-heading">
             <div>
@@ -1087,6 +1096,7 @@
                   </article>{/each}
               </div>{/if}
           {:else}
+            <TakeReview embedded />
             <article class="panel review-summary">
               <div>
                 <h2>
@@ -1164,7 +1174,16 @@
           {/if}
         </section>
 
-        <aside class="inspector">
+        <aside class="inspector" aria-label="Preview and project files">
+          <button
+            class="inspector-toggle"
+            aria-expanded={!inspectorCollapsed}
+            aria-controls="inspector-body"
+            title="Hide preview panel"
+            onclick={toggleInspector}
+            ><Icon name="chevron" size={16} /><span class="sr-only">Hide preview panel</span></button
+          >
+          <div class="inspector-body" id="inspector-body" hidden={inspectorCollapsed}>
           <div class="preview-heading">
             <h2>Preview</h2>
             <span class="tag">Story placeholder</span>
@@ -1281,7 +1300,11 @@
               intake is not available yet. Lyrics can be extracted from the selected master in Story.</small
             >
           </section>
+        </div>
         </aside>
+        {#if inspectorCollapsed}<button class="inspector-tab" aria-controls="inspector-body" aria-expanded="false" onclick={toggleInspector}
+            ><span class="inspector-tab-bar" aria-hidden="true"></span><span class="inspector-tab-label">Preview</span></button
+          >{/if}
       </div>
       <!-- Only project/audio mapping changes replace playback. Story, reference,
            approval and pin saves keep the active media session and playhead. -->

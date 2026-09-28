@@ -1,8 +1,9 @@
 import json
 import os
+import tempfile
 import unittest
 
-from mvvm_gen import graphs, pk_v11, timing
+from mvvm_gen import graphs, pk_v11, review, timing
 
 PLAN = os.path.join(os.path.dirname(__file__), "mvvm_gen", "plans", "i-ran-pilot.json")
 
@@ -80,6 +81,68 @@ class GraphTests(unittest.TestCase):
             self.assertIn(shot["location"], plan["locations"])
             for cid in shot["characters"]:
                 self.assertIn(cid, plan["characters"])
+
+
+class ReviewTests(unittest.TestCase):
+    @staticmethod
+    def d(a, b, choice):
+        return {"a": a, "b": b, "choice": choice}
+
+    def test_each_setup_compares_its_own_two_seeds(self):
+        takes = [0, 1, 2, 3, 4, 5]
+        self.assertEqual(review.bracket(takes, [], 2)["pair"], [0, 1])
+        state = review.bracket(takes, [self.d(0, 1, "b")], 2)
+        self.assertEqual((state["pair"], state["setup"]), ([2, 3], 1))  # the chosen take does not carry over
+        state = review.bracket(takes, [self.d(0, 1, "b"), self.d(2, 3, "a")], 2)
+        self.assertEqual(state["pair"], [4, 5])
+
+    def test_cut_uses_the_first_setup_with_a_winner(self):
+        log = [self.d(0, 1, "neither"), self.d(2, 3, "b"), self.d(4, 5, "a")]
+        state = review.bracket([0, 1, 2, 3, 4, 5], log, 2)
+        self.assertEqual((state["done"], state["winner"], state["rejected"]), (True, 3, [0, 1, 2, 5]))
+        self.assertEqual([s["winner"] for s in state["setups"]], [None, 3, 4])
+
+    def test_setup_with_one_rendered_take_is_kept_or_rejected_alone(self):
+        state = review.bracket([0, 1, 2], [self.d(0, 1, "a")], 2)
+        self.assertEqual(state["pair"], [2, None])
+        with self.assertRaises(ValueError):
+            review.bracket([0, 1, 2], [self.d(0, 1, "a"), self.d(2, None, "b")], 2)
+        dropped = review.bracket([0, 1, 2], [self.d(0, 1, "neither"), self.d(2, None, "neither")], 2)
+        self.assertEqual((dropped["done"], dropped["winner"]), (True, None))
+
+    def test_redoing_one_setup_keeps_the_others(self):
+        log = [self.d(0, 1, "a"), self.d(2, 3, "neither"), self.d(4, 5, "b")]
+        state = review.bracket([0, 1, 2, 3, 4, 5], [log[0], log[2]], 2)
+        self.assertEqual((state["pair"], state["setup"], state["done"]), ([2, 3], 1, False))
+        self.assertEqual([s["winner"] for s in state["setups"]], [0, None, 5])
+        redone = review.bracket([0, 1, 2, 3, 4, 5], [log[0], log[2], self.d(2, 3, "b")], 2)
+        self.assertEqual((redone["done"], redone["winner"]), (True, 0))
+        with tempfile.TemporaryDirectory() as root:
+            store = review.Store(root)
+            store.set_decisions("s01", log)
+            store.redo("s01", 2, 1)
+            self.assertEqual(store.decisions("s01"), [log[0], log[2]])
+
+    def test_decision_for_a_stale_pair_is_rejected(self):
+        with self.assertRaises(ValueError):
+            review.bracket([0, 1, 2, 3], [self.d(1, 2, "a")], 2)
+        with self.assertRaises(ValueError):
+            review.bracket([0, 1], [self.d(0, 1, "a"), self.d(0, 1, "a")], 2)
+
+    def test_store_reports_winner_only_when_decided(self):
+        with tempfile.TemporaryDirectory() as root:
+            store = review.Store(root)
+            takes = [0, 1, 2, 3]
+            self.assertEqual(store.winner("s01", takes, 2), (None, "not reviewed"))
+            store.decide("s01", takes, 2, 0, 1, "neither", "  face drifts  ")
+            self.assertEqual(store.winner("s01", takes, 2), (None, "review unfinished"))
+            store.decide("s01", takes, 2, 2, 3, "b")
+            reloaded = review.Store(root)
+            self.assertEqual(reloaded.winner("s01", takes, 2), (3, "reviewed"))
+            self.assertEqual(reloaded.decisions("s01")[0]["comment"], "face drifts")
+            self.assertEqual(reloaded.winner("s01", takes + [4, 5], 2)[1], "review unfinished")
+            with self.assertRaises(ValueError):
+                store.decide("s01", takes, 2, 2, 3, "a")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,8 @@
   color-scheme: dark;
   accent-color: var(--accent);
   caret-color: var(--accent);
-  scrollbar-color: #a1a1aa #141416;
+  /* Scrollbars stay dark and translucent on every surface; never a grey bar. Inherited by all scroll areas. */
+  scrollbar-color: rgb(255 255 255 / 14%) transparent;
   font-family: "DM Sans", "Segoe UI", sans-serif;
   color: #f4f4f5;
   background: #101012;
@@ -805,6 +806,77 @@ main {
   border-left: 1px solid #202023;
   min-height: 100%;
   background: #141416;
+  position: relative;
+}
+.inspector-toggle {
+  position: absolute;
+  top: 12px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #a1a1aa;
+  z-index: 1;
+}
+.inspector-toggle:hover {
+  background: #202023;
+  color: #f4f4f5;
+}
+.inspector-toggle svg {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.inspector-body {
+  margin-top: 14px;
+}
+/* Collapsed: the panel is gone and the canvas takes the full width with the transport's side padding,
+   so the song map lines up with the timeline below. A slim tab centred on the right edge reopens it. */
+.workspace.inspector-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace.inspector-collapsed .canvas-column {
+  padding-inline: 30px;
+}
+.workspace.inspector-collapsed .inspector {
+  display: none;
+}
+.inspector-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 26px;
+  padding: 12px 0;
+  background: #141416;
+  border: 1px solid #3f3f46;
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -6px 0 18px rgb(0 0 0 / 35%);
+  color: #a1a1aa;
+}
+.inspector-tab:hover {
+  background: #18181b;
+  color: #f4f4f5;
+}
+.inspector-tab-bar {
+  width: 3px;
+  height: 30px;
+  border-radius: 2px;
+  background: var(--mint);
+}
+.inspector-tab-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .preview-heading {
   display: flex;
@@ -1200,10 +1272,35 @@ input[type="range"].playhead {
   background: transparent;
   border: 0;
 }
-.playhead::-webkit-slider-runnable-track { height: 4px; background: #52525b; border-radius: 0; }
-.playhead::-webkit-slider-thumb { appearance: none; width: 10px; height: 18px; margin-top: -7px; border: 1px solid #f4f4f5; border-radius: 0; background: #d4d4d8; }
-.playhead::-moz-range-track { height: 4px; background: #52525b; border-radius: 0; }
-.playhead::-moz-range-thumb { width: 8px; height: 16px; border: 1px solid #f4f4f5; border-radius: 0; background: #d4d4d8; }
+/* Scrubber after Project Stack Structure: thin bordered track, played part in the indigo-violet gradient
+   (--pct is set by the component), slim outlined thumb lighter than the track, with a dark ring; the
+   outline lights violet on hover/focus. */
+.playhead::-webkit-slider-runnable-track {
+  height: 7px;
+  border: 1px solid #2a2a2e;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, #4f46e5, #a78bfa) 0 0 / var(--pct, 0%) 100% no-repeat,
+    #121214;
+}
+.playhead::-webkit-slider-thumb {
+  appearance: none;
+  width: 8px;
+  height: 22px;
+  margin-top: -8.5px;
+  border: 1px solid #8b8b94;
+  border-radius: 2px;
+  background: #3a3a40;
+  box-shadow: 0 0 0 2px #050505;
+  transition: border-color 0.12s ease-out, background 0.12s ease-out;
+}
+.playhead:hover::-webkit-slider-thumb,
+.playhead:focus-visible::-webkit-slider-thumb { border-color: #a78bfa; background: #4a4a52; }
+.playhead::-moz-range-track { height: 7px; border: 1px solid #2a2a2e; border-radius: 2px; background: #121214; }
+.playhead::-moz-range-progress { height: 7px; border-radius: 2px; background: linear-gradient(90deg, #4f46e5, #a78bfa); }
+.playhead::-moz-range-thumb { width: 6px; height: 20px; border: 1px solid #8b8b94; border-radius: 2px; background: #3a3a40; box-shadow: 0 0 0 2px #050505; }
+.playhead:hover::-moz-range-thumb,
+.playhead:focus-visible::-moz-range-thumb { border-color: #a78bfa; background: #4a4a52; }
 .playhead:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .timeline button.short-section { background: rgb(59 130 246 / 12%); }
 .timeline button.medium-section { background: rgb(99 102 241 / 12%); }
@@ -1426,6 +1523,21 @@ input[type="range"].playhead {
     border-left: 0;
     border-top: 1px solid var(--line);
     padding: 24px 18px;
+  }
+  .inspector-toggle {
+    display: none;
+  }
+  .workspace.inspector-collapsed .inspector {
+    display: block;
+  }
+  .inspector-tab {
+    display: none;
+  }
+  .workspace.inspector-collapsed .canvas-column {
+    padding-inline: 18px;
+  }
+  .inspector-body[hidden] {
+    display: block;
   }
   .preview-frame {
     max-width: 560px;

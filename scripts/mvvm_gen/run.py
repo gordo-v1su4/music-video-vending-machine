@@ -17,7 +17,7 @@ import subprocess
 import sys
 import time
 
-from . import comfy, graphs, pk_v11, timing
+from . import comfy, graphs, pk_v11, review, timing
 
 STAGES = ("sheets", "keyframes", "clips", "check", "review", "cut")
 SWARM_HISTORY = os.environ.get("MVVM_SWARM_HISTORY", r"D:\output\local\MVVM")
@@ -254,6 +254,19 @@ class Run:
     def take_path(self, sid, take):
         return self.path("clips", f"{sid}.mp4" if take == 0 else f"{sid}-t{take}.mp4")
 
+    def takes(self, shot):
+        """Rendered take numbers of a shot, in render order."""
+        n = (1 + len(shot.get("alts", []))) * self.plan.get("seeds_per_prompt", 1)
+        return [t for t in range(max(n, shot.get("takes", self.plan.get("takes", 1))))
+                if os.path.exists(self.take_path(shot["id"], t))]
+
+    def pick(self, shot):
+        """(take, source): the side-by-side review winner, else the plan's `pick`, else take 0."""
+        take, why = review.Store(self.root).winner(shot["id"], self.takes(shot), self.plan.get("seeds_per_prompt", 1))
+        if take is not None:
+            return take, why
+        return shot.get("pick", 0), f"plan pick ({why})" if "pick" in shot else f"take 0 ({why})"
+
     def check(self):
         """Technical self-check of each picked take; writes check/report.json and a contact sheet.
 
@@ -263,7 +276,7 @@ class Run:
         report, rows = {}, []
         w, h = self.plan["frame_size"]
         for shot, count in zip(self.plan["shots"], self.shot_frames()):
-            sid, take = shot["id"], shot.get("pick", 0)
+            sid, (take, source) = shot["id"], self.pick(shot)
             clip = self.take_path(sid, take)
             if not os.path.exists(clip):
                 report[sid] = {"status": "missing", "clip": clip}
@@ -281,7 +294,7 @@ class Run:
             frames = int(probe["nb_read_frames"])
             problems = [p for p, bad in (("short", frames < count), ("resolution", (probe["width"], probe["height"]) != (w, h)),
                                          ("black", black > 0), ("frozen", frozen > 0)) if bad]
-            report[sid] = {"take": take, "clip": clip, "frames": frames, "needed": count, "fps": probe["r_frame_rate"],
+            report[sid] = {"take": take, "take_source": source, "clip": clip, "frames": frames, "needed": count, "fps": probe["r_frame_rate"],
                            "size": [probe["width"], probe["height"]], "black_spans": black, "frozen_spans": frozen,
                            "status": "pass" if not problems else "flagged", "problems": problems}
             row = self.path("check", f"{sid}.png")
@@ -411,7 +424,10 @@ class Run:
         total = sum(frames) / timing.FPS
         inputs, filters = [], []
         for i, (shot, count) in enumerate(zip(self.plan["shots"], frames)):
-            clip = self.take_path(shot["id"], shot.get("pick", 0))
+            take, source = self.pick(shot)
+            if source != "reviewed":
+                print(f"[cut] {shot['id']}: using {source}", flush=True)
+            clip = self.take_path(shot["id"], take)
             inputs += ["-i", clip]
             filters.append(
                 f"[{i}:v]fps={timing.FPS},scale={out_w}:{out_h}:force_original_aspect_ratio=increase,"
