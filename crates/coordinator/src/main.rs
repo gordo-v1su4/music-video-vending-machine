@@ -7,11 +7,18 @@ use utoipa::OpenApi;
 
 /// Coordinator settings are named MVVM_* (2026-09-29). The retired MVM_* spelling is still read, with a warning,
 /// until the server's private env file is renamed; then delete this fallback.
+/// Retired names actually read this run, reported once at startup so the rename can be confirmed per environment.
+static RETIRED_READ: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
 fn setting(name: &str) -> Result<String, env::VarError> {
     env::var(format!("MVVM_{name}")).or_else(|_| {
         let retired = env::var(format!("MVM_{name}"));
         if retired.is_ok() {
             tracing::warn!("MVM_{name} is a retired name; rename it to MVVM_{name}");
+            let mut seen = RETIRED_READ.lock().unwrap();
+            if !seen.iter().any(|n| n == name) {
+                seen.push(name.to_string());
+            }
         }
         retired
     })
@@ -79,6 +86,16 @@ async fn main() -> anyhow::Result<()> {
         storage_name: "rustfs".into(),
         object_bucket: setting("S3_BUCKET")?,
     };
+    let retired = RETIRED_READ.lock().unwrap().clone();
+    if retired.is_empty() {
+        tracing::info!("settings: all read from MVVM_ names (no retired MVM_ names in use)");
+    } else {
+        tracing::warn!(
+            "settings: {} retired MVM_ name(s) still in use: {}; rename them to MVVM_",
+            retired.len(),
+            retired.join(", ")
+        );
+    }
     let recovery_state = state.clone();
     let recovery = tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(30));

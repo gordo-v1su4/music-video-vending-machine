@@ -7,5 +7,6 @@ if (-not (Test-Path $envFile)) { throw "Missing $envFile; see .env.example for t
 foreach ($line in Get-Content $envFile) {
     if ($line -match '^\s*([A-Z0-9_]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process') }
 }
+if (-not $env:RUST_LOG) { $env:RUST_LOG = 'mvm_coordinator=info' }  # shows the startup "settings:" line
 Set-Location $root
 cargo run -p mvm-coordinator --locked @args
