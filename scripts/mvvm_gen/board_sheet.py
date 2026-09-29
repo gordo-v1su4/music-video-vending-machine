@@ -14,15 +14,17 @@ FONT = r"C\:/Windows/Fonts/arialbd.ttf"
 # panel -> (image in fixed/<board>/, label). The first existing image wins.
 STATUS = {
     "board2": {
-        "p11": (["p11-v4-s0.png", "p11-final.png"], "p11  queued"),
-        "p12": (["p12-v4-s0.png", "p12-final.png"], "p12  queued"),
-        "p13": (["p13-final.png"], "p13  FINAL (yours)"),
-        "p21": (["p21-v4-s0.png", "p21-final.png"], "p21  hands: queued"),
-        "p22": (["p22-final.png"], "p22  FINAL (yours) + alt"),
-        "p23": (["p23-v4-s0.png", "p23-final.png"], "p23  mist fall: rendering"),
-        "p31": (["p31-v4-s0.png"], "p31  candidate: pick take"),
-        "p32": (["p32-v4-s0.png", "p32-final.png"], "p32  queued"),
-        "p33": (["p33-v4-s0.png", "p33-final.png"], "p33  kiss: queued"),
+        "p11": (["p11-v4-s0.png"], "p11  picked"),
+        "p12": (["p12-v4-s1.png"], "p12  picked"),
+        "p13": (["p13-final.png"], "p13  YOURS"),
+        "p21": (["p21-adam-s1.png"], "p21  picked (hands)"),
+        "p22": (["p22-final.png"], "p22  YOURS"),
+        "p23": (["p23-P-s1.png"], "p23  picked (motion blur)"),
+        "p31": (["p31-v4-s0.png"], "p31  picked"),
+        "p32": (["p32-v4-s1.png"], "p32  picked"),
+        "p33": (["p33-v4-s1.png"], "p33  picked"),
+        "p11r": (["p11r-hair-s1.png"], "p11r  YOURS + hair fix (reverse of p11)"),
+        "p22alt": (["p22-alt.png"], "p22 alt  YOURS"),
     },
 }
 
@@ -41,16 +43,15 @@ def main(board):
     tiles = []
     for panel, (names, label) in STATUS[board].items():
         src = next((os.path.join(d, n) for n in names if os.path.exists(os.path.join(d, n))), None)
-        if "v4" in os.path.basename(src or "") and "queued" in label or "rendering" in label and "v4" in (src or ""):
-            label = label.split("  ")[0] + "  NEW: review"
         out = os.path.join(d, f"_tile-{panel}.png")
         tile(src, label, out)
         tiles.append(out)
     sheet = os.path.join(ROOT, "fixed", f"{board}-sheet.png")
     inputs = sum((["-i", t] for t in tiles), [])
-    layout = "|".join(f"{c * 644}_{r * 404}" for r in range(3) for c in range(3))
+    # The user's 3x3 grid, then any added panels on extra rows.
+    layout = "|".join(f"{(i % 3) * 644}_{(i // 3) * 404}" for i in range(len(tiles)))
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex",
-                    f"xstack=inputs=9:layout={layout}:fill=0x111111", sheet], check=True)
+                    f"xstack=inputs={len(tiles)}:layout={layout}:fill=0x111111", sheet], check=True)
     for t in tiles:
         os.remove(t)
     print(sheet)
