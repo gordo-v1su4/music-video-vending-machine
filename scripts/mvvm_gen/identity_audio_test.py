@@ -58,6 +58,62 @@ def prompt_for(run, chunk):
                                   "<Audio 1>, the song itself, exactly as supplied.")
 
 
+# Shot content for the chorus chunk, one per cut slot; <Subject 1> wherever Lune is on screen.
+V4_SHOTS = [
+    "Opening shot: first-person POV sprinting through dense moonlit jungle palms at night, fronds whipping past the lens, "
+    "heavy realistic footfalls; movement follows the pulse of <Audio 1>, camera restrained through the opening phrase.",
+    "<Subject 1> runs straight toward the camera through the palms, silver headwrap and silver halter top catching green "
+    "laser light, real weight in every stride; the camera tracks backward at her running speed.",
+    "Extreme close-up of <Subject 1>'s face and eyes, her silver headwrap across her forehead, eyes wide and wet with "
+    "sweat, a green laser sweeping across her face.",
+    "Low angle at ground level: <Subject 1>'s tan suede boots slam into wet roots, mud spraying toward the lens.",
+    "The palms part and <Subject 1> bursts out onto a ridge above the festival crowd under a huge full moon; the camera "
+    "surges forward past her shoulder into the lasers.",
+]
+
+
+def music_timeline(chunk, shots_text):
+    """The template's TIMELINE, anchored on the edit plan: cuts named by what the music does there."""
+    off = lambda ms: (ms - chunk["startMs"]) / 1000
+    cuts = [off(x["startMs"]) for x in chunk["shots"]]
+    ends = [off(x["endMs"]) for x in chunk["shots"]]
+    hits = [off(x["ms"]) for x in chunk["impacts"]]
+    near_hit = lambda t: any(abs(h - t) <= 0.08 for h in hits)
+    lines = []
+    for i, (t, text) in enumerate(zip(cuts, shots_text)):
+        if i == 0:
+            lines.append(f"[Shot 1]\n{text}")
+        else:
+            last = i == len(cuts) - 1
+            if near_hit(t) and last:
+                cue = "exactly on the major hit, smash cut to a completely different composition and camera position. Strong sudden visual energy."
+            elif near_hit(t):
+                cue = "on the strong downbeat, hard cut to a dramatically different camera angle. The cut lands precisely with the musical transient."
+            elif ends[i] - t < 0.9:
+                cue = "on the sharp transient, abrupt framing change; a very fast cut that resolves immediately."
+            else:
+                cue = "synchronized to the transient, a very fast whip-pan into a closer framing; the motion begins just before the hit and resolves just after it."
+            lines.append(f"[Shot {i + 1}] At {stamp(t)}, {cue}\n{text}")
+        for h in hits:
+            if t + 0.1 < h < ends[i] - 0.1:
+                lines.append(f"At {stamp(h)}, on the kick transient inside this shot, a hard physical accent: a push-in impact "
+                             f"and a sharp movement from the subject.")
+    for b in chunk["builds"]:
+        a, z = max(0.0, off(b["startMs"])), min(ends[-1], off(b["endMs"]))
+        lines.append(f"From {stamp(a)} to {stamp(z)}, as <Audio 1> builds in intensity, progressively increase camera "
+                     f"velocity and subject movement. The acceleration should feel musically driven rather than mechanically linear.")
+    lines.append(f"From {stamp(cuts[-1] + 0.6)} to {stamp(ends[-1])}, allow the shot to breathe; camera movement follows the "
+                 f"groove without cutting on every beat.")
+    return "\n\n".join(lines)
+
+
+def music_prompt_for(run, chunk):
+    char = run.plan["characters"]["lune"]
+    subjects = [(f"{char['identity']} Outfit: {char['look']}", [1, 2], run.full_name("lune"), [2, 3, 4, 5])]
+    return graphs.h3_music_prompt(subjects, "A fast-cut chorus montage in five shots, from the jungle run to the festival ridge.",
+                                  run.plan["style"], music_timeline(chunk, V4_SHOTS))
+
+
 def face_score(ref, video):
     out = subprocess.run([COMFY_PY, "scripts/mvvm_gen/face_check.py", ref, video], capture_output=True, text=True)
     line = next((l for l in out.stdout.splitlines() if l.startswith("{")), None)
@@ -68,6 +124,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("plan")
     ap.add_argument("--at", type=float, default=230.0)
+    ap.add_argument("--variant", choices=("v3", "v4"), default="v4",
+                    help="v3: fixed ref2v prompt; v4: the user's audio-reactive music-video template")
     args = ap.parse_args(argv)
     run = Run(args.plan)
     with open(run.path("edit-plan.json"), encoding="utf-8") as fh:
@@ -76,7 +134,8 @@ def main(argv=None):
     planned = [round((x["startMs"] - chunk["startMs"]) / 1000, 2) for x in chunk["shots"][1:]]
     print(f"chunk {chunk['index']} {stamp(start)} +{seconds:.2f}s planned cuts {planned}", flush=True)
     print("preflight:", comfy.preflight(), flush=True)
-    prompt = prompt_for(run, chunk)
+    prompt = music_prompt_for(run, chunk) if args.variant == "v4" else prompt_for(run, chunk)
+    print("--- prompt ---\n" + prompt + "\n---", flush=True)
     refs = [run.upload(run.named_panel("lune", p)) for p in ("anchor", "closeup")]
     song_file = run.plan["song"]["audio"]
     song = comfy.upload_image(song_file)
@@ -85,7 +144,7 @@ def main(argv=None):
     base = seed_for(run.name, "audiotest", str(chunk["index"]))
     sla = {**run.plan.get("clip_overrides", {}).get(SLA, {}),
            "reference_protection": "Heavy Enforcement", "protect_audio": True, "dense_last_steps": 1, "dense_steps": "0-2"}
-    variants = [("v3", 0, sla), ("v3", 1, sla)]  # v3: named refs, <Subject 1> in shots 2-5, retention on those shots, headwrap required
+    variants = [(args.variant, 0, sla), (args.variant, 1, sla)]  # v3: named refs, <Subject 1> in shots 2-5, retention on those shots, headwrap required
     results = []
     for name, k, overrides in variants:
         key = f"idtest:c{chunk['index']}:{name}:s{k}"

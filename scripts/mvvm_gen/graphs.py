@@ -151,6 +151,41 @@ def h3_ref2v_prompt(subjects, summary, look, shot, sound):
     return "\n".join(parts)
 
 
+MUSIC_HEADER = (
+    "Use <Audio 1> as the master musical timing reference. Preserve the original audio continuously and synchronize "
+    "visual performance, camera movement, cuts, transitions, and motion intensity to its rhythm, transients, musical "
+    "phrases, builds, drops, and changes in energy. The visual editing should feel intentionally choreographed to the "
+    "music, not randomly reactive.")
+
+MUSIC_MOTION = """MOTION BEHAVIOR
+Low-frequency energy and kick drums: increase physical weight, camera impact, push-ins, body movement, and large-scale motion.
+Snare and sharp mid-frequency transients: trigger fast directional accents, whip-pans, abrupt framing changes, or cuts.
+High-frequency percussion: influence small rapid visual details, micro-jitters, lighting accents, or very brief glitch-like events.
+Rising musical energy: progressively increase camera speed, movement amplitude, and visual intensity.
+Breakdowns or sparse musical passages: reduce motion, lengthen shots, and stabilize the camera.
+Major drops: allow the strongest changes in shot scale, camera position, movement, or environment.
+
+EDITING RULE
+Use the supplied timestamps as explicit editing anchors. Between those anchors, interpret <Audio 1> naturally and
+maintain audiovisual synchronization. Prioritize: 1. major downbeats 2. musical drops 3. phrase changes 4. strong
+transients 5. rhythmic movement. Do not force a cut onto every beat. Do not create constant random cutting. The result
+should feel like a music-video director choreographed the camera and edit around the track."""
+
+
+def h3_music_prompt(subjects, summary, look, timeline):
+    """H3 reference prompt in the user's audio-reactive music-video template (2026-09-28): <Audio 1> is the master
+    timing reference, the timeline carries timestamped anchors from the edit plan, motion behaviour maps frequency
+    bands to kinds of movement, and the song stays the continuous soundtrack. subjects as in h3_ref2v_prompt."""
+    base = h3_ref2v_prompt(subjects, f"{MUSIC_HEADER} {summary}", look, "", "")
+    head = base.split("detailed_description:")[0]
+    return "\n".join([
+        head.rstrip(), "", "detailed_description:", look, "", "TIMELINE", timeline, "", MUSIC_MOTION, "",
+        "overall_soundscape:",
+        "Preserve any intended diegetic sound while maintaining synchronization with <Audio 1>.", "",
+        "non_diegetic_music:",
+        "<Audio 1> remains continuous and serves as the complete musical timing reference for the target video."])
+
+
 def h3_prompt(scene, motion, camera, sound="Muffled festival bass and crowd ambience. No dialogue or vocals."):
     """H3's documented multimodal prompt structure for a single continuous shot."""
     return (
