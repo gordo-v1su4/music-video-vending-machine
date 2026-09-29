@@ -5,6 +5,18 @@ use sha2::{Digest, Sha256};
 use std::{env, net::SocketAddr, sync::Arc, time::Duration};
 use utoipa::OpenApi;
 
+/// Coordinator settings are named MVVM_* (2026-09-29). The retired MVM_* spelling is still read, with a warning,
+/// until the server's private env file is renamed; then delete this fallback.
+fn setting(name: &str) -> Result<String, env::VarError> {
+    env::var(format!("MVVM_{name}")).or_else(|_| {
+        let retired = env::var(format!("MVM_{name}"));
+        if retired.is_ok() {
+            tracing::warn!("MVM_{name} is a retired name; rename it to MVVM_{name}");
+        }
+        retired
+    })
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     if env::args().any(|a| a == "--openapi") {
@@ -14,15 +26,15 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
-    let development = env::var("MVM_DEV_LOCAL").as_deref() == Ok("1");
-    let bind: SocketAddr = env::var("MVM_BIND")
+    let development = setting("DEV_LOCAL").as_deref() == Ok("1");
+    let bind: SocketAddr = setting("BIND")
         .unwrap_or_else(|_| "127.0.0.1:5199".into())
         .parse()?;
     anyhow::ensure!(
         !development || bind.ip().is_loopback(),
-        "MVM_DEV_LOCAL requires a loopback bind"
+        "MVVM_DEV_LOCAL requires a loopback bind"
     );
-    let token = env::var("MVM_OPERATOR_TOKEN").ok();
+    let token = setting("OPERATOR_TOKEN").ok();
     anyhow::ensure!(
         development || token.as_ref().is_some_and(|v| v.len() >= 32),
         "Production requires an operator token with at least 32 bytes"
@@ -35,21 +47,21 @@ async fn main() -> anyhow::Result<()> {
     )?;
     let convex = Some(convex_client.clone());
     anyhow::ensure!(
-        env::var("MVM_S3_BUCKET").is_ok(),
+        setting("S3_BUCKET").is_ok(),
         "MVVM requires configured RustFS storage"
     );
-    let endpoint = env::var("MVM_S3_ENDPOINT")?;
+    let endpoint = setting("S3_ENDPOINT").context("MVVM_S3_ENDPOINT is required")?;
     let objects: Arc<dyn ObjectStore> = Arc::new(
         AmazonS3Builder::new()
-            .with_bucket_name(env::var("MVM_S3_BUCKET")?)
-            .with_region(env::var("MVM_S3_REGION").unwrap_or_else(|_| "us-east-1".into()))
+            .with_bucket_name(setting("S3_BUCKET")?)
+            .with_region(setting("S3_REGION").unwrap_or_else(|_| "us-east-1".into()))
             .with_endpoint(&endpoint)
             .with_allow_http(endpoint.starts_with("http://"))
-            .with_access_key_id(env::var("MVM_S3_ACCESS_KEY")?)
-            .with_secret_access_key(env::var("MVM_S3_SECRET_KEY")?)
+            .with_access_key_id(setting("S3_ACCESS_KEY").context("MVVM_S3_ACCESS_KEY is required")?)
+            .with_secret_access_key(setting("S3_SECRET_KEY").context("MVVM_S3_SECRET_KEY is required")?)
             .build()?,
     );
-    let origins = env::var("MVM_ALLOWED_ORIGINS")
+    let origins = setting("ALLOWED_ORIGINS")
         .unwrap_or_else(|_| {
             "http://localhost:5198,http://127.0.0.1:5198,tauri://localhost,http://tauri.localhost"
                 .into()
@@ -65,7 +77,7 @@ async fn main() -> anyhow::Result<()> {
         token_hash,
         development,
         storage_name: "rustfs".into(),
-        object_bucket: env::var("MVM_S3_BUCKET")?,
+        object_bucket: setting("S3_BUCKET")?,
     };
     let recovery_state = state.clone();
     let recovery = tokio::spawn(async move {

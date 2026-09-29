@@ -4,7 +4,7 @@
 # ///
 """Verify the dedicated application's RustFS permissions, without root credentials.
 
-Inject MVM_S3_ACCESS_KEY and MVM_S3_SECRET_KEY with agent-secrets. Retains the
+Inject MVVM_S3_ACCESS_KEY and MVVM_S3_SECRET_KEY with agent-secrets. Retains the
 successful fixture. Negative mutations target only new disposable probe keys.
 """
 import argparse
@@ -43,8 +43,8 @@ def main():
         output.flush()
         os.fsync(output.fileno())
     client = boto3.client("s3", endpoint_url=endpoint, region_name="us-east-1",
-        aws_access_key_id=os.environ["MVM_S3_ACCESS_KEY"],
-        aws_secret_access_key=os.environ["MVM_S3_SECRET_KEY"],
+        aws_access_key_id=os.environ["MVVM_S3_ACCESS_KEY"],
+        aws_secret_access_key=os.environ["MVVM_S3_SECRET_KEY"],
         config=Config(signature_version="s3v4", s3={"addressing_style": "path"},
                       retries={"max_attempts": 0}, connect_timeout=10, read_timeout=30,
                       request_checksum_calculation="when_required", response_checksum_validation="when_required"))

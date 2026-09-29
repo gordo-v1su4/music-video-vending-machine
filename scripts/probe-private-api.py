@@ -4,7 +4,7 @@
 # ///
 """Exercise a separately launched private coordinator on loopback port 5201.
 
-Inject MVM_OPERATOR_TOKEN. Run start once, restart the coordinator, then verify
+Inject MVVM_OPERATOR_TOKEN. Run start once, restart the coordinator, then verify
 with the same receipt. Uses only synthetic media and an acceptance project.
 """
 import argparse
@@ -51,7 +51,7 @@ def session_token():
     with _session_lock:
         if _session_token is None:
             response = request("POST", "/api/v1/sessions", {"clientLabel": "Private acceptance probe"},
-                               authenticated=False, headers={"Authorization": "Bearer " + os.environ["MVM_OPERATOR_TOKEN"]})
+                               authenticated=False, headers={"Authorization": "Bearer " + os.environ["MVVM_OPERATOR_TOKEN"]})
             _session_token = json.loads(expect(201, response))["token"]
         return _session_token
 

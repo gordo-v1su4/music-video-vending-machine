@@ -5,13 +5,13 @@ services:
     restart: unless-stopped
     env_file: ${MVVM_PRIVATE_ENV:?Absolute private env path required}
     environment:
-      MVM_DEV_LOCAL: "0"
-      MVM_BIND: 0.0.0.0:5199
-      MVM_ALLOWED_ORIGINS: https://app-vm.tail7fdbe2.ts.net:8443,tauri://localhost,http://tauri.localhost
+      MVVM_DEV_LOCAL: "0"
+      MVVM_BIND: 0.0.0.0:5199
+      MVVM_ALLOWED_ORIGINS: https://app-vm.tail7fdbe2.ts.net:8443,tauri://localhost,http://tauri.localhost
       CONVEX_SELF_HOSTED_URL: http://100.118.78.13:13210
-      MVM_S3_ENDPOINT: https://s3.v1su4.dev
-      MVM_S3_BUCKET: mvvm
-      MVM_S3_REGION: us-east-1
+      MVVM_S3_ENDPOINT: https://s3.v1su4.dev
+      MVVM_S3_BUCKET: mvvm
+      MVVM_S3_REGION: us-east-1
       RUST_LOG: mvm_coordinator=info
     read_only: true
     tmpfs:

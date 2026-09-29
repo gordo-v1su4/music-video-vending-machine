@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && groupadd --gid 10001 mvvm && useradd --uid 10001 --gid mvvm --no-create-home mvvm
 COPY --from=rust-build /src/target/release/mvm-coordinator /usr/local/bin/mvvm-coordinator
 USER 10001:10001
-ENV MVM_BIND=0.0.0.0:5199
+ENV MVVM_BIND=0.0.0.0:5199
 EXPOSE 5199
 STOPSIGNAL SIGINT
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 CMD curl --fail --silent http://127.0.0.1:5199/api/v1/health > /dev/null || exit 1

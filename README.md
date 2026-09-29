@@ -13,7 +13,7 @@ The `convex/` schema and internal functions live in this repository. The home `m
 Install backend dependencies with `bun install --frozen-lockfile`. Inject the variable names from `.env.example` through the private secret manager, then run:
 
 ```powershell
-$env:MVM_DEV_LOCAL = '1'
+$env:MVVM_DEV_LOCAL = '1'
 cargo run -p mvm-coordinator --locked
 ```
 

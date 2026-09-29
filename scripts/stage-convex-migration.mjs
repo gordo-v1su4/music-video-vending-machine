@@ -34,7 +34,7 @@ async function main() {
   const key = process.env.MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY;
   if (url !== "http://100.118.78.13:13210" || !key) throw Error("Dedicated MVVM endpoint and admin credential required");
   const client = new ConvexHttpClient(url);
-  const objects = new S3Client({ endpoint: "https://s3.v1su4.dev", region: "us-east-1", forcePathStyle: true, maxAttempts: 1, credentials: { accessKeyId: process.env.MVM_S3_ACCESS_KEY, secretAccessKey: process.env.MVM_S3_SECRET_KEY } });
+  const objects = new S3Client({ endpoint: "https://s3.v1su4.dev", region: "us-east-1", forcePathStyle: true, maxAttempts: 1, credentials: { accessKeyId: process.env.MVVM_S3_ACCESS_KEY, secretAccessKey: process.env.MVVM_S3_SECRET_KEY } });
   client.setAdminAuth(key);
   const exportRef = makeFunctionReference("migration:exportSnapshot");
   const importRef = makeFunctionReference("migration:importSnapshot");

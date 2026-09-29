@@ -29,8 +29,8 @@ After exact-head review/CI gates and merge:
    artifact checksums. Set `MVVM_COORDINATOR_IMAGE` and `MVVM_WEB_IMAGE` to the
    reviewed local `sha256:` image IDs in the deployment's protected configuration.
 3. Place Compose in `/opt/mvvm-studio`. A root-only private env file supplies only
-   `MVM_OPERATOR_TOKEN`, `MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY`, `MVM_S3_ACCESS_KEY`
-   and `MVM_S3_SECRET_KEY`, fetched freshly from BWS. Map scoped MVVM storage
+   `MVVM_OPERATOR_TOKEN`, `MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY`, `MVVM_S3_ACCESS_KEY`
+   and `MVVM_S3_SECRET_KEY`, fetched freshly from BWS. Map scoped MVVM storage
    secrets to the coordinator's existing MVM env names. Set `MVVM_PRIVATE_ENV`
    to that file's absolute path. Do not log `docker compose config` with expanded
    env values. Provider credentials remain omitted until their capability and

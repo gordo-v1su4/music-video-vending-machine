@@ -15,7 +15,7 @@ class SessionProbeTests(unittest.TestCase):
         probe._session_token = None
 
     def test_parallel_requests_share_one_exchange(self):
-        with patch.dict("os.environ", {"MVM_OPERATOR_TOKEN": "synthetic-bootstrap"}), \
+        with patch.dict("os.environ", {"MVVM_OPERATOR_TOKEN": "synthetic-bootstrap"}), \
                 patch.object(probe, "request", return_value=(201, b'{"token":"synthetic-session"}')) as request:
             with ThreadPoolExecutor(max_workers=8) as pool:
                 tokens = list(pool.map(lambda _: probe.session_token(), range(16)))
@@ -25,7 +25,7 @@ class SessionProbeTests(unittest.TestCase):
             self.assertEqual(request.call_args.args[:2], ("POST", "/api/v1/sessions"))
 
     def test_failed_exchange_is_not_cached(self):
-        with patch.dict("os.environ", {"MVM_OPERATOR_TOKEN": "synthetic-bootstrap"}), \
+        with patch.dict("os.environ", {"MVVM_OPERATOR_TOKEN": "synthetic-bootstrap"}), \
                 patch.object(probe, "request", return_value=(401, b'{}')):
             with self.assertRaisesRegex(ValueError, "HTTP 201"):
                 probe.session_token()
