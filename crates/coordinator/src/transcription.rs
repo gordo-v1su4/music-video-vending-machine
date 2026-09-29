@@ -100,6 +100,11 @@ pub struct RecoverTranscription {
     pub provider_response: Option<Value>,
     #[serde(default)]
     pub confirmed_source: bool,
+    /// Operator opt-in: import `provider_response` into a job that already completed (its gaps are filled; saved
+    /// words and the original provider receipts are kept). Off by default, so a finished transcript is never
+    /// changed by accident.
+    #[serde(default)]
+    pub replace_completed: bool,
 }
 
 #[utoipa::path(post, operation_id="recover_transcription",path="/api/v1/projects/{id}/assets/{asset_id}/transcription/recovery",params(("id"=Uuid,Path),("asset_id"=Uuid,Path)),request_body=RecoverTranscription,responses((status=200,body=Option<TranscriptionJob>)))]

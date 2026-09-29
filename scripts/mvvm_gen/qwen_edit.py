@@ -51,12 +51,13 @@ def rewritten_prompt(record):
     return None
 
 
-def edit(scene, refs, instruction, out, seed=42, pe=True, resolution=1024, steps=40):
+def edit(scene, refs, instruction, out, seed=42, pe=True, resolution=1024, steps=40, canvas=None):
     """Run one edit on 7821 and write `out` (+ `out`.json). `scene` and `refs` are local image paths."""
-    fixed = conform(scene, os.path.splitext(out)[0] + "-scene.png")
-    names = [comfy.upload_image(p) for p in [fixed, *refs]]
+    # canvas: a new image at that size; then `scene` is just the first reference (not conformed) or None.
+    first = ([conform(scene, os.path.splitext(out)[0] + "-scene.png")] if not canvas else [scene] if scene else [])
+    names = [comfy.upload_image(p) for p in [*first, *refs]]
     graph = graphs.qwen21_edit(instruction, names, seed, "mvvm/qwen-edit/" + os.path.splitext(os.path.basename(out))[0],
-                               steps=steps, resolution=resolution, pe=pe, pe_seed=seed % 100000)
+                               steps=steps, resolution=resolution, pe=pe, pe_seed=seed % 100000, canvas=canvas)
     started = time.monotonic()
     prompt_id = comfy.submit(graph)
     record = comfy.wait(prompt_id, timeout=1800)

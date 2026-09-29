@@ -70,13 +70,16 @@ QWEN_PE_CLIP = "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors"
 QWEN_EDIT_UNET = "qwen_image_2.1_bf16.safetensors"  # the user's workflow; never the int8 or a LoRA for edits
 
 
-def qwen21_edit(instruction, refs, seed, prefix, steps=40, resolution=1024, unet=None, pe=True, pe_seed=42):
+def qwen21_edit(instruction, refs, seed, prefix, steps=40, resolution=1024, unet=None, pe=True, pe_seed=42,
+                canvas=None):
     """The user's proven Qwen 2.1 edit (SwarmUI kim-ho-qwen/swarm-safe-qwen-2.1-pe-i2i.json), node for node.
 
     Straight qwen_image_2.1 bf16 (no LoRA), 40 steps euler/simple, cfg 1, denoise 1.0; refs are `<image1>..` in order,
     and the canvas is the encoder's own latent (sized from the refs), not an empty latent. With pe, the
     EditPromptRewrite node (Qwen 3.5 PE model, sampling 1.0 / 0.95 / 0 / 24000) looks at the refs and rewrites the
-    instruction before encoding, exactly as in that workflow."""
+    instruction before encoding, exactly as in that workflow.
+    canvas=(w, h): a NEW image at that size (empty latent) instead of an edit on the first reference's canvas; for
+    scenes the edit can't pose (full-body action, falls), with refs as identity/style sources only."""
     g = {
         "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": unet or QWEN_EDIT_UNET, "weight_dtype": "default"}},
         "cache": {"class_type": "QwenImage21Cache", "inputs": {"model": ["unet", 0], "device": "auto", "dtype": "default"}},
@@ -97,8 +100,12 @@ def qwen21_edit(instruction, refs, seed, prefix, steps=40, resolution=1024, unet
         g["pe_text"] = {"class_type": "PreviewAny", "inputs": {"source": ["rewrite", 0]}}
     g["encode"] = {"class_type": "TextEncodeQwenImage21", "inputs": encode}
     g["sample"] = {"class_type": "KSampler", "inputs": {
-        "model": ["cache", 0], "positive": ["encode", 0], "negative": ["encode", 1], "latent_image": ["encode", 2],
+        "model": ["cache", 0], "positive": ["encode", 0], "negative": ["encode", 1],
+        "latent_image": ["canvas", 0] if canvas else ["encode", 2],
         "seed": seed, "steps": steps, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}}
+    if canvas:
+        g["canvas"] = {"class_type": "EmptyLatentImage", "inputs": {"width": snap32(canvas[0]), "height": snap32(canvas[1]),
+                                                                    "batch_size": 1}}
     g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sample", 0], "vae": ["vae", 0]}}
     g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}}
     return g

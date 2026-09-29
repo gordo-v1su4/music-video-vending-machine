@@ -20,10 +20,10 @@ export const enqueue=internalMutation({args:{auth:identity,projectId:v.string(),
   const now=new Date().toISOString();
   await ctx.db.insert("transcription_jobs",{legacyId:args.jobId,data:{id:args.jobId,asset_id:args.assetId,project_id:args.projectId,sha256:meta.sha256,model:"stack-structure-v1",status:"queued",message:null,result:null,receipt:null,created_at:now,updated_at:now,next_poll_at:now}});
 }});
-export const recover=internalMutation({args:{auth:identity,expectedUpdatedAt:v.string(),data:rows.transcription_jobs},handler:async(ctx,{auth,expectedUpdatedAt,data})=>{
+export const recover=internalMutation({args:{auth:identity,expectedUpdatedAt:v.string(),allowCompleted:v.optional(v.boolean()),data:rows.transcription_jobs},handler:async(ctx,{auth,expectedUpdatedAt,allowCompleted,data})=>{
   await requireSession(ctx,auth);
   const row=await ctx.db.query("transcription_jobs").withIndex("by_legacy_id",q=>q.eq("legacyId",data.id)).unique();
-  if(!row || Date.parse(row.data.updated_at)!==Date.parse(expectedUpdatedAt) || !["failed","reconciliation_required"].includes(row.data.status)) throw new ConvexError("CONFLICT");
+  if(!row || Date.parse(row.data.updated_at)!==Date.parse(expectedUpdatedAt) || !["failed","reconciliation_required",...(allowCompleted?["completed"]:[])].includes(row.data.status)) throw new ConvexError("CONFLICT");
   const latest=(await ctx.db.query("transcription_jobs").withIndex("by_asset_model",q=>q.eq("data.asset_id",row.data.asset_id)).collect()).sort((a,b)=>Date.parse(b.data.created_at)-Date.parse(a.data.created_at))[0];
   const asset=await ctx.db.query("assets").withIndex("by_legacy_id",q=>q.eq("legacyId",data.asset_id)).unique();
   if(latest?._id!==row._id || !asset || asset.data.project_id!==data.project_id || row.data.asset_id!==data.asset_id || row.data.project_id!==data.project_id || row.data.sha256!==data.sha256 || JSON.parse(asset.data.metadata).sha256!==data.sha256 || row.data.model!==data.model || data.status!=="completed") throw new ConvexError("CONFLICT");

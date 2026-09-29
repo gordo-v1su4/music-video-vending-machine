@@ -100,6 +100,14 @@ Lessons:
 
 - **Settled recipe (2026-09-28): upscale, then C**, one character per pass, with "with smooth clear skin" for Lune. The proportion check picks the takes that kept the panel's composition.
 - Use **C's formula to replace a whole person** (the user's preferred look).
+- **Full-body action (falls, leaps): do not patch the panel.** On board2 p23 every edit of the panel was rejected:
+  - "Replace…" kept the doubled figure.
+  - Clearing the plate first gave a posed studio portrait.
+  - "Put … in place of the falling figures" gave arms up, but no motion blur and wrong body proportions.
+  Render a **new image** instead: `qwen_edit.edit(master, [panel], "Using the woman from <image1>, create a new
+  cinematic widescreen photograph with the camera angle, mist and colour grade of <image2>: …", canvas=(1344, 768))`,
+  with the action and "strong motion blur streaks on her limbs, hair and the mist" stated. The canvas is an empty
+  latent, so the model draws the whole body.
 - Use "Replace … same face" only when the rest of the frame is already production quality.
 - **Low-res source:** upscale the scene first (single image, no tags): "Keep colors exactly the same, upscale the
   image." Output quality follows input quality (research doc).

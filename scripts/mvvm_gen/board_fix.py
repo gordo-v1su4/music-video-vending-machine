@@ -63,6 +63,11 @@ EDITS = {
                  "from the fall. Match the exact lighting and environment of <image1>.", ["lune"], False)],
         "p31": [UPSCALE, put("lune", ", with her eyes closed", ", with bubbles drifting in front of her face")],
         "p33": [UPSCALE, put("rafa", ", not smiling", ""), put("lune", "", "")],
+        "p11": [UPSCALE, put("rafa", ", running toward her across the rope bridge", ""),
+                put("lune", ", seen from behind in the foreground", "")],
+        "p12": [UPSCALE, put("lune", ", reaching her hand toward the camera", "")],
+        "p32": [UPSCALE, put("lune", ", sinking through the water as a dark silhouette with her arms raised",
+                             ", with bubbles rising around her")],
     },
 }
 
@@ -85,11 +90,18 @@ def step_refs(run, cast):
 def edit_main(run, args):
     """Each panel's steps through qwen_edit.edit (the locked call); the last step's image is the take."""
     report = {}
+    finals_path = run.path("boards", "fixed", "finals.json")
+    user_finals = {k: v for k, v in (json.load(open(finals_path, encoding="utf-8")) if os.path.exists(finals_path)
+                                      else {}).items() if v.get("source", "").startswith("user-made")}
     for board in args.boards:
         src_dir, out_dir = run.path("boards", board), run.path("boards", "fixed", board)
         os.makedirs(out_dir, exist_ok=True)
         for panel, steps in EDITS[board].items():
             if args.panels and panel not in args.panels:
+                continue
+            if f"{board}/{panel}" in user_finals:
+                print(f"[boardedit] {board}/{panel}: the user made this one ({user_finals[f'{board}/{panel}']['source']}); "
+                      "skipped", flush=True)
                 continue
             original = qwen_edit.conform(os.path.join(src_dir, f"{panel}.png"), os.path.join(out_dir, f"{panel}-scene.png"))
             for k in range(args.seeds):
