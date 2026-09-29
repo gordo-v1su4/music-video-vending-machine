@@ -1,0 +1,177 @@
+{
+ "unet": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "qwen_image_2.1_bf16.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "cache": {
+  "class_type": "QwenImage21Cache",
+  "inputs": {
+   "model": [
+    "unet",
+    0
+   ],
+   "device": "auto",
+   "dtype": "default"
+  }
+ },
+ "clip": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_8b_bf16.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "vae": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+  }
+ },
+ "ref1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "scene.png"
+  }
+ },
+ "ref2": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "ref1.png"
+  }
+ },
+ "ref3": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "ref2.png"
+  }
+ },
+ "pe_clip": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  }
+ },
+ "rewrite": {
+  "class_type": "QwenImage21_EditPromptRewrite",
+  "inputs": {
+   "clip": [
+    "pe_clip",
+    0
+   ],
+   "prompt": "Replace the woman in <image1> with the woman from <image2>, same face.",
+   "temperature": 1.0,
+   "top_p": 0.95,
+   "presence_penalty": 0.0,
+   "max_length": 24000,
+   "seed": 42,
+   "image_1": [
+    "ref1",
+    0
+   ],
+   "image_2": [
+    "ref2",
+    0
+   ],
+   "image_3": [
+    "ref3",
+    0
+   ]
+  }
+ },
+ "pe_text": {
+  "class_type": "PreviewAny",
+  "inputs": {
+   "source": [
+    "rewrite",
+    0
+   ]
+  }
+ },
+ "encode": {
+  "class_type": "TextEncodeQwenImage21",
+  "inputs": {
+   "clip": [
+    "clip",
+    0
+   ],
+   "prompt": [
+    "rewrite",
+    0
+   ],
+   "negative_prompt": "",
+   "resolution": 1024,
+   "vae": [
+    "vae",
+    0
+   ],
+   "images.image_1": [
+    "ref1",
+    0
+   ],
+   "images.image_2": [
+    "ref2",
+    0
+   ],
+   "images.image_3": [
+    "ref3",
+    0
+   ]
+  }
+ },
+ "sample": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "cache",
+    0
+   ],
+   "positive": [
+    "encode",
+    0
+   ],
+   "negative": [
+    "encode",
+    1
+   ],
+   "latent_image": [
+    "encode",
+    2
+   ],
+   "seed": 42,
+   "steps": 40,
+   "cfg": 1.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0
+  }
+ },
+ "decode": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "sample",
+    0
+   ],
+   "vae": [
+    "vae",
+    0
+   ]
+  }
+ },
+ "save": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "decode",
+    0
+   ],
+   "filename_prefix": "qwen-edit"
+  }
+ }
+}

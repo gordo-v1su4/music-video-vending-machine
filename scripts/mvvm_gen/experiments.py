@@ -146,7 +146,7 @@ def main(argv=None):
         pid = comfy.submit(graph)
         print(f"[{eid}] chunk {ci} ({title}) queued as {pid}, {len(prompt)} chars", flush=True)
         jobs.append((eid, ci, pid, dest, chunk))
-    identity = lune["identity_ref"]
+    identity = lune.get("master_ref", lune["identity_ref"])
     for eid, ci, pid, dest, chunk in jobs:
         record = comfy.wait(pid, timeout=run.plan.get("job_timeout_s", 1200))
         comfy.download(comfy.output_files(record)[0], dest)

@@ -28,8 +28,13 @@ def h3_length(seconds):
     return frames + (17 - (frames - 5) % 17) % 17
 
 
-def qwen21_image(prompt, refs, width, height, seed, prefix, steps=40, ref_resolution=1024, unet=None):
-    """Text-to-image (no refs) or reference edit/composite (refs = uploaded names)."""
+def qwen21_image(prompt, refs, width, height, seed, prefix, steps=40, ref_resolution=1024, unet=None,
+                 init_image=None, denoise=1.0, mask_image=None):
+    """Text-to-image (no refs) or reference edit/composite (refs = uploaded names).
+
+    init_image + denoise < 1: start from that image (scaled to the canvas) instead of an empty latent, so its
+    composition, framing and light survive and only `denoise` of it is re-rendered (image-to-image).
+    mask_image (with init_image): only the white area of that mask is re-rendered (inpaint); the rest stays exact."""
     g = {
         "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": unet or QWEN["unet"], "weight_dtype": "default"}},
         "cache": {"class_type": "QwenImage21Cache", "inputs": {"model": ["unet", 0], "device": "auto", "dtype": "default"}},
@@ -42,8 +47,57 @@ def qwen21_image(prompt, refs, width, height, seed, prefix, steps=40, ref_resolu
         g[f"ref{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
         encode[f"images.image_{i}"] = [f"ref{i}", 0]
     g["encode"] = {"class_type": "TextEncodeQwenImage21", "inputs": encode}
+    if init_image:
+        g["init"] = {"class_type": "LoadImage", "inputs": {"image": init_image}}
+        g["init_scaled"] = {"class_type": "ImageScale", "inputs": {"image": ["init", 0], "upscale_method": "lanczos",
+                                                                   "width": snap32(width), "height": snap32(height),
+                                                                   "crop": "center"}}
+        g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["init_scaled", 0], "vae": ["vae", 0]}}
+        if mask_image:
+            g["mask"] = {"class_type": "LoadImageMask", "inputs": {"image": mask_image, "channel": "red"}}
+            g["encoded"] = g.pop("latent")
+            g["latent"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["encoded", 0], "mask": ["mask", 0]}}
     g["sample"] = {"class_type": "KSampler", "inputs": {
         "model": ["cache", 0], "positive": ["encode", 0], "negative": ["encode", 1], "latent_image": ["latent", 0],
+        "seed": seed, "steps": steps, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple",
+        "denoise": float(denoise) if init_image else 1.0}}
+    g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sample", 0], "vae": ["vae", 0]}}
+    g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}}
+    return g
+
+
+QWEN_PE_CLIP = "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors"
+QWEN_EDIT_UNET = "qwen_image_2.1_bf16.safetensors"  # the user's workflow; never the int8 or a LoRA for edits
+
+
+def qwen21_edit(instruction, refs, seed, prefix, steps=40, resolution=1024, unet=None, pe=True, pe_seed=42):
+    """The user's proven Qwen 2.1 edit (SwarmUI kim-ho-qwen/swarm-safe-qwen-2.1-pe-i2i.json), node for node.
+
+    Straight qwen_image_2.1 bf16 (no LoRA), 40 steps euler/simple, cfg 1, denoise 1.0; refs are `<image1>..` in order,
+    and the canvas is the encoder's own latent (sized from the refs), not an empty latent. With pe, the
+    EditPromptRewrite node (Qwen 3.5 PE model, sampling 1.0 / 0.95 / 0 / 24000) looks at the refs and rewrites the
+    instruction before encoding, exactly as in that workflow."""
+    g = {
+        "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": unet or QWEN_EDIT_UNET, "weight_dtype": "default"}},
+        "cache": {"class_type": "QwenImage21Cache", "inputs": {"model": ["unet", 0], "device": "auto", "dtype": "default"}},
+        "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": QWEN["clip"], "type": "qwen_image", "device": "default"}},
+        "vae": {"class_type": "VAELoader", "inputs": {"vae_name": QWEN["vae"]}},
+    }
+    encode = {"clip": ["clip", 0], "prompt": instruction, "negative_prompt": "", "resolution": resolution, "vae": ["vae", 0]}
+    rewrite = {"prompt": instruction, "temperature": 1.0, "top_p": 0.95, "presence_penalty": 0.0,
+               "max_length": 24000, "seed": pe_seed}
+    for i, name in enumerate(refs, start=1):
+        g[f"ref{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+        encode[f"images.image_{i}"] = [f"ref{i}", 0]
+        rewrite[f"image_{i}"] = [f"ref{i}", 0]
+    if pe:
+        g["pe_clip"] = {"class_type": "CLIPLoader", "inputs": {"clip_name": QWEN_PE_CLIP, "type": "qwen_image", "device": "default"}}
+        g["rewrite"] = {"class_type": "QwenImage21_EditPromptRewrite", "inputs": {"clip": ["pe_clip", 0], **rewrite}}
+        encode["prompt"] = ["rewrite", 0]
+        g["pe_text"] = {"class_type": "PreviewAny", "inputs": {"source": ["rewrite", 0]}}
+    g["encode"] = {"class_type": "TextEncodeQwenImage21", "inputs": encode}
+    g["sample"] = {"class_type": "KSampler", "inputs": {
+        "model": ["cache", 0], "positive": ["encode", 0], "negative": ["encode", 1], "latent_image": ["encode", 2],
         "seed": seed, "steps": steps, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}}
     g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sample", 0], "vae": ["vae", 0]}}
     g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}}

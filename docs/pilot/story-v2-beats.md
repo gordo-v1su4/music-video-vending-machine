@@ -18,6 +18,17 @@ shot slots, impacts, stutters and builds are from the song analysis, not hand ti
 | 29 | 4:24-4:34 | inst, build to 4:31.6 | The reveal: slow push as he turns; on the peak hit, hard cut to his face, clearly not Rafa. Cut to her: smile collapses into confusion then hurt, held in slow motion. |
 | 30 | 4:34-4:42 | verse, calm | She pulls away; he is bewildered. Alone again, searching the crowd. |
 
+## Performance notes (user, after the first experiments)
+
+- Rafa does not smile all the time: mostly intent, longing, strain; a smile only where the beat earns it.
+- The stranger almost sees her, then looks through her, and is pulled away by someone else (a hand on his arm, another
+  woman or friends dragging him into the crowd) before any real contact: the rejection reads as indifference.
+- More lyrical / pedestrian-contemporary dance and fast movement; quicker cuts and jerky snaps to the beats.
+- User storyboards (`.runtime/gen/i-ran-pilot/boards/src`, nine 3x3 grids) are the visual source: panels are chopped,
+  characters put back exactly with Qwen 2.1 edit (`scripts/mvvm_gen/board_fix.py`), then animated first-frame on
+  the music. Board 2 (rope bridge -> reach -> almost-touch -> bridge breaks -> fall -> underwater -> kiss in the water)
+  is the user's favourite; board 3 has the right colours but weak characters.
+
 ## Making the twist read
 
 1. Establish Rafa's face: a clean close-up in chunks 23-24 (curly black hair, goatee, open olive shirt).
