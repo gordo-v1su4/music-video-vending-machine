@@ -1,6 +1,18 @@
 # Music Video Vending Machine (mvvm)
 
-Personal narrative music-video studio. **Under construction; not production-ready.**
+Turn a song and a story into an editable narrative music video.
+
+## Stack
+
+- Rust (Axum) coordinator API
+- Self-hosted Convex
+- RustFS object storage
+- Svelte web client
+- Python operator probes and ComfyUI workflow definitions for local SwarmUI/ComfyUI (Qwen Image, MiniMax H3)
+
+## Status
+
+Under construction. Not production-ready.
 
 The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Greptile must award the current implementation PR head 5/5 before merge, with checks green.
 
