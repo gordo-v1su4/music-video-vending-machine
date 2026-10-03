@@ -5,7 +5,7 @@
   "status": "partial",
   "productionAdapterAccepted": false,
   "comfy": {
-    "endpoint": "http://127.0.0.1:8198",
+    "endpoint": "",
     "mode": "isolated_standalone",
     "version": "0.37.0",
     "commit": "73c9bad4d21e7addbe1d13bc92eee0f1431b017d",
@@ -158,7 +158,7 @@
   ],
   "essentia": {
     "status": "synthetic_fixture_pass",
-    "endpoint": "http://100.118.78.13:18000",
+    "endpoint": "",
     "receipt": ".runtime/essentia-private-receipt.json",
     "providerId": "8f1f42bcff9d461b95593321af433216",
     "imageDigest": "sha256:86b7699795e387091286e6a5a85d481f2e81d5f9e2fcb9b753d211331f83491d",

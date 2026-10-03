@@ -15,7 +15,7 @@ its old audio metadata and URLs are not used.
   has 16,944,000 samples, exactly 353 seconds; all preceding samples match the
   untrimmed master. A 320 kbps MP3 reports 353.000000 seconds.
 - The current MP3 completed `POST /analyze/studio/jobs` followed by polling its
-  retained identity at `https://essentia.v1su4.dev`, the same public Studio
+  retained identity at the configured Essentia base URL, the same public Studio
   contract used by Beatsmaxxer Pro. Result: duration 352.999977 seconds, 22 raw
   musical sections, 795 beats, 1,341 onsets, measured 136.831284 BPM. The user's
   locked 137 BPM is separate from the estimate. Model section end rounding is

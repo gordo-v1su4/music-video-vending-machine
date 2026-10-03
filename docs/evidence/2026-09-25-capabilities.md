@@ -25,7 +25,7 @@ Five-second NVIDIA samples during the edit/H3 sequence reached **31,659 MiB whol
 
 The supplied `ComfyUI-EZi KitchenAttention.bat` delegates to the installation helper, whose launch command includes `--use-ck-attention`. This probe instead used PyTorch attention; KitchenAttention compatibility/performance is **unverified**. Preserve that distinction when reproducing or changing the runtime.
 
-If switching to SwarmUI, use only the user-approved SwarmUI launcher and let it own its ComfyUI backend; never start the backend independently. The vault runbook identifies `D:\SwarmUI\Windows_Start_SwarmUI.bat`; the literal supplied `D:\SwarmUI\Windows\_Start\_SwarmUI.bat` was absent. No SwarmUI launch occurred. The current standalone route avoids guessing a replacement launcher. The canonical local instructions were read from `hermes-notebook-vault/10-Infrastructure/SwarmUI-ComfyUI Runtime Runbook.md`.
+If switching to SwarmUI, use only the user-approved SwarmUI launcher and let it own its ComfyUI backend; never start the backend independently. The vault runbook identifies `SwarmUI launcher script`; the literal supplied `SwarmUI launcher script` was absent. No SwarmUI launch occurred. The current standalone route avoids guessing a replacement launcher. The canonical local instructions were read from `private operator vault/10-Infrastructure/SwarmUI-ComfyUI Runtime Runbook.md`.
 
 ## Reproduction and submission safety
 

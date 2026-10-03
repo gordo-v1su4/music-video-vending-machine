@@ -1,8 +1,7 @@
 # Private home deployment
 
-Target: home `app-vm`, with primary Convex 13210 and private RustFS bucket `mvvm`.
-The public edge is not used. Dedicated Tailscale HTTPS origin:
-`https://app-vm.tail7fdbe2.ts.net:8443`.
+Target: a private application host running dedicated Convex and a scoped RustFS bucket (names and URLs via deployment env, not committed).
+The public internet edge is not used. HTTPS is terminated on a private overlay network and proxied to loopback services.
 
 `deploy/Dockerfile` builds separate coordinator and static web images from pinned
 base-image digests and frozen Cargo/Bun dependencies. Pass the exact HTTPS
@@ -12,7 +11,7 @@ dependencies. The coordinator includes FFmpeg, runs as UID 10001, and requires
 its existing production session configuration. The web image removes Caddy's
 unneeded privileged-port file capability and also runs as UID 10001.
 
-`deploy/compose.yaml` serves HTTP only on app-vm loopback port 13220; the
+`deploy/compose.yaml` serves HTTP only on application host loopback port 13220; the
 coordinator has no host-published port. Both containers drop all capabilities,
 use read-only roots and bounded memory/CPU. Writable scratch is tmpfs. Tailscale
 Serve will terminate HTTPS and proxy to loopback. Never enable Funnel for this
@@ -41,7 +40,7 @@ After exact-head review/CI gates and merge:
    session creation, authenticated reads, logout/revocation, media and restart
    persistence. Verify the visible browser against HTTPS.
 5. Record the active source/image identities and rollback configuration in the
-   canonical `proxmox-home` runbook and synced operator index.
+   canonical `private infrastructure repository` runbook and synced operator index.
 
 Rollback uses the previous image IDs/configuration with the same compatible
 database. Do not restore an old database over newer edits to undo an image
@@ -52,8 +51,8 @@ recovery decision. Do not remove Convex or RustFS volumes.
 
 The static web image builds and serves HTTP 200 under the same non-root,
 read-only, no-capability restrictions. Header checks and Caddy config validation
-pass. The coordinator image built on app-vm after Docker Desktop repeatedly
+pass. The coordinator image built on application host after Docker Desktop repeatedly
 failed downloading a pinned Rust image layer; the same image pulled successfully
-on app-vm. Its restricted-runtime OpenAPI check passed, image user is 10001,
+on application host. Its restricted-runtime OpenAPI check passed, image user is 10001,
 and Compose configuration validates. This is packaging work, not an accepted live private deployment.
 CI builds both images and smoke-tests their restricted runtimes.

@@ -1,6 +1,6 @@
 # Svelte Video Shaders donor audit
 
-Source inspection on 2026-09-25 of `C:/Users/Gordo/Documents/Github/svelte-video-shaders`, local `main` at `893eedb`. Existing modified `.gitignore` and untracked `UI_UX_DESIGN_HANDOFF.md` preserved. `graft map` reports no graph; no graph was built during this read-only pass. Read AGENTS/CLAUDE and relevant local rules, plus the Svelte code-writer skill. No dependencies installed, components edited, servers started, generation requested, runtime tests or browser verification performed.
+Source inspection on 2026-09-25 of `donor-repo/svelte-video-shaders`, local `main` at `893eedb`. Existing modified `.gitignore` and untracked `UI_UX_DESIGN_HANDOFF.md` preserved. `graft map` reports no graph; no graph was built during this read-only pass. Read AGENTS/CLAUDE and relevant local rules, plus the Svelte code-writer skill. No dependencies installed, components edited, servers started, generation requested, runtime tests or browser verification performed.
 
 ## Recommended role
 

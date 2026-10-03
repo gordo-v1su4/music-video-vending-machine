@@ -1,6 +1,6 @@
 # Project Stack Structure UI reuse source audit
 
-Inspected 2026-09-25 at `C:/Users/Gordo/Documents/Github/project-stack-structure`, local `main`, HEAD `0e8c45c`. Working tree already has modified package/config/agent files and an unrelated deleted plan; preserve those. This is a bounded source inspection, not a browser, service, generation, or export test. No servers started or packages installed.
+Inspected 2026-09-25 at `donor-repo/project-stack-structure`, local `main`, HEAD `0e8c45c`. Working tree already has modified package/config/agent files and an unrelated deleted plan; preserve those. This is a bounded source inspection, not a browser, service, generation, or export test. No servers started or packages installed.
 
 ## Recommendation
 
@@ -10,7 +10,7 @@ The older memory about a missing treatment layer is stale: current source contai
 
 ## Implemented source and reuse implications
 
-All paths below are relative to `C:/Users/Gordo/Documents/Github/project-stack-structure`; line numbers refer to this inspection.
+All paths below are relative to `donor-repo/project-stack-structure`; line numbers refer to this inspection.
 
 | Area | Current source evidence | Reuse and limits |
 | --- | --- | --- |

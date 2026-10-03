@@ -1,6 +1,6 @@
 {
   "bucket": "mvvm",
-  "endpoint": "https://s3.v1su4.dev",
+  "endpoint": "",
   "key": "projects/25b33767-c252-4c11-bcd3-66a4d1159ac2/storage-acceptance.bin",
   "created": true,
   "bytes": 65536,

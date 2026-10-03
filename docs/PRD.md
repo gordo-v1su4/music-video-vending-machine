@@ -10,7 +10,7 @@ A personal, local-first studio turns an approved song and collaboratively develo
 
 | ID | Requirement |
 | --- | --- |
-| R01 | Shared Svelte web and Windows Tauri clients, homelab Rust coordinator, dedicated self-hosted Convex on home app-vm (user-approved September 26 database revision), existing RustFS, existing Trigger with a thin Bun task layer, Windows RTX 5090 worker. |
+| R01 | Shared Svelte web and Windows Tauri clients, homelab Rust coordinator, dedicated self-hosted Convex on home application host (user-approved September 26 database revision), existing RustFS, existing Trigger with a thin Bun task layer, Windows RTX 5090 worker. |
 | R02 | Import and preserve source audio, optional stems/MIDI, lyrics, images and clips. Approve an immutable production master. Verify optional timing assets before use. |
 | R03 | Use Essentia analysis tied to master identity; preserve uncertainty and manual corrections. Narrative v1 does not promise word-level alignment or lip sync. |
 | R04 | Central visual canvas with Story, References, Production and Review views; persistent preview and compact representational timeline. Collaborative treatment, stable character/location identities, exact versus inspiration references. Production presents story/beat planning and prompts, image generation, video generation, automatic beat-derived compositing, and a distinct review stage as a clear progress experience rather than a bare checklist. |

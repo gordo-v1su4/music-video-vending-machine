@@ -39,7 +39,7 @@ User instruction, 2026-09-25: commit and push completed work through implementat
 
 - UI: dark mode by user preference; use the pinned project-local Impeccable skill for design and testing. Record audit results and actual browser observations; preserve product rules during visual refinement.
 
-- Metadata: dedicated self-hosted Convex on home app-vm with transactional revision checks; never Trigger internal tables.
+- Metadata: dedicated self-hosted Convex on home application host with transactional revision checks; never Trigger internal tables.
 - GPU: one heavy workload at a time until measured coexistence proves otherwise.
 - Runtime truth: capability manifest records tested model/workflow hashes, versions, memory and elapsed time.
 - Director: Jcode acceptance suite first; application-owned OpenAI-compatible loop if it fails, with identical validated action contracts.

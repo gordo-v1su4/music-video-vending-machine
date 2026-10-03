@@ -1,6 +1,6 @@
 # MVVM Convex migration
 
-User-approved target: a dedicated self-hosted Convex instance on home `app-vm`,
+User-approved target: a dedicated self-hosted Convex instance on home `application host`,
 named `mvvm`, with RustFS for object storage and Trigger for orchestration.
 This supersedes PostgreSQL as the application database. The primary local coordinator now runs the Convex-only binary against the `mvvm` instance and RustFS bucket. No creative approval or paid-call authorization changes.
 
@@ -159,7 +159,7 @@ cleanup is outstanding alongside the legacy SQL adapter removal.
 - Verify the actual app in the in-app browser, then exact-head Greptile 5/5,
   green CI and resolved findings before merging the implementation PR.
 
-Infrastructure runbook: `proxmox-home/docs/mvvm-convex.md`. Existing RustFS bucket
+Infrastructure runbook: `private infrastructure repository/docs/mvvm-convex.md`. Existing RustFS bucket
 and PostgreSQL identities remain source locations until their migration is verified.
 `scripts/stage-convex-migration.mjs` is diagnostic staging tooling, not a cutover
 command. It compares full materialized records, including the large analysis result.
@@ -193,7 +193,7 @@ command. It compares full materialized records, including the large analysis res
 - BWS MVVM_S3_ACCESS_KEY / MVVM_S3_SECRET_KEY created and silently verified.
   Policy mvvm-coordinator-v1 grants only projects-prefix GET/PUT and listing.
   Scope denial checks passed; evidence: 2026-09-26-mvvm-scoped-storage.json.
-  Canonical infra policy/runbook committed and pushed as proxmox-home 7175d23;
+  Canonical infra policy/runbook committed and pushed as private infrastructure repository 7175d23;
   vault secret inventory updated. Old credentials and source bucket preserved.
 - All three original media assets (25,242,410 bytes) copied with create-only
   writes to mvvm and read back with matching SHA-256 and lengths. This copy
@@ -287,7 +287,7 @@ command. It compares full materialized records, including the large analysis res
 
 ## Isolated Convex restore and private API acceptance — 2026-09-26
 
-- Provisioned separate restore-check backend on app-vm ports 13212/13213 and
+- Provisioned separate restore-check backend on application host ports 13212/13213 and
   mvvm-convex-restore-check-data. Primary 13210 and its volume unchanged.
   Reused existing MVVM instance identity; no new permanent secrets.
 - Deployed current schema/functions and imported the checksum-pinned prepared

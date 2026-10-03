@@ -108,7 +108,7 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 
 Recent work focused on durable saving, private storage, authentication, draft retention, and review fixes. Visible local tests created a project, saved its treatment, reloaded it, and preserved a draft through sign-out/reconnect. Those checks do **not** prove audio segmentation, story generation, or finished video production.
 
-The dark zinc workspace is implemented. Browser testing must stay in the user's visible in-app tab. Local services use web 5198 and API 5199, with Convex on home app-vm and media in RustFS `mvvm`. PostgreSQL 54329 is retained rollback material only; it is no longer the application database. The local API remains development-only and omits provider credentials during migration review.
+The dark zinc workspace is implemented. Browser testing must stay in the user's visible in-app tab. Local services use web 5198 and API 5199, with Convex on home application host and media in RustFS `mvvm`. PostgreSQL 54329 is retained rollback material only; it is no longer the application database. The local API remains development-only and omits provider credentials during migration review.
 
 ## Rules that stay in force
 

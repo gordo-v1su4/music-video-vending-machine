@@ -1,7 +1,7 @@
 {
   "state": "passed",
   "checkedAt": "2026-09-26T02:48:12.768723+00:00",
-  "endpoint": "https://s3.v1su4.dev",
+  "endpoint": "",
   "bucket": "music-vending-machine",
   "key": "projects/75e2e899-5a64-4771-923c-592731027c14/permission-probe.bin",
   "sha256": "ef48d735c4ebee55fd50b70b973d4f946e091b32ee5faeab571995058cc7b233",
