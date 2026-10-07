@@ -4,6 +4,8 @@ Personal narrative music-video studio. **Under construction; not production-read
 
 The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Greptile must award the current implementation PR head 5/5 before merge, with checks green.
 
+![Music Video Vending Machine song treatment and analysis](docs/images/music-video-workspace.png)
+
 ## Development
 
 Requirements: Rust stable, Bun, FFmpeg/FFprobe, a private self-hosted Convex deployment, and RustFS. The coordinator binds to 127.0.0.1:5199; web development uses 127.0.0.1:5198 with strict port binding.
