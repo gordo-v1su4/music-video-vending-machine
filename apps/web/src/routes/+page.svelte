@@ -15,6 +15,7 @@
   } from "$lib/api";
   import Transport from "$lib/Transport.svelte";
   import TakeReview from "$lib/TakeReview.svelte";
+  import ProductionStudio from "$lib/ProductionStudio.svelte";
   import FirstCut from "$lib/FirstCut.svelte";
   import CutVideo from "$lib/CutVideo.svelte";
   import { pilotCut } from "$lib/pilot-cut.svelte";
@@ -1079,22 +1080,20 @@
                   Save story edits before approving production.
                 </p>{/if}
             </article>
-            <article class="panel capability-panel">
-              <span class="capability-symbol" aria-hidden="true"
-                ><Icon name="production" /></span
-              >
-              <div>
-                <h2>Generation is not connected yet</h2>
-                <p>
-                  The local image and video workflows must pass a real
-                  generation check before this studio can submit production.
-                  Your approvals are saved; no generation has been submitted.
-                </p>
-                <span class="tag"
-                  >Qwen and MiniMax H3 awaiting verification</span
-                >
-              </div>
-            </article>
+            <h2 class="journey-heading">Local production journey</h2>
+            <p class="subtle">
+              The pilot's approved packet, prompts, SwarmUI renders, review and
+              Keep decisions. Renders start from presets in SwarmUI's Generate
+              tab; this view collects their receipts.
+            </p>
+            {#if masterAsset}
+              <SongAnalysis client={api} projectId={project.id} asset={masterAsset} source={urls[masterAsset.id]}
+                lyrics={alignedTranscript?.chunks ?? []} available={serverAvailable && !connecting} locked hasSections={sections.length > 0}
+                focus={{ startMs: 229285, endMs: 263663 }}
+                onError={(e) => { if (e instanceof ApiError && e.status === 401) report(e); }}
+                onUse={() => {}} />
+            {/if}
+            <ProductionStudio embedded />
             {#if project.shots.length}<h2>Shot coverage</h2>
               <div class="shot-list">
                 {#each project.shots as shot (shot.id)}<article

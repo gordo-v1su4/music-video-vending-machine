@@ -1135,17 +1135,8 @@ main {
   color: #f4f4f5;
   line-height: 1.5;
 }
-.capability-panel {
-  display: flex;
-  gap: 20px;
-}
-.capability-symbol {
-  font-size: 35px;
-  color: #d4d4d8;
-}
-.capability-panel p {
-  font-size: 12px;
-  margin: 10px 0 15px;
+.journey-heading {
+  margin-top: 28px;
 }
 .shot-list {
   margin-top: 17px;
@@ -1702,9 +1693,6 @@ input[type="range"].playhead {
   }
   .approval-details dd {
     margin-top: 8px;
-  }
-  .capability-panel {
-    flex-direction: column;
   }
   .button-row {
     flex-wrap: wrap;

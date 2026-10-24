@@ -8,8 +8,10 @@
   import { buildCutMap, energyAt, hitCurve, type CutSource } from './cut-map';
   import { beatMsFrom, findImpacts, findStutters, planChunks } from './edit-plan';
 
-  let { client, projectId, asset, source, lyrics = [], available, locked, hasSections, onUse, onError }: {
+  let { client, projectId, asset, source, lyrics = [], available, locked, hasSections, focus, onUse, onError }: {
     client: StudioApi; projectId: string; asset: Asset; source?: string;
+    /** Open zoomed to this song window once the analysis loads (e.g. a production passage). */
+    focus?: { startMs: number; endMs: number };
     available: boolean; locked: boolean; hasSections: boolean;
     lyrics?: NonNullable<TranscriptionJob['result']>['chunks'];
     onUse: (result: SongAnalysis) => void; onError: (error: unknown) => void;
@@ -120,6 +122,13 @@
     viewSpan = width >= durationMs ? 0 : width;
     viewStart = Math.max(0, Math.min(durationMs - width, start));
   }
+  let focused = false;
+  $effect(() => {
+    if (focus && result && !focused) {
+      focused = true;
+      setView(focus.startMs, focus.endMs - focus.startMs);
+    }
+  });
   function zoomBy(factor: number, anchorMs = viewStart + span / 2) {
     const next = Math.max(MIN_SPAN_MS, Math.min(durationMs, span * factor));
     setView(anchorMs - ((anchorMs - viewStart) * next) / span, next);
