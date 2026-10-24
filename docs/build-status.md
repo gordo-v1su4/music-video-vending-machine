@@ -4,7 +4,7 @@ Updated: 2026-09-26. Overall: in progress, not a release.
 
 | Milestone | Status | Evidence / next action |
 | --- | --- | --- |
-| M0 | Accepted | PRD/backlog, private GitHub baseline and CI; [PR #1](https://github.com/gordo-v1su4/music-vending-machine/pull/1) merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
+| M0 | Accepted | PRD/backlog, private GitHub baseline and CI; PR #1 merged at `86d236c` after Greptile 5/5 on `d42c04e`, passing CI and resolved findings |
 | M1 | Partial | [Live probes](evidence/2026-09-25-capabilities.md): private RustFS round-trip and Essentia fixture passed; Qwen still and H3 clip generated and inspected; Qwen edit preservation failed; vision, WebGPU/WebView2, Jcode and Ableton gates pending |
 | M2 | Partial | [Private storage/recovery](evidence/2026-09-25-private-recovery.md) passed; [operator session checks](evidence/2026-09-26-operator-sessions.md) passed; PR #4 merged at `c924765` after exact-head Greptile 5/5 on `d00c371`, green CI and resolved findings. Windows sharing and pending-upload backup acceptance remain |
 | M3 | Pending | Trigger/worker integration not implemented |
@@ -18,7 +18,7 @@ Current user-facing checklist: [PROGRESS.md](PROGRESS.md). Next priority is the 
 
 ## Known external constraints
 
-- [PR #2](https://github.com/gordo-v1su4/music-vending-machine/pull/2) merged at `e97ed9e` after Greptile 5/5 on `53ec733` and passing CI. Its generation probes do not enable unverified production capabilities.
+- PR #2 merged at `e97ed9e` after Greptile 5/5 on `53ec733` and passing CI. Its generation probes do not enable unverified production capabilities.
 
 - Linear connection returned reauthentication required during planning. Repository tracking continues independently.
 - No application existed at implementation start. Research and model-file inventories do not prove successful generation.
@@ -33,4 +33,4 @@ Latest evidence: [foundation verification](evidence/2026-09-25-foundation.md), [
 
 ## September 26 persistence revision
 
-The user-approved database change is merged in PR #7 (`24b96cc`): self-hosted Convex on home app-vm and the scoped RustFS `mvvm` bucket. Exact-head Greptile scored 5/5 on `de64fe3`, CI passed and findings were resolved. SQL runtime/dependencies and PostgreSQL CI service were removed. Thirty ordinary Rust tests and seven disposable Convex HTTP acceptance tests pass; the reviewed primary local coordinator was replaced and browser-verified with the existing revision-7 song unchanged. See [migration evidence](convex-migration-status.md) and [current-bucket object recovery](evidence/2026-09-26-convex-same-bucket-recovery.md). This is not a private production release. Scheduled/off-host backup retention, durable private hosting, installed Windows acceptance, generation, temporal review and export remain open.
+The user-approved database change is merged in PR #7 (`24b96cc`): self-hosted Convex on home application host and the scoped RustFS `mvvm` bucket. Exact-head Greptile scored 5/5 on `de64fe3`, CI passed and findings were resolved. SQL runtime/dependencies and PostgreSQL CI service were removed. Thirty ordinary Rust tests and seven disposable Convex HTTP acceptance tests pass; the reviewed primary local coordinator was replaced and browser-verified with the existing revision-7 song unchanged. See [migration evidence](convex-migration-status.md) and [current-bucket object recovery](evidence/2026-09-26-convex-same-bucket-recovery.md). This is not a private production release. Scheduled/off-host backup retention, durable private hosting, installed Windows acceptance, generation, temporal review and export remain open.

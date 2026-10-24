@@ -1,6 +1,18 @@
 # Music Video Vending Machine (mvvm)
 
-Personal narrative music-video studio. **Under construction; not production-ready.**
+Turn a song and a story into an editable narrative music video.
+
+## Stack
+
+- Rust (Axum) coordinator API
+- Self-hosted Convex
+- RustFS object storage
+- Svelte web client
+- Python operator probes and ComfyUI workflow definitions for local SwarmUI/ComfyUI (Qwen Image, MiniMax H3)
+
+## Status
+
+Under construction. Not production-ready.
 
 The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Greptile must award the current implementation PR head 5/5 before merge, with checks green.
 
@@ -10,9 +22,9 @@ The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-pl
 
 Requirements: Rust stable, Bun, FFmpeg/FFprobe, a private self-hosted Convex deployment, and RustFS. The coordinator binds to 127.0.0.1:5199; web development uses 127.0.0.1:5198 with strict port binding.
 
-The `convex/` schema and internal functions live in this repository. The home `mvvm` instance runs on app-vm; infrastructure definitions and credential-name inventory live in the canonical proxmox-home repository. Media and large analysis payloads use the scoped RustFS `mvvm` bucket. See [migration evidence and remaining gates](docs/convex-migration-status.md).
+The `convex/` schema and internal functions live in this repository. Self-hosted Convex, RustFS, Essentia, and private deployment URLs are configured through environment variables (see `.env.example`; set values in `.env.local`, git-ignored). Infrastructure runbooks and credential-name inventories stay in the operator's private repos, not in git. Media and large analysis payloads use a scoped object-storage bucket. See [migration evidence and remaining gates](docs/convex-migration-status.md).
 
-Install backend dependencies with `bun install --frozen-lockfile`. Inject the variable names from `.env.example` through the private secret manager, then run:
+Install backend dependencies with `bun install --frozen-lockfile`. Copy `.env.example` to `.env.local` for local values, or inject the same variable names through your private secret manager, then run:
 
 ```powershell
 $env:MVVM_DEV_LOCAL = '1'

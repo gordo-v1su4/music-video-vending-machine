@@ -40,6 +40,8 @@ After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
 
+Backend and hosting URLs (Convex, RustFS, Essentia, private HTTPS edges) come from environment variables and `.env.local`; never hardcode or commit them.
+
 ## UI design and verification
 
 Use the project-local [Impeccable skill](.agents/skills/impeccable/SKILL.md) for UI design, refinement and testing, as requested by the user. Preserve the approved product requirements in `docs/PRD.md`. Dark mode is the user-confirmed default; verify text contrast, keyboard focus, disabled states and responsive layouts in that theme. Apply the Svelte skill alongside Impeccable for component changes.

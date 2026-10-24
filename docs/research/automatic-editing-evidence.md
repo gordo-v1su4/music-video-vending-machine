@@ -1,6 +1,6 @@
 # Automatic editing: Project Stack source evidence
 
-Focused read-only inspection, 2026-09-25. Source root: `C:/Users/Gordo/Documents/Github/project-stack-structure`, local `main` at `0e8c45c`. No execution, visual review, or quality benchmark performed. These findings describe examined algorithms, not every editing path in that repository.
+Focused read-only inspection, 2026-09-25. Source root: `donor-repo/project-stack-structure`, local `main` at `0e8c45c`. No execution, visual review, or quality benchmark performed. These findings describe examined algorithms, not every editing path in that repository.
 
 ## Main finding
 

@@ -10,7 +10,7 @@ Expected inputs are Suno songs with audio, stems, and MIDI. Verify version and t
 
 The approved master remains intact outside deliberate narrative breaks. Added sound effects are allowed. The agent may propose a prelude, dialogue interlude, break before a bridge, suspenseful cutout, or complete silence over action, subject to preview approval. These are optional story choices; no interruption is required. Dialogue production and each proposal's exact time mapping still need definition.
 
-Use the user's [Essentia analysis service](https://essentia.v1su4.dev/docs). Its live API contract and health were inspected; successful analysis on a project song remains to be verified. Keep musical evidence tied to the approved audio version.
+Use the operator's Essentia analysis service (`ESSENTIA_API_BASE_URL`). Its live API contract and health were inspected; successful analysis on a project song remains to be verified. Keep musical evidence tied to the approved audio version.
 
 ## Interaction model
 

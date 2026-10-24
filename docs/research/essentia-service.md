@@ -1,6 +1,6 @@
 # Existing Essentia analysis service
 
-Read-only live inspection: 2026-09-25. User-selected endpoint: [Swagger docs](https://essentia.v1su4.dev/docs). Direct HTTPS requests returned docs and [OpenAPI](https://essentia.v1su4.dev/openapi.json); [health](https://essentia.v1su4.dev/health) reported `status: ok`, version `4.1.0`. The web browsing tool could not fetch this host, but requests from the workstation succeeded. No audio uploaded, authenticated analysis attempted, or jobs submitted.
+Read-only live inspection: 2026-09-25. The operator pointed the app at a self-hosted Essentia HTTP service (`ESSENTIA_API_BASE_URL` in `.env.local`). Direct HTTPS requests returned Swagger docs, OpenAPI, and a health payload reporting `status: ok`, version `4.1.0`. The web browsing tool could not fetch that host from the agent environment, but requests from the workstation succeeded. No audio uploaded, authenticated analysis attempted, or jobs submitted.
 
 ## Useful live contract
 

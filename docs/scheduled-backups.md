@@ -5,12 +5,12 @@ project data. This is off the home server, not off-site. Run installation from
 PowerShell 7 with Node 24 or newer after the implementation PR passes its merge gates:
 
 ```powershell
-./scripts/install-backup-task.ps1 -SecretsRunner C:/Users/Gordo/Documents/Github/proxmox-home/shared/bin/agent-secrets.mjs
+./scripts/install-backup-task.ps1 -SecretsRunner <path-to-secret-runner>/agent-secrets.mjs
 ```
 
 The installer copies the three backup scripts and frozen production dependencies
 to `%LOCALAPPDATA%/mvvm/backup-runner`. It does not depend on the app worktree
-afterward. The canonical `proxmox-home` secret runner and Node installation must
+afterward. The canonical `private infrastructure repository` secret runner and Node installation must
 remain available. The installer refuses to replace an existing runner or task;
 upgrades require an inspected replacement rather than silently changing a job.
 

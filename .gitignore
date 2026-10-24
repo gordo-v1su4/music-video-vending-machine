@@ -4,6 +4,7 @@
 # Private runtime and generated artifacts
 .env
 .env.*
+.env.local
 !.env.example
 .runtime/
 node_modules/
