@@ -1,0 +1,6 @@
+interface:
+  display_name: "H3 Ref2V Dynamic Compiler"
+  short_description: "Compile and lint H3 multi-cut reference prompts"
+  default_prompt: "Use $h3-ref2v-dynamic-compiler to compile my H3 scene into timestamped cuts and a matching frame schedule, then lint both."
+policy:
+  allow_implicit_invocation: true

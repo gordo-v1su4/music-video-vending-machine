@@ -45,3 +45,27 @@ no API key, $0).
 Use the project-local [Impeccable skill](.agents/skills/impeccable/SKILL.md) for UI design, refinement and testing, as requested by the user. Preserve the approved product requirements in `docs/PRD.md`. Dark mode is the user-confirmed default; verify text contrast, keyboard focus, disabled states and responsive layouts in that theme. Apply the Svelte skill alongside Impeccable for component changes.
 
 For existing surfaces, use scoped audit/refinement rather than treating each change as a redesign. Record mechanical checks separately from observed browser behavior, and never report browser emulation as physical-device or Windows WebView2 acceptance. See `docs/ui-design-workflow.md` for provenance and verification expectations.
+
+## Agent skills
+
+### H3 prompt compilation
+
+For H3 Ref2V multi-cut prompts, audio-reactive timing and scoped prompt repairs, use [h3-ref2v-dynamic-compiler](.agents/skills/h3-ref2v-dynamic-compiler/SKILL.md) first. It is the user's preferred writing profile and includes a portable linter. Preserve the official encoder grammar and actual workflow input map; its frame schedule requires a compatible connected scheduler. Use `h3-prompt-writing` for base-mode grammar.
+
+Before delivering or submitting any newly written or revised H3 prompt, run that skill's linter with the actual duration/FPS, fix errors and resolve warnings or record intentional exceptions, then rerun. Audit adjacent shots for repeated completed actions and conflicting entry/exit states. Report the lint result; a pass is not render-quality acceptance. Audit archived prompts read-only.
+
+### Issue tracker
+
+Engineering skills publish to Linear's Music Video Vending Machine project/team V1S. See [issue tracker](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+Reuse the configured five triage labels and native blocking edges. See [triage labels](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Use the shared root glossary and applicable product/ADR decisions. See [domain documentation](docs/agents/domain.md).
+
+### Production handoffs and review tools
+
+When resuming local generation, moving a packet to another agent system, or using wardrobe/identity checks, read [production resume](docs/pilot/agent-production-resume.md) and its role/tool pointers before acting.

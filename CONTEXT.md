@@ -49,8 +49,11 @@ The approved visual reference set anchoring one Character Look for generation.
 _Avoid_: Character profile
 
 **Sequence**:
-A contiguous group of shots planned and reviewed together as part of the musical edit.
+A contiguous group of clips and their shots planned and reviewed together as part of the musical edit.
 _Avoid_: Shot
+
+**Clip**:
+A generated or supplied video asset containing one or more shots. A Sequence can use a whole clip or selected shot ranges within it.
 
 **Repair chunk**:
 A candidate edit section proposed for revision, with neighboring footage and context handles included so the user can judge continuity.
@@ -72,6 +75,21 @@ The time-based view of the musical edit, showing how scenes relate to the song. 
 
 **Candidate clip**:
 A generated or supplied clip being considered for a place in the musical edit, evaluated for both its own attributes and its fit with neighboring clips.
+
+**Prompt interpretation**:
+An independently authored creative treatment of the same shot brief, expressed as a generation prompt. Different interpretations can be compared while keeping the intended shot and references consistent.
+
+**Blind candidate comparison**:
+A comparison of candidate clips under anonymous labels, without revealing their prompt writer or model to reviewers before judgments are recorded. Competing prompt writers do not see one another's prompts or results during the independent comparison.
+
+**Usable range**:
+A timecoded portion of a candidate clip suitable for the intended edit even when other portions are defective. It must cover the needed action and remain suitable in context with neighboring footage.
+
+**Workflow run**:
+One execution of a generation workflow with a recorded set of inputs and settings. Its output clip may contain one or more generated shots.
+
+**Generated shot**:
+One continuous camera view within a generated clip, bounded by reviewed cuts or the clip's edges. It can be reviewed and selected independently of other shots from the same Workflow run.
 
 **Coverage gap**:
 A part of the planned video for which no suitable clip has been selected. The gap remains an explicit unresolved production need.
