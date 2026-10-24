@@ -65,7 +65,9 @@ async fn main() -> anyhow::Result<()> {
             .with_endpoint(&endpoint)
             .with_allow_http(endpoint.starts_with("http://"))
             .with_access_key_id(setting("S3_ACCESS_KEY").context("MVVM_S3_ACCESS_KEY is required")?)
-            .with_secret_access_key(setting("S3_SECRET_KEY").context("MVVM_S3_SECRET_KEY is required")?)
+            .with_secret_access_key(
+                setting("S3_SECRET_KEY").context("MVVM_S3_SECRET_KEY is required")?,
+            )
             .build()?,
     );
     let origins = setting("ALLOWED_ORIGINS")

@@ -153,7 +153,10 @@ async fn convex_http_sessions_work_without_postgres() {
     };
     let client = state.convex.as_ref().unwrap();
     client.begin_upload(&auth, &asset, &key).await.unwrap();
-    assert_eq!(mvvm_coordinator::reconcile_uploads(&state).await.unwrap(), 0);
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        0
+    );
     assert!(
         client
             .list_assets(&auth, project_id)
@@ -169,8 +172,14 @@ async fn convex_http_sessions_work_without_postgres() {
         )
         .await
         .unwrap();
-    assert_eq!(mvvm_coordinator::reconcile_uploads(&state).await.unwrap(), 1);
-    assert_eq!(mvvm_coordinator::reconcile_uploads(&state).await.unwrap(), 0);
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        1
+    );
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        0
+    );
     assert_eq!(
         client.list_assets(&auth, project_id).await.unwrap().len(),
         1

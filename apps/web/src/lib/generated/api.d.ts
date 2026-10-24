@@ -432,6 +432,12 @@ export interface components {
             /** Format: uuid */
             jobId: string;
             providerResponse?: unknown;
+            /**
+             * @description Operator opt-in: import `provider_response` into a job that already completed (its gaps are filled; saved
+             *     words and the original provider receipts are kept). Off by default, so a finished transcript is never
+             *     changed by accident.
+             */
+            replaceCompleted?: boolean;
             sourceSha256: string;
         };
         Reference: {
