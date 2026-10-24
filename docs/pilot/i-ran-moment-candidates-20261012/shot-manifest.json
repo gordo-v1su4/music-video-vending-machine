@@ -1,0 +1,2118 @@
+{
+  "status": "discussion draft; not queued",
+  "created_date": "2026-10-12",
+  "song": {
+    "title": "I Ran",
+    "duration_ms": 353000,
+    "locked_bpm": 137,
+    "master_path": "D:/output/local/MVVM/song/master.mp3",
+    "timing_source": "D:/output/local/MVVM/i-ran-pilot/edit-plan.json"
+  },
+  "creative_scope": "Adult first/second-year college students; broad imagery to edit later. Keep living, grave and uncertain-reality endings separate.",
+  "prompt_count": 120,
+  "timing_policy": "Deliberately unassigned; edit after coverage review. Do not invent a chronological placement on the song.",
+  "chosen_still_route": {
+    "checkpoint": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+    "turbo_lora": "none",
+    "native_size": [
+      2560,
+      1440
+    ],
+    "first_steps": 50,
+    "first_denoise": 1.0,
+    "latent_scale": 2,
+    "latent_size": [
+      5120,
+      2880
+    ],
+    "second_sampler": "er_sde",
+    "second_scheduler": "simple",
+    "second_steps": 10,
+    "second_denoise": 0.2,
+    "final_size": [
+      2048,
+      1152
+    ]
+  },
+  "loader": {
+    "node": "CR Prompt List",
+    "assembly": "prepend_text + selected line + append_text",
+    "index_base": 0,
+    "candidate_max_rows": 120,
+    "seed_mode": "fixed",
+    "status": "Installed parser and graph binding inspected; no multi-row render acceptance in this session",
+    "empty_lines": "Count as prompts; prompts.txt has none",
+    "trailing_newline": "Omitted so CR Prompt List does not create an extra empty row",
+    "input_status": "Shot bodies only. Freeze the Ref2VA prefix/suffix and synchronize environment images before unattended generation."
+  },
+  "shots": [
+    {
+      "shot_id": "IR-001",
+      "prompt_line": 1,
+      "comfy_start_index": 0,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-001",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-002",
+      "prompt_line": 2,
+      "comfy_start_index": 1,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-002",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-003",
+      "prompt_line": 3,
+      "comfy_start_index": 2,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-003",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-004",
+      "prompt_line": 4,
+      "comfy_start_index": 3,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-004",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-005",
+      "prompt_line": 5,
+      "comfy_start_index": 4,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-005",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-006",
+      "prompt_line": 6,
+      "comfy_start_index": 5,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-006",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-007",
+      "prompt_line": 7,
+      "comfy_start_index": 6,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-007",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-008",
+      "prompt_line": 8,
+      "comfy_start_index": 7,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-008",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-009",
+      "prompt_line": 9,
+      "comfy_start_index": 8,
+      "story_phase": "festival",
+      "location_id": "gorge",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-009",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-010",
+      "prompt_line": 10,
+      "comfy_start_index": 9,
+      "story_phase": "festival",
+      "location_id": "gorge",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-010",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-011",
+      "prompt_line": 11,
+      "comfy_start_index": 10,
+      "story_phase": "festival",
+      "location_id": "gorge",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-011",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-012",
+      "prompt_line": 12,
+      "comfy_start_index": 11,
+      "story_phase": "festival",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "current festival sheet Look",
+      "output_prefix": "i-ran/IR-012",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-013",
+      "prompt_line": 13,
+      "comfy_start_index": 12,
+      "story_phase": "college_closeness",
+      "location_id": "quad",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-013",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-014",
+      "prompt_line": 14,
+      "comfy_start_index": 13,
+      "story_phase": "college_closeness",
+      "location_id": "library",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-014",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-015",
+      "prompt_line": 15,
+      "comfy_start_index": 14,
+      "story_phase": "college_closeness",
+      "location_id": "cafeteria",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-015",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-016",
+      "prompt_line": 16,
+      "comfy_start_index": 15,
+      "story_phase": "college_closeness",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-016",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-017",
+      "prompt_line": 17,
+      "comfy_start_index": 16,
+      "story_phase": "college_closeness",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-017",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-018",
+      "prompt_line": 18,
+      "comfy_start_index": 17,
+      "story_phase": "college_closeness",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-018",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-019",
+      "prompt_line": 19,
+      "comfy_start_index": 18,
+      "story_phase": "college_closeness",
+      "location_id": "covered_walk",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-019",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-020",
+      "prompt_line": 20,
+      "comfy_start_index": 19,
+      "story_phase": "college_closeness",
+      "location_id": "car",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-020",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-021",
+      "prompt_line": 21,
+      "comfy_start_index": 20,
+      "story_phase": "college_closeness",
+      "location_id": "diner",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-021",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-022",
+      "prompt_line": 22,
+      "comfy_start_index": 21,
+      "story_phase": "college_closeness",
+      "location_id": "laundromat",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-022",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-023",
+      "prompt_line": 23,
+      "comfy_start_index": 22,
+      "story_phase": "college_closeness",
+      "location_id": "rooftop",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-023",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-024",
+      "prompt_line": 24,
+      "comfy_start_index": 23,
+      "story_phase": "college_closeness",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-024",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-025",
+      "prompt_line": 25,
+      "comfy_start_index": 24,
+      "story_phase": "waiting_distance",
+      "location_id": "road",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-025",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-026",
+      "prompt_line": 26,
+      "comfy_start_index": 25,
+      "story_phase": "waiting_distance",
+      "location_id": "road",
+      "characters": [],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-026",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-027",
+      "prompt_line": 27,
+      "comfy_start_index": 26,
+      "story_phase": "waiting_distance",
+      "location_id": "car",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-027",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-028",
+      "prompt_line": 28,
+      "comfy_start_index": 27,
+      "story_phase": "waiting_distance",
+      "location_id": "parking",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-028",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-029",
+      "prompt_line": 29,
+      "comfy_start_index": 28,
+      "story_phase": "waiting_distance",
+      "location_id": "car",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-029",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-030",
+      "prompt_line": 30,
+      "comfy_start_index": 29,
+      "story_phase": "waiting_distance",
+      "location_id": "work_entrance",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-030",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-031",
+      "prompt_line": 31,
+      "comfy_start_index": 30,
+      "story_phase": "waiting_distance",
+      "location_id": "parking",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-031",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-032",
+      "prompt_line": 32,
+      "comfy_start_index": 31,
+      "story_phase": "waiting_distance",
+      "location_id": "work_entrance",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-032",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-033",
+      "prompt_line": 33,
+      "comfy_start_index": 32,
+      "story_phase": "waiting_distance",
+      "location_id": "car",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-033",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-034",
+      "prompt_line": 34,
+      "comfy_start_index": 33,
+      "story_phase": "waiting_distance",
+      "location_id": "covered_walk",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-034",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-035",
+      "prompt_line": 35,
+      "comfy_start_index": 34,
+      "story_phase": "waiting_distance",
+      "location_id": "parking",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-035",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-036",
+      "prompt_line": 36,
+      "comfy_start_index": 35,
+      "story_phase": "waiting_distance",
+      "location_id": "road",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-036",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-037",
+      "prompt_line": 37,
+      "comfy_start_index": 36,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-037",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-038",
+      "prompt_line": 38,
+      "comfy_start_index": 37,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-038",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-039",
+      "prompt_line": 39,
+      "comfy_start_index": 38,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-039",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-040",
+      "prompt_line": 40,
+      "comfy_start_index": 39,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-040",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-041",
+      "prompt_line": 41,
+      "comfy_start_index": 40,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-041",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-042",
+      "prompt_line": 42,
+      "comfy_start_index": 41,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "stairwell",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-042",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-043",
+      "prompt_line": 43,
+      "comfy_start_index": 42,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-043",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-044",
+      "prompt_line": 44,
+      "comfy_start_index": 43,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-044",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-045",
+      "prompt_line": 45,
+      "comfy_start_index": 44,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "courtyard",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-045",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-046",
+      "prompt_line": 46,
+      "comfy_start_index": 45,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "library",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-046",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-047",
+      "prompt_line": 47,
+      "comfy_start_index": 46,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "covered_walk",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-047",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-048",
+      "prompt_line": 48,
+      "comfy_start_index": 47,
+      "story_phase": "closeness_withdrawal",
+      "location_id": "house",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-048",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-049",
+      "prompt_line": 49,
+      "comfy_start_index": 48,
+      "story_phase": "other_person_optional",
+      "location_id": "quad",
+      "characters": [
+        "lune",
+        "other"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-049",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-050",
+      "prompt_line": 50,
+      "comfy_start_index": 49,
+      "story_phase": "other_person_optional",
+      "location_id": "cafeteria",
+      "characters": [
+        "lune",
+        "other"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-050",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-051",
+      "prompt_line": 51,
+      "comfy_start_index": 50,
+      "story_phase": "other_person_optional",
+      "location_id": "courtyard",
+      "characters": [
+        "rafa",
+        "lune",
+        "other"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-051",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-052",
+      "prompt_line": 52,
+      "comfy_start_index": 51,
+      "story_phase": "other_person_optional",
+      "location_id": "cafeteria",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-052",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-053",
+      "prompt_line": 53,
+      "comfy_start_index": 52,
+      "story_phase": "other_person_optional",
+      "location_id": "lobby",
+      "characters": [
+        "lune",
+        "other"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-053",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-054",
+      "prompt_line": 54,
+      "comfy_start_index": 53,
+      "story_phase": "other_person_optional",
+      "location_id": "bleachers",
+      "characters": [
+        "lune",
+        "other"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-054",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-055",
+      "prompt_line": 55,
+      "comfy_start_index": 54,
+      "story_phase": "other_person_optional",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-055",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-056",
+      "prompt_line": 56,
+      "comfy_start_index": 55,
+      "story_phase": "other_person_optional",
+      "location_id": "cafeteria",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-056",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-057",
+      "prompt_line": 57,
+      "comfy_start_index": 56,
+      "story_phase": "other_person_optional",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-057",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-058",
+      "prompt_line": 58,
+      "comfy_start_index": 57,
+      "story_phase": "other_person_optional",
+      "location_id": "phone_detail",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-058",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-059",
+      "prompt_line": 59,
+      "comfy_start_index": 58,
+      "story_phase": "other_person_optional",
+      "location_id": "courtyard",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-059",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-060",
+      "prompt_line": 60,
+      "comfy_start_index": 59,
+      "story_phase": "other_person_optional",
+      "location_id": "covered_walk",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-060",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-061",
+      "prompt_line": 61,
+      "comfy_start_index": 60,
+      "story_phase": "solitary_moments",
+      "location_id": "house",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-061",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-062",
+      "prompt_line": 62,
+      "comfy_start_index": 61,
+      "story_phase": "solitary_moments",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-062",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-063",
+      "prompt_line": 63,
+      "comfy_start_index": 62,
+      "story_phase": "solitary_moments",
+      "location_id": "rooftop",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-063",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-064",
+      "prompt_line": 64,
+      "comfy_start_index": 63,
+      "story_phase": "solitary_moments",
+      "location_id": "rooftop",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-064",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-065",
+      "prompt_line": 65,
+      "comfy_start_index": 64,
+      "story_phase": "solitary_moments",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-065",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-066",
+      "prompt_line": 66,
+      "comfy_start_index": 65,
+      "story_phase": "solitary_moments",
+      "location_id": "bathroom",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-066",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-067",
+      "prompt_line": 67,
+      "comfy_start_index": 66,
+      "story_phase": "solitary_moments",
+      "location_id": "bus",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-067",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-068",
+      "prompt_line": 68,
+      "comfy_start_index": 67,
+      "story_phase": "solitary_moments",
+      "location_id": "bus_stop",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-068",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-069",
+      "prompt_line": 69,
+      "comfy_start_index": 68,
+      "story_phase": "solitary_moments",
+      "location_id": "library",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-069",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-070",
+      "prompt_line": 70,
+      "comfy_start_index": 69,
+      "story_phase": "solitary_moments",
+      "location_id": "bedroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-070",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-071",
+      "prompt_line": 71,
+      "comfy_start_index": 70,
+      "story_phase": "solitary_moments",
+      "location_id": "laundromat",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-071",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-072",
+      "prompt_line": 72,
+      "comfy_start_index": 71,
+      "story_phase": "solitary_moments",
+      "location_id": "lake",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-072",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-073",
+      "prompt_line": 73,
+      "comfy_start_index": 72,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-073",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-074",
+      "prompt_line": 74,
+      "comfy_start_index": 73,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-074",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-075",
+      "prompt_line": 75,
+      "comfy_start_index": 74,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-075",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-076",
+      "prompt_line": 76,
+      "comfy_start_index": 75,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-076",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-077",
+      "prompt_line": 77,
+      "comfy_start_index": 76,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-077",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-078",
+      "prompt_line": 78,
+      "comfy_start_index": 77,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-078",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-079",
+      "prompt_line": 79,
+      "comfy_start_index": 78,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-079",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-080",
+      "prompt_line": 80,
+      "comfy_start_index": 79,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-080",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-081",
+      "prompt_line": 81,
+      "comfy_start_index": 80,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-081",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-082",
+      "prompt_line": 82,
+      "comfy_start_index": 81,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-082",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-083",
+      "prompt_line": 83,
+      "comfy_start_index": 82,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-083",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-084",
+      "prompt_line": 84,
+      "comfy_start_index": 83,
+      "story_phase": "jog_cliff",
+      "location_id": "gorge",
+      "characters": [],
+      "branch_status": "candidate moment",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "jogging Look needs selection",
+      "output_prefix": "i-ran/IR-084",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-085",
+      "prompt_line": 85,
+      "comfy_start_index": 84,
+      "story_phase": "too_late_living_option",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-085",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-086",
+      "prompt_line": 86,
+      "comfy_start_index": 85,
+      "story_phase": "too_late_living_option",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-086",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-087",
+      "prompt_line": 87,
+      "comfy_start_index": 86,
+      "story_phase": "too_late_living_option",
+      "location_id": "rain_street",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-087",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-088",
+      "prompt_line": 88,
+      "comfy_start_index": 87,
+      "story_phase": "too_late_living_option",
+      "location_id": "covered_walk",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-088",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-089",
+      "prompt_line": 89,
+      "comfy_start_index": 88,
+      "story_phase": "too_late_living_option",
+      "location_id": "parking",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-089",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-090",
+      "prompt_line": 90,
+      "comfy_start_index": 89,
+      "story_phase": "too_late_living_option",
+      "location_id": "parking",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-090",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-091",
+      "prompt_line": 91,
+      "comfy_start_index": 90,
+      "story_phase": "too_late_living_option",
+      "location_id": "courtyard",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-091",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-092",
+      "prompt_line": 92,
+      "comfy_start_index": 91,
+      "story_phase": "too_late_living_option",
+      "location_id": "house",
+      "characters": [
+        "lune",
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-092",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-093",
+      "prompt_line": 93,
+      "comfy_start_index": 92,
+      "story_phase": "too_late_living_option",
+      "location_id": "house",
+      "characters": [
+        "lune",
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-093",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-094",
+      "prompt_line": 94,
+      "comfy_start_index": 93,
+      "story_phase": "too_late_living_option",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-094",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-095",
+      "prompt_line": 95,
+      "comfy_start_index": 94,
+      "story_phase": "too_late_living_option",
+      "location_id": "rain_street",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-095",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-096",
+      "prompt_line": 96,
+      "comfy_start_index": 95,
+      "story_phase": "too_late_living_option",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-096",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-097",
+      "prompt_line": 97,
+      "comfy_start_index": 96,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-097",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-098",
+      "prompt_line": 98,
+      "comfy_start_index": 97,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-098",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-099",
+      "prompt_line": 99,
+      "comfy_start_index": 98,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-099",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-100",
+      "prompt_line": 100,
+      "comfy_start_index": 99,
+      "story_phase": "grave_reveal_option",
+      "location_id": "gorge",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-100",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-101",
+      "prompt_line": 101,
+      "comfy_start_index": 100,
+      "story_phase": "grave_reveal_option",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-101",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-102",
+      "prompt_line": 102,
+      "comfy_start_index": 101,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-102",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-103",
+      "prompt_line": 103,
+      "comfy_start_index": 102,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-103",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-104",
+      "prompt_line": 104,
+      "comfy_start_index": 103,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-104",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-105",
+      "prompt_line": 105,
+      "comfy_start_index": 104,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-105",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-106",
+      "prompt_line": 106,
+      "comfy_start_index": 105,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-106",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-107",
+      "prompt_line": 107,
+      "comfy_start_index": 106,
+      "story_phase": "grave_reveal_option",
+      "location_id": "cemetery",
+      "characters": [],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-107",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-108",
+      "prompt_line": 108,
+      "comfy_start_index": 107,
+      "story_phase": "grave_reveal_option",
+      "location_id": "courtyard",
+      "characters": [],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-108",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-109",
+      "prompt_line": 109,
+      "comfy_start_index": 108,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "bedroom",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-109",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-110",
+      "prompt_line": 110,
+      "comfy_start_index": 109,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "bedroom",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-110",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-111",
+      "prompt_line": 111,
+      "comfy_start_index": 110,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "house",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-111",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-112",
+      "prompt_line": 112,
+      "comfy_start_index": 111,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "house",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-112",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-113",
+      "prompt_line": 113,
+      "comfy_start_index": 112,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "house",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-113",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-114",
+      "prompt_line": 114,
+      "comfy_start_index": 113,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "house",
+      "characters": [],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-114",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-115",
+      "prompt_line": 115,
+      "comfy_start_index": 114,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "bathroom",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-115",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-116",
+      "prompt_line": 116,
+      "comfy_start_index": 115,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "bathroom",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-116",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-117",
+      "prompt_line": 117,
+      "comfy_start_index": 116,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "covered_walk",
+      "characters": [
+        "rafa"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-117",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-118",
+      "prompt_line": 118,
+      "comfy_start_index": 117,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "covered_walk",
+      "characters": [
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-118",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-119",
+      "prompt_line": 119,
+      "comfy_start_index": 118,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "gorge",
+      "characters": [],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-119",
+      "seed": 4102
+    },
+    {
+      "shot_id": "IR-120",
+      "prompt_line": 120,
+      "comfy_start_index": 119,
+      "story_phase": "dream_uncertain_option",
+      "location_id": "festival",
+      "characters": [
+        "rafa",
+        "lune"
+      ],
+      "branch_status": "alternative; not selected",
+      "song_start_ms": null,
+      "song_end_ms": null,
+      "beat_assignment": null,
+      "look_status": "everyday adult college Look needs selection",
+      "output_prefix": "i-ran/IR-120",
+      "seed": 4102
+    }
+  ]
+}

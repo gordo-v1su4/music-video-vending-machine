@@ -1,0 +1,356 @@
+{
+  "title": "I Ran jungle festival and anamorphic reference library",
+  "local_date": "2026-10-12",
+  "usage": {
+    "world_and_style": "World design, crowd atmosphere, materials, spatial depth and lighting. Invent original compositions; do not recreate exact reference pictures.",
+    "cinematography": "Framing, optical softness, anamorphic bokeh, grain, intimate fragments, unusual viewpoints and motion streaks. Warm examples do not set the palette; blue/teal examples may guide color.",
+    "identity": "Rafa and Lune approved sheets remain character and wardrobe truth. Reference image characters do not replace them.",
+    "pacing": "The earlier supplied 15-second example video guides quick associative cuts. Four planned test anchors remain frames 0,81,162,242 at 24fps; still frame positions are planning targets, not injected guides yet."
+  },
+  "images": [
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_0e9f4fc6-7a96-443b-9453-9bbdaaa2cb8d_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_0e9f4fc6-7a96-443b-9453-9bbdaaa2cb8d_0.png",
+      "sha256": "d89f8c06450d930019ebcf3379fc592567595a49f16c6f77e6bdb2a9fb52e2aa",
+      "bytes": 1269851,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_a7be99b0-3343-4d14-a11b-fe729db3da3d_2 (1).png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_a7be99b0-3343-4d14-a11b-fe729db3da3d_2 (1).png",
+      "sha256": "4ad24559f94445af5930ac85372fefafd0c201b0e8f160bcb4601a5b44d795ba",
+      "bytes": 1553583,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_3d08ff12-ef1d-4106-9aa3-ef2aad06109e_3.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_3d08ff12-ef1d-4106-9aa3-ef2aad06109e_3.png",
+      "sha256": "ea1b069bc2db20418242a7d4d0f36c590f7c7f999a78783163f52b87f1852408",
+      "bytes": 1174633,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_grid_of_5_anamorphic_shots._Futuristic_jungle_rave_nocturnal_6b5aca4a-46b4-4b8e-9676-5999b5156e2c_1.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_grid_of_5_anamorphic_shots._Futuristic_jungle_rave_nocturnal_6b5aca4a-46b4-4b8e-9676-5999b5156e2c_1.png",
+      "sha256": "a6fdd1d55b3bc48b3aaca100053d318fcd264862619b21397297fdb08ee4fe4a",
+      "bytes": 1119663,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_c6e8c47e-dad6-4677-bdf8-ec8d031b712c_2.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_c6e8c47e-dad6-4677-bdf8-ec8d031b712c_2.png",
+      "sha256": "510aede3ffa76969cba41804473c8cc142053d6047e061bae4559bc8770c98d4",
+      "bytes": 1514015,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_9f4d88d3-3134-4f88-95b9-ecb32cad7734_1.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_9f4d88d3-3134-4f88-95b9-ecb32cad7734_1.png",
+      "sha256": "0c4370fe086f60ba9c39db5448071af762ba02862cc37edd8defa641cc456765",
+      "bytes": 1454191,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_0e9f4fc6-7a96-443b-9453-9bbdaaa2cb8d_1.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angl_0e9f4fc6-7a96-443b-9453-9bbdaaa2cb8d_1.png",
+      "sha256": "42587d315549c024e15ae2b98ac7df6b2fef3c04883aa892646a24d83f4f5925",
+      "bytes": 1448093,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Extreme_lo_40b231c2-2d0c-4a36-8fa1-b098521fc355.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Extreme_lo_40b231c2-2d0c-4a36-8fa1-b098521fc355.png",
+      "sha256": "10aab493af15bd7d3fd2b2f21434bcff7af21aca351470ad2dc7f655d847e371",
+      "bytes": 6262346,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_0.png",
+      "sha256": "8b22d6c35565a084f39160cae7cee64984e50444b6b0eecaa207c09211dd7d3c",
+      "bytes": 5449154,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_b1027f82-41b9-42a2-b9bb-d72653347e5b_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_b1027f82-41b9-42a2-b9bb-d72653347e5b_0.png",
+      "sha256": "5962b2df5e79ce2be64cca503fd7a80a843d703829d1820ace00cbb651b6e22d",
+      "bytes": 6179523,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_anamorphic_lens_optics_characteristics_of_a_Massive_nighttim_0f9802f4-1293-4329-92c9-4f6d8569ffcb_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_anamorphic_lens_optics_characteristics_of_a_Massive_nighttim_0f9802f4-1293-4329-92c9-4f6d8569ffcb_0.png",
+      "sha256": "fa1cfcbee4ad8fd9547e88054ba500d34135e649da523288e1176fb5a6a54c6a",
+      "bytes": 6596217,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_e7970628-6a25-43cf-93b2-88f1d1138b68_3.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_e7970628-6a25-43cf-93b2-88f1d1138b68_3.png",
+      "sha256": "3078286e9e42d203df5dbe44d64925c37e4391f4f22c1d2ec26a7a41259f9833",
+      "bytes": 6295477,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_futuristic_jungle_rave_nocturnal_romantic_277f60a5-3df2-4802-89e9-8bf5add97a98_3.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_futuristic_jungle_rave_nocturnal_romantic_277f60a5-3df2-4802-89e9-8bf5add97a98_3.png",
+      "sha256": "598052f18edb8bb43abb7d47f853c22eb17d6dc55d1e3a09529f7ecc90a7ed35",
+      "bytes": 6578973,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_1.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_1.png",
+      "sha256": "2b4f7f96a0bfca66ccb119ccf8b802c320bb15f4b37521b56da65a1dbd0cab4d",
+      "bytes": 8107742,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_3.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_d5833858-fbcd-4bef-8797-32b7cec381ee_3.png",
+      "sha256": "a14a7a65c39374ce5bb3667508c95f64e4214ce109117f40786c50ecccb969ae",
+      "bytes": 8235857,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_b1027f82-41b9-42a2-b9bb-d72653347e5b_1.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_an_anamorphic_shot_anamorphic_lens_optics_characteristics_of_b1027f82-41b9-42a2-b9bb-d72653347e5b_1.png",
+      "sha256": "f9ad7b340f476b0b662e24253c108d2a1ce6d00fe9d3f0e308cf138106889947",
+      "bytes": 6514557,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angle__f5aa5cff-7b32-4d7d-b536-f2e66a221eb5.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_Futuristic_jungle_rave_nocturnal_romantic_thriller._Low_angle__f5aa5cff-7b32-4d7d-b536-f2e66a221eb5.png",
+      "sha256": "b135828922a8ff0aa9c26c7866c891938874d8082293b2ec3cfd11131058e49b",
+      "bytes": 7923113,
+      "set": "latest attachment set",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_use_only_1_of_the_guy_from_image_1._Nocturnal_romantic_thril_194a7fed-2d09-4a2a-897a-8ebeb0c3c781_3.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_use_only_1_of_the_guy_from_image_1._Nocturnal_romantic_thril_194a7fed-2d09-4a2a-897a-8ebeb0c3c781_3.png",
+      "sha256": "f7a7173ab27c332995a421fb9197b01a323cefa91bd4f866a759aae5d9949fab",
+      "bytes": 1413746,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_use_only_1_of_the_guy_from_image_1._Nocturnal_romantic_thril_194a7fed-2d09-4a2a-897a-8ebeb0c3c781_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_use_only_1_of_the_guy_from_image_1._Nocturnal_romantic_thril_194a7fed-2d09-4a2a-897a-8ebeb0c3c781_0.png",
+      "sha256": "9000487119abdd16309a44c4e08e8ef51dad01fd410498e343a737c146c57df1",
+      "bytes": 1385226,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_a7be99b0-3343-4d14-a11b-fe729db3da3d_2.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_a7be99b0-3343-4d14-a11b-fe729db3da3d_2.png",
+      "sha256": "4ad24559f94445af5930ac85372fefafd0c201b0e8f160bcb4601a5b44d795ba",
+      "bytes": 1553583,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_0b4ed187-4c98-4f3a-880a-6169a07a1451_0.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\_still_archive._Futuristic_jungle_rave_nocturnal_romantic_thr_0b4ed187-4c98-4f3a-880a-6169a07a1451_0.png",
+      "sha256": "19d390808354bd02bec2fe9b0776b435a26df8ae9d2b06cbde3fdf492ee097e8",
+      "bytes": 1191989,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/hf_20261012_023252_9d25fa0a-a5fa-4b1b-bfce-0e978bc95063.png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\hf_20261012_023252_9d25fa0a-a5fa-4b1b-bfce-0e978bc95063.png",
+      "sha256": "d7e8f65ad3b39dd768e556442a8462a1ed7cdc7317e1783b5c0f6c3834811ef3",
+      "bytes": 7544131,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/hf_20261012_015835_f7a02d6c-72f0-4595-b52e-eeb748d0e768 (1).png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\hf_20261012_015835_f7a02d6c-72f0-4595-b52e-eeb748d0e768 (1).png",
+      "sha256": "d9fb1ceae7993f9d8f09926d25c524365292277c9d96b027cd3017040a3c774a",
+      "bytes": 7355026,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/hf_20261012_020051_3e984294-ce28-4594-a6e0-7efbdb69103c (3).png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\hf_20261012_020051_3e984294-ce28-4594-a6e0-7efbdb69103c (3).png",
+      "sha256": "e98aaafe8872b5b2d2f10e581729b3b380b76fa435498734b2c0273120d496ff",
+      "bytes": 8356020,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "world-and-style/hf_20261012_020053_6d459d0d-d9b6-4bd9-bc46-a1afdf3d692e (1).png",
+      "source_path": "C:\\Users\\Gordo\\Downloads\\hf_20261012_020053_6d459d0d-d9b6-4bd9-bc46-a1afdf3d692e (1).png",
+      "sha256": "65d7b21c55cbe936d777af916370f6745662ab89521b23a8241aaa97ea909668",
+      "bytes": 8434882,
+      "set": "earlier world references",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/7 - Believer.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\7 - Believer.jpg",
+      "sha256": "c1d647f986b65acbf096d524fa9610d98a53f08e5fb3da65aa78f0d496ac2a1c",
+      "bytes": 683005,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/21 - Atlanta.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\21 - Atlanta.jpg",
+      "sha256": "14717a359159a4b2e588e5271411309f0510ab8b2958f9cfb24fbf3a45969cce",
+      "bytes": 229351,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/24 - Telling Myself.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\24 - Telling Myself.jpg",
+      "sha256": "104e8c9cf4c08fa313d958e5760b41d164bf2afe5ce231bbc233a2f64d0e4b99",
+      "bytes": 582930,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/35 - More With Less.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\35 - More With Less.jpg",
+      "sha256": "7bed84a5b18569bd229340ee59a373917bce235fb0385a8666bcf301e705a009",
+      "bytes": 1293056,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/44 - Right Time.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\44 - Right Time.jpg",
+      "sha256": "0431d8ba4f5e85df65d60b423fac68cdd13475efe2f40c83468f1cdc96306999",
+      "bytes": 266082,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/63 - Take Me To America.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\63 - Take Me To America.jpg",
+      "sha256": "6aa7896256c8e06870d5ea352e19d10bdba3de524859f72ba522f40dbe842080",
+      "bytes": 800280,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/88 - Birdsong.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\88 - Birdsong.jpg",
+      "sha256": "2f9dc2fd3b6b0d73c86e7ce0d0752da0ff2feaa5072f93ea66f6c706642a0196",
+      "bytes": 742188,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/130 - Gretel  Hansel.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\130 - Gretel  Hansel.jpg",
+      "sha256": "a6eb149063ef13158a4147435a22bd899aa14a09566539bb634db8c9df511b36",
+      "bytes": 791931,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/115 - Chungking Express.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\115 - Chungking Express.jpg",
+      "sha256": "b8c41f480f34dd35bc756e6e0d42843a42aede343920b53bd7298145b53c7ae8",
+      "bytes": 790758,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/114 - All Your Words.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\114 - All Your Words.jpg",
+      "sha256": "3dd2e1566046ffc4289fc8cf5d53fc6d93de3aea6bfa9d8e46dca71b62a72ba6",
+      "bytes": 1208416,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/132 - Fallen Angels.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\132 - Fallen Angels.jpg",
+      "sha256": "8434c21a6e8183b71f3f57708ed8b5b9faf182b5c21e153108f14c2ae3ac311d",
+      "bytes": 815490,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/134 - The Worst Person in the World.png",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\134 - The Worst Person in the World.png",
+      "sha256": "806482b4ff30c339f386266d0a4e16b89620b71fae5806a6fdd38cdb22f3b89e",
+      "bytes": 3274045,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/144 - Dreaming in Spring.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA\\144 - Dreaming in Spring.jpg",
+      "sha256": "d9bfd53bd49046ab0f7f13b8f61545f7ed39a72820a0e8e97d2ef88e7cf05df1",
+      "bytes": 850336,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/39 - Anora.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA-2.0\\39 - Anora.jpg",
+      "sha256": "9318126f2cd6aec07ac1baa61f5f15bfa4ed3319b257d200b314ddcbea464646",
+      "bytes": 660919,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/40 - Anora.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA-2.0\\40 - Anora.jpg",
+      "sha256": "150748c25b4e61c22f3abb84d05782c0816e7d1daf764b44d2c875a043d01e44",
+      "bytes": 488599,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/58 - Terminator Dark Fate.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA-2.0\\58 - Terminator Dark Fate.jpg",
+      "sha256": "9bd8501011c86ecab5881ea63352810d6ba14f1807846d43ddbf2260c4c33d08",
+      "bytes": 553285,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/56 - Godzilla Final Wars.png",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA-2.0\\56 - Godzilla Final Wars.png",
+      "sha256": "2c3a03a3c093c7ddeeca4489a2c56761afe8228496d5cd6adb4b051c5b256c3a",
+      "bytes": 2207823,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    },
+    {
+      "file": "cinematography/110 - Wild at Heart.jpg",
+      "source_path": "C:\\Users\\Gordo\\Desktop\\Main\\shotdek-anamorphic-references\\ANA-2.0\\110 - Wild at Heart.jpg",
+      "sha256": "094acae2da6754b2082831b05fcd9e94e44373c6fb9974db66a2ae3268123ed4",
+      "bytes": 406711,
+      "set": "lens and composition reference",
+      "status": "exploratory reference; not approved character canon"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+  "first_pass": {
+    "size": [
+      2560,
+      1440
+    ],
+    "steps": 50,
+    "turbo": false
+  },
+  "second_pass": {
+    "size": [
+      4096,
+      2304
+    ],
+    "steps": 10,
+    "denoise": 0.1,
+    "sampler": "er_sde"
+  },
+  "comparison": {
+    "before": [
+      2048,
+      1152
+    ],
+    "after": [
+      2048,
+      1152
+    ],
+    "node": 410
+  },
+  "nodes_preserved": 317
+}

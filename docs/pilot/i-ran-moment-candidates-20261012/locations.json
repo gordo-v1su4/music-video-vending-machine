@@ -1,0 +1,226 @@
+[
+  {
+    "id": "parking",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-11-parking-lot.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Waiting across from work; later return to the empty parking space",
+    "role": "environment only",
+    "sha256": "023e979e079d7dd94516a7f337a7e3e3db2dbbbeb6209d0eed4f5280ddfb1a5c"
+  },
+  {
+    "id": "bathroom",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-10-bathroom.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Mirror portraits, indecision, tears, composing herself",
+    "role": "environment only",
+    "sha256": "3e28767b4a0a6f5bc22dd563c85a9c0eabded69a30e4c73127219139f6b4b3cc"
+  },
+  {
+    "id": "cafeteria",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-05-cafeteria.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Student meals together, missed meetings, a second chair empty",
+    "role": "environment only",
+    "sha256": "66d14f08dcb757896ab55afc7a9484642081ccfbe42f4735b6c811a3dd25b298"
+  },
+  {
+    "id": "rooftop",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-06-rooftop-night.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Together at blue hour, separate longing, smoking",
+    "role": "environment only",
+    "sha256": "84feeb30273e811e581fab00ea5c781769cb93bed3f36d6c181af2ffadae4cd7"
+  },
+  {
+    "id": "courtyard",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-04-courtyard-dusk.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Crossing paths, watching from a distance, waiting bench",
+    "role": "environment only",
+    "sha256": "0e15f3aa7d9f8d1bd5de20ae0cd6eeb592b2ef70c2b13b997915c981db4c64a1"
+  },
+  {
+    "id": "library",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-08-library-stacks.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Study memories, avoidance, empty aisles",
+    "role": "environment only",
+    "sha256": "9f34be41cc6ed70d399837cff8aa915edee516b5dce0bd6ba0e158fe35aacea4"
+  },
+  {
+    "id": "covered_walk",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-18-covered-walk.png",
+    "exists": true,
+    "visually_inspected": true,
+    "usage": "Rain shelter, separation, matching empty and occupied frames",
+    "role": "environment only",
+    "sha256": "864bd10368ca23434d9749d55dc4fb2ac150bbc3c0b34a52586696e9b4777666"
+  },
+  {
+    "id": "quad",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-20-quad.png",
+    "exists": true,
+    "visually_inspected": false,
+    "usage": "Campus movement and separation",
+    "role": "environment only",
+    "sha256": "dd3f46dc9886abbcffab0775708eb6498c226cc2a9696a124fdb54f2a6f06a71"
+  },
+  {
+    "id": "stairwell",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-03-stairwell.png",
+    "exists": true,
+    "visually_inspected": false,
+    "usage": "Different levels, paused departure",
+    "role": "environment only",
+    "sha256": "db1ee49a8e960dbc94368c6c62b51e8b125be2f0754fac5f4f8746baf4f06d71"
+  },
+  {
+    "id": "lobby",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-14-lobby.png",
+    "exists": true,
+    "visually_inspected": false,
+    "usage": "Encounters and departures",
+    "role": "environment only",
+    "sha256": "abf2f6e6b5e5dbe6e92544cadc5515e5abc7fdf47efe566adb952b82bb893ffd"
+  },
+  {
+    "id": "bleachers",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style/br-style-15-bleachers.png",
+    "exists": true,
+    "visually_inspected": false,
+    "usage": "Distance between two people",
+    "role": "environment only",
+    "sha256": "fa6ae5bf28c46d0f11b703eb56390530973eaf83ab9a2d912c87d0b44c539d85"
+  },
+  {
+    "id": "house",
+    "kind": "borrowed plate",
+    "source_path": "C:/Users/Gordo/Desktop/Main/bloodrush/ep01-the-late-shift/refs/locations/house-living-day-angles/house-living-day-angles-01.png",
+    "exists": true,
+    "visually_inspected": "four-angle source board and autumn single",
+    "alternate_paths": [
+      "C:/Users/Gordo/Desktop/Main/bloodrush/ep01-the-late-shift/refs/locations/house-living-day-angles/house-living-day-angles-02.png",
+      "C:/Users/Gordo/Desktop/Main/bloodrush/ep01-the-late-shift/refs/locations/house-living-day-angles/house-living-day-angles-03.png",
+      "C:/Users/Gordo/Desktop/Main/bloodrush/ep01-the-late-shift/refs/locations/house-living-day-angles/house-living-day-angles-04.png",
+      "C:/Users/Gordo/Desktop/Main/bloodrush/ep01-the-late-shift/refs/locations/house-living-day-autumn/house-living-day-autumn-01.png"
+    ],
+    "usage": "Shared student house candidate; intimacy, departure, empty matching composition",
+    "role": "environment only",
+    "era_note": "Period props are visible; the song video year remains unassigned",
+    "sha256": "3feb1cadc40a88dff2ff4a23dc8c18b2111ad670515c1ad5309ca666b28823d8"
+  },
+  {
+    "id": "gorge",
+    "kind": "existing approved world reference",
+    "source_path": "D:/input/hf_20261007_142933_fe26c478-b4cc-478d-9b1a-9d5be5648b3c.png",
+    "usage": "Former meeting place, present jogging, fall, dream branches"
+  },
+  {
+    "id": "festival",
+    "kind": "existing project references plus text",
+    "source_directory": "D:/output/local/MVVM/i-ran-pilot/plates_v2",
+    "selection": "not selected in this draft",
+    "usage": "The night they met and happy memories"
+  },
+  {
+    "id": "road",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A winding two-lane road between college towns at blue hour, dark trees, sparse passing cars, damp asphalt and cool mist.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "car",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "The interior of one modest older student car, dark cloth seats, cool light through rain-streaked windows; freeze a car reference if revisited.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "work_entrance",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A modest student-job building entrance across from the borrowed campus parking lot; the actual job remains unspecified.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "diner",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A small late-night roadside diner, worn booths, large dark windows, subdued practical lights and a mostly empty room.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "laundromat",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A small laundromat at dusk with large circular machine windows, a single bench and blue-grey daylight.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "phone_detail",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A close detail of a hand and phone, screen turned away; exact UI and readable text are unnecessary.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "bus",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A regional bus interior, worn fabric seats and rain-streaked windows, cool passing daylight.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "bus_stop",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A lonely roadside glass bus shelter between towns, wet pavement, low trees and a pale dusk sky.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "bedroom",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A modest adult student bedroom, narrow bed, textbooks, plain curtains and one window; no approved bedroom plate yet.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "lake",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A quiet lakeside wooden jetty at dawn, low fog, still water, reed beds and distant tree-covered hills.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "rain_street",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "An ordinary near-campus residential street at night, wet pavement, parked student cars and subdued streetlights.",
+    "reference_needed_before_draft": false
+  },
+  {
+    "id": "cemetery",
+    "kind": "text-only candidate",
+    "source_path": null,
+    "description": "A small hillside cemetery beneath old trees in cool morning mist, restrained stone markers, wet grass; ending option only.",
+    "reference_needed_before_draft": false
+  }
+]

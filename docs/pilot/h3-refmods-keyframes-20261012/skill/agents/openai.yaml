@@ -1,0 +1,4 @@
+interface:
+  display_name: "MiniMax H3 RefMods and Keyframes"
+  short_description: "Build RefMods and refine cinematic H3 keyframes"
+  default_prompt: "Use $minimax-h3-refmods-keyframes to inspect reference bundles and reproduce the tested two-pass still workflow."

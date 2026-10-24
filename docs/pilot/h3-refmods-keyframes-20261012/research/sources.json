@@ -1,0 +1,68 @@
+[
+  {
+    "file": "upstream/MINIMAX_H3_HYBRID_LORA_REFMOD_CONTAINERS_GUIDE.md",
+    "url": "https://huggingface.co/datasets/malcolmrey/various/resolve/main/h3-center/docs/MINIMAX_H3_HYBRID_LORA_REFMOD_CONTAINERS_GUIDE.md",
+    "sha256": "B3C1364A746DAE885DCDC6558590DCCC4B5A676A02E29FA3F8F88614389DE4D1",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "upstream/MINIMAX_H3_REFMOD_CREATION_GUIDE.md",
+    "url": "https://huggingface.co/datasets/malcolmrey/various/resolve/main/h3-center/docs/MINIMAX_H3_REFMOD_CREATION_GUIDE.md",
+    "sha256": "DC8D2DD4F42E137F51CEDA21D218326107F06BD0D6D90D97FFFDBDA68EAC313B",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "upstream/MINIMAX_H3_REFMOD_STACKING_AND_MULTISUBJECT_GUIDE.md",
+    "url": "https://huggingface.co/datasets/malcolmrey/various/resolve/main/h3-center/docs/MINIMAX_H3_REFMOD_STACKING_AND_MULTISUBJECT_GUIDE.md",
+    "sha256": "BA3735C8A2ED765B7AF90B1961328EBBC5F9765BE533B90C0D442EBEE0B4DBE2",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "upstream/MINIMAX_H3_REFMODS_INSTALLATION_AND_USAGE_GUIDE.md",
+    "url": "https://huggingface.co/datasets/malcolmrey/various/resolve/main/h3-center/docs/MINIMAX_H3_REFMODS_INSTALLATION_AND_USAGE_GUIDE.md",
+    "sha256": "4B4021B9A40FF0B9CEBD9BE333078B8CBB556B1C5A13DF5A9D5681102A97E35A",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "upstream/MINIMAX_H3_PROMPTING_GUIDE.md",
+    "url": "https://huggingface.co/datasets/malcolmrey/various/resolve/main/h3-center/docs/MINIMAX_H3_PROMPTING_GUIDE.md",
+    "sha256": "86AF0E6B973F5BC343EDD69FA9EE996B87D52C865F56A914FBBBDA8F111EE599",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "upstream/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md",
+    "url": "https://huggingface.co/MiniMaxAI/MiniMax-H3/resolve/main/docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md",
+    "sha256": "1E574F356716AD55612247FFB7BBCCBCDB484AD96599D63C7DCA1AF186B1FAB7",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "prompt-skill/SKILL.md",
+    "url": "https://raw.githubusercontent.com/benjiyaya/Minimax-H3-Prompt-AgentSkill/main/SKILL.md",
+    "sha256": "F329053A5B72F1BBCFA91521E08CCBBAEB7DDD08C9C948420CFE86ADA03FD0BD",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "prompt-skill/README.md",
+    "url": "https://raw.githubusercontent.com/benjiyaya/Minimax-H3-Prompt-AgentSkill/main/README.md",
+    "sha256": "CE06CCEBC446FAC86AAA3FED0402AEE2936166317A8CB36C7A402B8D0B436039",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "prompt-skill/references/ref2va-format.md",
+    "url": "https://raw.githubusercontent.com/benjiyaya/Minimax-H3-Prompt-AgentSkill/main/references/ref2va-format.md",
+    "sha256": "8A383B10147854928415389D8E63DEBD233316B494EF58B5C34F105866609388",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "prompt-skill/references/base-multishot-format.md",
+    "url": "https://raw.githubusercontent.com/benjiyaya/Minimax-H3-Prompt-AgentSkill/main/references/base-multishot-format.md",
+    "sha256": "C0F27133FE31F38D8283BE35A2708DEFE437CC56B0BADD594AC2A081333E5107",
+    "downloaded_on": "2026-10-12"
+  },
+  {
+    "file": "prompt-skill/references/creative-showcase.md",
+    "url": "https://raw.githubusercontent.com/benjiyaya/Minimax-H3-Prompt-AgentSkill/main/references/creative-showcase.md",
+    "sha256": "6C5A7601CBD57E95F5D5FD662E7BCD97ED82644A0EAE4B294F29DEC414BB6AB0",
+    "downloaded_on": "2026-10-12"
+  }
+]

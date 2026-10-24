@@ -1,0 +1,20 @@
+{
+  "audios": {
+    "1": "supplied song"
+  },
+  "pictures": {
+    "1": "night jungle gorge scene",
+    "2": "Rafa character sheet"
+  },
+  "guides": [
+    {
+      "name": "falling boot",
+      "frame": 118
+    }
+  ],
+  "videos": {},
+  "subjects": {
+    "2": "night jungle gorge",
+    "1": "Rafa"
+  }
+}

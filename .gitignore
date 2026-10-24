@@ -17,3 +17,12 @@ playwright-report/
 *.local
 __pycache__/
 *.pyc
+
+# Local agent scratch/state and pilot reference images (public repo: binaries and third-party stills stay local)
+.scratch/
+.cursor/hooks/state
+docs/pilot/**/*.png
+docs/pilot/**/*.jpg
+docs/pilot/**/*.jpeg
+docs/pilot/**/*.webp
+docs/pilot/**/*.mp4
