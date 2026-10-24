@@ -140,7 +140,7 @@ mod tests {
             .unwrap();
         assert!(projects.len() >= 3);
         for document in projects {
-            let _: mvm_domain::Project = serde_json::from_str(&document).unwrap();
+            let _: mvvm_domain::Project = serde_json::from_str(&document).unwrap();
         }
         assert_eq!(
             client

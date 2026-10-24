@@ -1,0 +1,12 @@
+road: A winding two-lane road between college towns at blue hour, dark trees, sparse passing cars, damp asphalt and cool mist.
+car: The interior of one modest older student car, dark cloth seats, cool light through rain-streaked windows; freeze a car reference if revisited.
+work_entrance: A modest student-job building entrance across from the borrowed campus parking lot; the actual job remains unspecified.
+diner: A small late-night roadside diner, worn booths, large dark windows, subdued practical lights and a mostly empty room.
+laundromat: A small laundromat at dusk with large circular machine windows, a single bench and blue-grey daylight.
+phone_detail: A close detail of a hand and phone, screen turned away; exact UI and readable text are unnecessary.
+bus: A regional bus interior, worn fabric seats and rain-streaked windows, cool passing daylight.
+bus_stop: A lonely roadside glass bus shelter between towns, wet pavement, low trees and a pale dusk sky.
+bedroom: A modest adult student bedroom, narrow bed, textbooks, plain curtains and one window; no approved bedroom plate yet.
+lake: A quiet lakeside wooden jetty at dawn, low fog, still water, reed beds and distant tree-covered hills.
+rain_street: An ordinary near-campus residential street at night, wet pavement, parked student cars and subdued streetlights.
+cemetery: A small hillside cemetery beneath old trees in cool morning mist, restrained stone markers, wet grass; ending option only.

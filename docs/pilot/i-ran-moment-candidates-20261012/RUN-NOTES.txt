@@ -1,0 +1,22 @@
+I RAN - COMFYUI BATCH OPERATOR NOTES (2026-10-12)
+
+This supersedes the preparation-only render hold in OVERVIEW.txt: the user explicitly authorized starting Run (Instant) and verifying its first cycles.
+
+Saved start-from-first workflow:
+D:/user/default/workflows/MVVM_I_Ran_H3_120_Keyframes_Prepared_v1.json
+Resume workflow after the first two verified images:
+D:/user/default/workflows/MVVM_I_Ran_H3_120_Keyframes_Resume.json
+
+Inputs: D:/input/mvvm/i-ran-20261012/
+Outputs: D:/output/mvvm/i-ran-20261012/keyframes/
+Manifest: D:/output/mvvm/i-ran-20261012/batch-manifest.json
+
+Run (Instant), batch count 1. Keep this workflow selected and the browser open while it runs. The integer index advances once per submission. Three aligned physical-line files provide the H3 prompt, environment image path, and filename. A fixed seed 4102 preserves the requested configuration. Identity images are unchanged; provisional clothes are described in the prompt. Original workflow and disabled branches are retained.
+
+Each completed shot saves IR-NNN_00001_.png plus an exact prompt .txt caption. PNG metadata contains the executed prompt graph and workflow. Existing files are not overwritten; a rerun receives another counter suffix.
+
+End-of-list limit: rows 0 through 119 pass. At index 120 the Math Expression node titled BATCH COMPLETE at 120 raises a deliberate division-by-zero error before any line loader or image generation. ComfyUI suppresses instant re-queuing on execution errors. This is an intentional stop marker, not a failed image. It avoids silent row wrap and does not clear other queued work.
+
+To resume after a failure, stop Run Instant first. Inspect the last successfully saved IR-NNN file, then set SHOT INDEX to the zero-based index of the next missing shot. For example after IR-002, resume at 2. The UI increments when it submits a job, so an unsuccessful submission can leave its counter one ahead; do not blindly resume from that displayed counter.
+
+Borrowed locations provide architecture and lighting only. Ending branches remain alternatives. Prompt-generated environments and provisional wardrobe continuity still need editorial review.

@@ -1,0 +1,25 @@
+subject_definitions:
+<Subject 1> is Rafa, the single man shown in the character sheet <Picture 2>.
+<Subject 2> is the night jungle gorge in <Picture 1>, preserving its ledge, rock pillars, vegetation, moonlight and mist.
+<Audio 1> is the supplied song, providing the musical timing reference.
+
+summary:
+[reference generation + audio reference] A three-shot surreal music-video sequence featuring <Subject 1> in <Subject 2>.
+
+retention_analysis:
+<Subject 1>: fully_preserved - identity and wardrobe from <Picture 2> throughout.
+<Subject 2>: fully_preserved - setting and lighting from <Picture 1> throughout.
+<Audio 1>: reference - musical phrasing and atmosphere.
+
+ detailed_description:
+[Shot 1] [Low tracking shot] Close-up. Rafa runs along the ledge, his boots striking cracked earth. At 4.5 seconds the ground breaks beneath his planted boot; his feet drop with the collapsing slab as loose stones pour into the gorge. At 4.917 seconds his boot fills the foreground above the breaking edge. Night jungle gorge, teal moonbeams, blue mist.
+
+[Shot 2] At 00:05.500, [Static shot] Medium full shot. Rafa falls headfirst through open air, completing two forward head-over-heels tumbles during the first two seconds. He unfolds into an upright suspended pose, face and chest toward the lens, arms spread. For the remaining three and a half seconds he hangs at a fixed height against the background, breathing visibly. Night jungle gorge, teal moonbeams, blue mist.
+
+[Shot 3] At 00:11.000, [Static shot] Wide shot. Rafa hangs upright above the cloud bank, face and chest toward the lens. He pitches headfirst into a forward somersault and accelerates downward, shrinking toward the lower center of the frame as rolling cloud encloses his body. Night jungle gorge, teal moonbeams, blue mist.
+
+overall_soundscape:
+The song leads, accompanied by crumbling earth, rushing air and audible breathing.
+
+non_diegetic_music:
+Reference <Audio 1> for the musical phrasing throughout the sequence.

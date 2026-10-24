@@ -1,0 +1,88 @@
+"""PlagueKind MiniMax H3 V11 workflow, as exported by ComfyUI's own frontend (graphToPrompt).
+
+`workflows/plaguekind-h3-v11.api.json` is his V11 graph unchanged: sparse SLA attention (0.7),
+H3 cache, chunked attention/feed-forward, AdaLN LoRA fix, res_multistep/simple 13 steps, no
+turbo. Each mode below only fills his reference bundle and sets his first/last-frame switch,
+exactly as the UI does; every other node and setting is his.
+
+Bundle slots (his Extra Refs subgraph): slot 1 and 2 feed first/last frame when the switch is
+off, or reference images 1 and 2 when it is on; slots 3-9 are always reference images 3-9.
+"""
+
+import copy
+import json
+import os
+
+TEMPLATE = os.path.join(os.path.dirname(__file__), "..", "..", "workflows", "plaguekind-h3-v11.api.json")
+WORKFLOWS = ("pk_v11_t2v", "pk_v11_fl2v", "pk_v11_ref2v", "pk_v11_fl2v_refs")
+
+SEED, SAVE, TARGET, DURATION = "5445", "5480", "5612", "5479:5476"
+COMBINED, REF_SWITCH, BUNDLE = "5479:5961", "5479:5881", "5556:5570"
+LORA_STACK = "5511"  # his LTX_lora_loader stack, feeding H3AdaLNLoRAFix
+SAMPLER = "5479:5472"
+
+
+def template():
+    with open(TEMPLATE, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, images=(), unet=None, overrides=None,
+          song_audio=None, reference_audio=None, loras=()):
+    """Return an API prompt for one of WORKFLOWS.
+
+    song_audio: (uploaded audio name, start seconds) to condition on real music. The node pack's
+        MiniMaxH3SongMaskedAVContext writes that slice into the target audio latent and protects it
+        from denoising, so the picture is generated hearing the song (as in its "Music Video" example).
+    reference_audio: (local path, start s, duration s): the same slice as an H3 reference audio input
+        (<Audio 1> in the prompt), the ref2va path the model reads for rhythm and lip-sync. Loaded by
+        VHS_LoadAudio straight from the file on this machine, sliced inside ComfyUI.
+
+    images: uploaded image names, one per bundle slot (None leaves a slot empty). fl2v takes
+        [first] or [first, last]; ref2v takes up to 9 refs; fl2v_refs takes [first, last-or-None,
+        ref, ...] with up to 7 refs in slots 3-9, which stay references in first/last-frame mode.
+    overrides: {node_id: {input: value}} for deliberate deviations from his settings (e.g. identity).
+    loras: [(name as the loader lists it, e.g. "h3\better_motion_h3_lora_v1_500.safetensors", strength)] go into
+        his LoRA stack (node 5511, ahead of the H3AdaLNLoRAFix), replacing its two disabled turbo entries.
+    """
+    if workflow not in WORKFLOWS:
+        raise ValueError(f"unknown workflow {workflow}; expected one of {WORKFLOWS}")
+    g = copy.deepcopy(template())
+    g[SEED]["inputs"]["noise_seed"] = seed
+    g[SAVE]["inputs"]["filename_prefix"] = prefix
+    # His note: for generation from scratch set the Target Dimension node to explicit W x H.
+    g[TARGET]["inputs"].update({"scale_mode": "Dimensions (W × H)", "aspect_ratio": "16:9 (Widescreen)",
+                               "width": width, "height": height})
+    g[DURATION]["inputs"]["value"] = seconds
+    g[COMBINED]["inputs"]["prompt"] = prompt
+    if unet:
+        g["5310:5008"]["inputs"]["unet_name"] = unet
+    if loras:
+        g[LORA_STACK]["inputs"]["stack_data"] = json.dumps(
+            [{"on": True, "lora": name, "str": strength, "v": 1, "a": 1, "t": 1} for name, strength in loras])
+    for node_id, values in (overrides or {}).items():
+        g[node_id]["inputs"].update(values)
+
+    limit = {"pk_v11_t2v": 0, "pk_v11_fl2v": 2, "pk_v11_ref2v": 9, "pk_v11_fl2v_refs": 9}[workflow]
+    if len(images) > limit:
+        raise ValueError(f"{workflow} takes at most {limit} images, got {len(images)}")
+    # Switch on = slots 1-2 are references (first/last frame disabled); off = first/last frame.
+    g[REF_SWITCH]["inputs"]["value"] = workflow == "pk_v11_ref2v"
+    for i, name in enumerate(images, start=1):
+        if name is None:
+            continue
+        g[f"mvvm_image_{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+        g[BUNDLE]["inputs"][f"input_{i}"] = [f"mvvm_image_{i}", 0]
+    if song_audio:
+        name, start = song_audio
+        g["mvvm_song"] = {"class_type": "LoadAudio", "inputs": {"audio": name}}
+        g["mvvm_song_ctx"] = {"class_type": "MiniMaxH3SongMaskedAVContext", "inputs": {
+            "latent": [COMBINED, 1], "audio_vae": g[COMBINED]["inputs"]["audio_vae"], "master_audio": ["mvvm_song", 0],
+            "clip_start_seconds": float(start), "context_length": 0, "source_fps": 24.0, "crop": "disabled"}}
+        g[SAMPLER]["inputs"]["latent_image"] = ["mvvm_song_ctx", 0]
+    if reference_audio:
+        path, start, duration = reference_audio
+        g["mvvm_ref_audio"] = {"class_type": "VHS_LoadAudio", "inputs": {
+            "audio_file": os.path.abspath(path), "seek_seconds": float(start), "duration": float(duration)}}
+        g[COMBINED]["inputs"]["audio"] = ["mvvm_ref_audio", 0]
+    return g

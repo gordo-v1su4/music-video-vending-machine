@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { videoDuration, videoPosition } from "./timing";
+import { songToVideo, videoDuration, videoPosition } from "./timing";
 import type { AudioBreak } from "./api";
 const breaks: AudioBreak[] = [
   {
@@ -18,6 +18,12 @@ const breaks: AudioBreak[] = [
   },
 ];
 describe("preview time mapping", () => {
+  test("song time maps to video time past earlier insertions only", () => {
+    expect(songToVideo(5000, breaks)).toBe(5000);
+    expect(songToVideo(10000, breaks)).toBe(13000);
+    expect(songToVideo(16000, breaks)).toBe(19000);
+    expect(videoPosition(songToVideo(16000, breaks), breaks).songMs).toBe(16000);
+  });
   test("insertions lengthen video and hold song position", () => {
     expect(videoDuration(30000, breaks)).toBe(33000);
     expect(videoPosition(11500, breaks)).toEqual({

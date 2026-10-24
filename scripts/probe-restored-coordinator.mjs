@@ -14,9 +14,9 @@ async function main(){
   const health=await (await request("/health",{},null)).json();
   if(health.database!=="convex"||health.storage!=="rustfs"||!health.sessionRequired||health.development)throw Error("Wrong runtime");
   if((await request("/projects",{},null)).status!==401)throw Error("Anonymous project read allowed");
-  if((await request("/projects",{},process.env.MVM_OPERATOR_TOKEN)).status!==401)throw Error("Bootstrap accepted on data route");
+  if((await request("/projects",{},process.env.MVVM_OPERATOR_TOKEN)).status!==401)throw Error("Bootstrap accepted on data route");
   stage="operator_session";
-  const login=await request("/sessions",{method:"POST",body:JSON.stringify({clientLabel:"MVVM isolated restore acceptance"})},process.env.MVM_OPERATOR_TOKEN);
+  const login=await request("/sessions",{method:"POST",body:JSON.stringify({clientLabel:"MVVM isolated restore acceptance"})},process.env.MVVM_OPERATOR_TOKEN);
   if(!login.ok)throw Error("Session failed");
   const grant=await login.json(); token=grant.token;
   if(typeof token!=="string"||!grant.session?.id)throw Error("Invalid session grant");

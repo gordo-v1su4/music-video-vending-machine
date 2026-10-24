@@ -1,0 +1,87 @@
+{
+ "id": "i-ran-demo",
+ "brief": "I Ran, 229.3-263.7 s of the song. Rafa sprints along a moonlit jungle gorge ledge; the cracked edge gives way under his boot and he falls backward into the misty gorge. The fall drifts slowly through fog, then he crashes down into a night jungle festival below. Lune, who has been dancing at the festival, finds him in the wreckage and pulls him up; their eyes meet. One continuous story, three planned Clips after the salvaged opening.",
+ "master": {
+  "path": "D:/output/local/MVVM/song/master.mp3",
+  "sha256": "08fc75c3752f2f697d3a6fab81f9ba290e1ca4a24dc4f3db3e1142417ba5ef0e",
+  "bpm": 136.83,
+  "passage_s": [229.285, 263.663],
+  "approved": true
+ },
+ "characters": [
+  {
+   "id": "rafa", "name": "Rafa",
+   "refmod": {"name": "Rafa_identity_full", "path": "D:/ComfyUI_V89/ComfyUI/models/refmods/Rafa_identity_full.safetensors",
+              "sha256": "704ac4ebf99bbcea930ddbc9f568b04e813d466933a372de1a6e6139472be215", "mode": "encode (Full Reference)",
+              "source_ref": "rafa-sheet"},
+   "look": "Rafa sheet Look: open olive short-sleeve shirt over bare chest, black backpack straps, gray paisley bandana, wooden bead necklace with medallion, olive cargo shorts with brown belt, olive socks, scuffed tan-brown boots, curly black hair, moustache and goatee.",
+   "look_note": "The pilot plan's Look text (camp shirt with chest harness) differs from the RefMod sheet; the RefMod sheet is the approved demo Look."
+  },
+  {
+   "id": "lune", "name": "Lune",
+   "refmod": {"name": "Lune_identity_full", "path": "D:/ComfyUI_V89/ComfyUI/models/refmods/Lune_identity_full.safetensors",
+              "sha256": "79db4029e29c0403382622a4179db4dca11617fbe52b2530e113182d62325138", "mode": "encode (Full Reference)",
+              "source_ref": "lune-sheet", "created": "2026-10-10 Swarm/Comfy job 7b1db45a-0256-4be8-9777-23fcfb05e865, same settings as Rafa"},
+   "look": "Lune sheet Look: silver metallic wrapped headband with yellow wildflowers, long wavy chestnut-brown hair, silver metallic triangle halter bikini top, thin silver waist chain, frayed light olive denim micro shorts, stacked silver chain bracelets, tan suede lace-up boots."
+  }
+ ],
+ "references": [
+  {"id": "rafa-sheet", "character": "rafa", "role": "identity", "decision": "approved",
+   "path": "D:/input/9d98d0d3-3b9a-43e1-9d8b-a217f4f4b0a5.png", "sha256": "ccdde04998d35a5ee9a75f8d5f6313eff38476d42a600bf04dec8d610d547817",
+   "provenance": "User-confirmed sole RefMod source (docs/pilot/rafa-refmod-test-handoff.md); four views, one outfit. Encoded 1664x928 (short edge <=1024) by Create H3 RefMod, Full Reference, identity, 5120-token budget.",
+   "transform": "none before Create H3 RefMod (node resizes)", "note": "Existing successful baseline; retained unchanged."},
+  {"id": "lune-sheet", "character": "lune", "role": "identity", "decision": "pending",
+   "path": "D:/output/local/MVVM/demo-v1s155/packet/lune-refmod-sheet.png", "sha256": "064ef78e7ac0c15972df728232d4986ac9b21d9db141329d33e85b73e1702b16",
+   "provenance": "Composed 2026-10-10 from i-ran-pilot/sheets/lune closeup.png (e625f0f4), front.png (b5fb929c), side.png (73361cd4), back.png (62f96df0) on 2752x1536 gray, close-up left, three full-body views right; no text.",
+   "transform": "lanczos resize, centre crop of close-up to 40% width", "note": "Needs director review before Lune shots render."},
+  {"id": "gorge", "role": "scene", "decision": "approved",
+   "path": "D:/ComfyUI_V89/ComfyUI/input/hf_20261007_142933_fe26c478-b4cc-478d-9b1a-9d5be5648b3c.png", "sha256": "06951079190b4e29b00cbf72aa7ebb3b70178f60ddac055bd50dc0de95d276f5",
+   "provenance": "<Picture 1> of the user's approved 1908 run-to-fall workflow (Rafa 1908 Original - Bullet Time).", "transform": "workflow ref_image_size=match (down only)"},
+  {"id": "festival", "role": "scene", "decision": "pending",
+   "path": "D:/output/local/MVVM/i-ran-pilot/plates_v2/dfdc9633b356c1b13ee20f3e1d54f24104af150c1559f1008f5192024f9c7df1.png", "sha256": "dfdc9633b356c1b13ee20f3e1d54f24104af150c1559f1008f5192024f9c7df1",
+   "provenance": "Pilot festival plate v2 #4 (full frame; plates 0-2 are letterboxed and rejected for scene use). Staged as Comfy input mvvm-festival-plate.png.", "transform": "workflow ref_image_size=match"},
+  {"id": "guide-a-ground-contact", "role": "timed_guide", "decision": "approved", "frame": 62,
+   "path": "C:/Users/Gordo/Downloads/hf_20261007_145804_0029b5f7-8406-4227-b733-49a83f977466.png", "sha256": "47ee78c8d7743a08d85457d168f8c487b9ede24c6c90d5f5623d6d28ba17a2ec",
+   "provenance": "Earlier two-guide trial ab692d87 guide 1 (rafa-guide-frame-1mp/guide-inputs.json). Staged as mvvm-guide-a.png.", "transform": "native AddGuide centre-crop/resize to pass-1 size"},
+  {"id": "guide-b-falling-boot", "role": "timed_guide", "decision": "approved", "frame": 120,
+   "path": "C:/Users/Gordo/Downloads/hf_20261007_145645_519a8c62-8000-49b3-892a-8ce49e97bd0b (2).png", "sha256": "dc821c4f670efc21d8e672a9976ce452f1a54f625b253afa38011599811a779e",
+   "provenance": "Downward-angled falling-boot guide, frame 120 in the two-guide and one-guide trials. Staged as mvvm-guide-b.png.", "transform": "native AddGuide centre-crop/resize to pass-1 size"},
+  {"id": "motion-dust-fall", "role": "motion", "decision": "rejected",
+   "path": "D:/output/local/Starred/MVVM/rafa-single-guide-1mp/rafa-one-guide_00009_.mp4",
+   "provenance": "User-starred internal render; user noted a good dust fall followed by an unwanted second fall.",
+   "note": "Explicitly excluded from this passage: the Eros demo workflow has no wired video-reference input and the clip contains the unwanted second fall. No external footage was downloaded (no licensed source in scope)."}
+ ],
+ "sequence": {
+  "id": "seq-into-the-fog",
+  "song_start_s": 229.285, "song_end_s": 263.663,
+  "clips": [
+   {"slot": "C0", "title": "Salvaged opening", "song_s": [229.285, 234.3], "kind": "supplied",
+    "source": "D:/output/local/raw/2026-10-09/1908001-subject_definitions Subject 1 is Rafa-videominimax_h3_hybrid_fl2va_ref2va_b25.mp4",
+    "range_s": [0.0, 5.0], "characters": ["rafa"], "location": "gorge",
+    "entry": "Rafa sprinting toward camera along the ledge path", "exit": "Boot breaks through the crumbling edge, body tipping back",
+    "camera": "Handheld, backing in front of him, then sinking to the boots", "cuts": 0},
+   {"slot": "C1", "title": "The fall", "song_s": [234.3, 246.14], "kind": "generate",
+    "characters": ["rafa"], "location": "gorge",
+    "entry": "Boot already through the edge, momentum carrying him backward", "exit": "Face-up, arms spread, sinking into dense fog",
+    "camera": "Continuous: over the boot, along the body, then easing toward his face as the fall slows",
+    "action": "Continuous momentum: supporting ground gives way, body keeps travelling down and back, slow-motion during the 238-246 s hold, descent continues throughout.",
+    "cuts": 0},
+   {"slot": "C2", "title": "The landing", "song_s": [246.14, 254.444], "kind": "generate",
+    "characters": ["rafa"], "location": "festival",
+    "entry": "Rafa drops out of the fog above the festival", "exit": "Rafa lying in torn canopy fabric and scattered light rigging, dazed",
+    "camera": "Wide from below as he drops out of the fog; one cut at about 3.9 s (the 250.06 s beat) to ground level as he lands", "cuts": 1},
+   {"slot": "C3", "title": "The meeting", "song_s": [254.444, 263.663], "kind": "generate",
+    "characters": ["lune", "rafa"], "location": "festival",
+    "entry": "Lune pushes through the crowd toward the wreckage", "exit": "Lune and Rafa face to face, her hand on his chest, eyes locked",
+    "camera": "Follows Lune in, settles on a two-shot", "cuts": 0}
+  ]
+ },
+ "workflow": {
+  "name": "MVVM - I Ran Music Video/MVVM Demo Eros Two Pass",
+  "source": "Eros JP Two Pass Rafa RefMod Only (H3_Turbo_2Pass_JP_14s)",
+  "model": "10Eros-Max-Turbo-Beta5-Q6_K.gguf",
+  "render_size": {"pass1_megapixels": 0.25, "final_megapixels": 0.5, "rtx_scale": 1.0},
+  "route": "SwarmUI 7861 Generate tab with saved presets (visible UI)"
+ },
+ "allowance": {"attempts_per_shot": 3, "repair_renders": 2, "gpu_minutes": 90, "paid_fallback": false}
+}

@@ -3,7 +3,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{AppState, router};
+use mvvm_coordinator::{AppState, router};
 use object_store::memory::InMemory;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -50,7 +50,7 @@ fn isolated_state(bootstrap: &str) -> AppState {
     let objects: Arc<dyn object_store::ObjectStore> = Arc::new(InMemory::new());
     AppState {
         convex: Some(
-            mvm_coordinator::convex::Client::new(
+            mvvm_coordinator::convex::Client::new(
                 &url,
                 &std::env::var("MVVM_TEST_CONVEX_ADMIN_KEY").unwrap(),
             )
@@ -135,7 +135,7 @@ async fn convex_http_sessions_work_without_postgres() {
     let asset_id = uuid::Uuid::new_v4();
     let bytes = bytes::Bytes::from_static(b"MVVM recovery acceptance bytes");
     let key = format!("projects/{project_id}/originals/{asset_id}");
-    let asset = mvm_coordinator::Asset {
+    let asset = mvvm_coordinator::Asset {
         id: asset_id,
         project_id,
         name: "recovery-fixture.bin".into(),
@@ -146,14 +146,17 @@ async fn convex_http_sessions_work_without_postgres() {
         url: format!("/api/v1/projects/{project_id}/assets/{asset_id}"),
         created_at: chrono::Utc::now(),
     };
-    let auth = mvm_coordinator::convex_sessions::Auth {
+    let auth = mvvm_coordinator::convex_sessions::Auth {
         session_id: Some(uuid::Uuid::parse_str(grant["session"]["id"].as_str().unwrap()).unwrap()),
-        issuer_hash: Some(mvm_coordinator::convex_sessions::hash(&bootstrap)),
+        issuer_hash: Some(mvvm_coordinator::convex_sessions::hash(&bootstrap)),
         development: false,
     };
     let client = state.convex.as_ref().unwrap();
     client.begin_upload(&auth, &asset, &key).await.unwrap();
-    assert_eq!(mvm_coordinator::reconcile_uploads(&state).await.unwrap(), 0);
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        0
+    );
     assert!(
         client
             .list_assets(&auth, project_id)
@@ -169,8 +172,14 @@ async fn convex_http_sessions_work_without_postgres() {
         )
         .await
         .unwrap();
-    assert_eq!(mvm_coordinator::reconcile_uploads(&state).await.unwrap(), 1);
-    assert_eq!(mvm_coordinator::reconcile_uploads(&state).await.unwrap(), 0);
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        1
+    );
+    assert_eq!(
+        mvvm_coordinator::reconcile_uploads(&state).await.unwrap(),
+        0
+    );
     assert_eq!(
         client.list_assets(&auth, project_id).await.unwrap().len(),
         1
@@ -289,7 +298,7 @@ async fn convex_http_sessions_work_without_postgres() {
     let server = tokio::spawn(async move { axum::serve(listener, provider).await.unwrap() });
     let mut worker_state = state.clone();
     worker_state.analysis = Some(Arc::new(
-        mvm_coordinator::analysis_jobs::Service::new(&origin, "fixture-key").unwrap(),
+        mvvm_coordinator::analysis_jobs::Service::new(&origin, "fixture-key").unwrap(),
     ));
     let worker_app = router(worker_state.clone(), vec![]);
     let analysis_path = format!(
@@ -302,17 +311,17 @@ async fn convex_http_sessions_work_without_postgres() {
             .0,
         StatusCode::OK
     );
-    mvm_coordinator::analysis_jobs::tick(&worker_state)
+    mvvm_coordinator::analysis_jobs::tick(&worker_state)
         .await
         .unwrap();
     let (status, job) = call(&worker_app, "GET", &analysis_path, token, Value::Null).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(job["status"], "reconciliation_required");
-    mvm_coordinator::analysis_jobs::tick(&worker_state)
+    mvvm_coordinator::analysis_jobs::tick(&worker_state)
         .await
         .unwrap();
     assert_eq!(submissions.load(std::sync::atomic::Ordering::SeqCst), 1);
-    let mut success_asset: mvm_coordinator::Asset =
+    let mut success_asset: mvvm_coordinator::Asset =
         serde_json::from_value(uploaded.clone()).unwrap();
     success_asset.id = uuid::Uuid::new_v4();
     success_asset.url = format!("/api/v1/projects/{project_id}/assets/{}", success_asset.id);
@@ -340,7 +349,7 @@ async fn convex_http_sessions_work_without_postgres() {
             .0,
         StatusCode::OK
     );
-    mvm_coordinator::analysis_jobs::tick(&worker_state)
+    mvvm_coordinator::analysis_jobs::tick(&worker_state)
         .await
         .unwrap();
     assert_eq!(
@@ -350,7 +359,7 @@ async fn convex_http_sessions_work_without_postgres() {
         "running"
     );
     tokio::time::sleep(std::time::Duration::from_millis(3100)).await;
-    mvm_coordinator::analysis_jobs::tick(&worker_state)
+    mvvm_coordinator::analysis_jobs::tick(&worker_state)
         .await
         .unwrap();
     let (status, completed) = call(&worker_app, "GET", &success_path, token, Value::Null).await;
@@ -370,7 +379,7 @@ async fn convex_http_sessions_work_without_postgres() {
             .all(|j| !matches!(j["status"].as_str(), Some("queued" | "running")))
     );
     worker_state.transcription = Some(Arc::new(
-        mvm_coordinator::transcription::Service::new(&origin, "fixture-key").unwrap(),
+        mvvm_coordinator::transcription::Service::new(&origin, "fixture-key").unwrap(),
     ));
     let transcription_app = router(worker_state.clone(), vec![]);
     let transcript_path = format!(
@@ -389,7 +398,7 @@ async fn convex_http_sessions_work_without_postgres() {
         .0,
         StatusCode::OK
     );
-    mvm_coordinator::transcription::tick(&worker_state)
+    mvvm_coordinator::transcription::tick(&worker_state)
         .await
         .unwrap();
     let (status, failed) = call(
@@ -402,7 +411,7 @@ async fn convex_http_sessions_work_without_postgres() {
     .await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(failed["status"], "reconciliation_required");
-    mvm_coordinator::transcription::tick(&worker_state)
+    mvvm_coordinator::transcription::tick(&worker_state)
         .await
         .unwrap();
     assert_eq!(
@@ -449,7 +458,7 @@ async fn convex_http_sessions_work_without_postgres() {
         .0,
         StatusCode::OK
     );
-    mvm_coordinator::transcription::tick(&worker_state)
+    mvvm_coordinator::transcription::tick(&worker_state)
         .await
         .unwrap();
     let (status, completed) = call(

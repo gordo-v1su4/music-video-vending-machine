@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const stage = mkdtempSync(join(tmpdir(), 'mvvm-convex-test-'));
 const name = `mvvm-test-${randomUUID()}`;
-const image = 'ghcr.io/get-convex/convex-backend@sha256:d9b46c8a7f4ed7724dc9325b7a215d6818953bf8b951c884eb916ae890e0e3c9';
+const image = 'ghcr.io/convex/convex-backend@sha256:d9b46c8a7f4ed7724dc9325b7a215d6818953bf8b951c884eb916ae890e0e3c9';
 const env = { ...process.env };
 const privateValues = [];
 for (const key of Object.keys(env)) {
@@ -48,7 +48,7 @@ try {
   writeFileSync(join(stage, '.env.local'), `CONVEX_SELF_HOSTED_URL=${url}\nCONVEX_SELF_HOSTED_ADMIN_KEY=${admin}\n`, { mode: 0o600 });
   run('node', [join(root, 'node_modules/convex/bin/main.js'), 'dev', '--once', '--typecheck', 'enable'], { cwd: stage });
   console.log('Disposable Convex schema deployed; running HTTP acceptance with fake providers.');
-  run('cargo', ['test', '-p', 'mvm-coordinator', '--locked', '--test', 'sessions', '--test', 'persistence', '--test', 'analysis_jobs', '--test', 'transcription',
+  run('cargo', ['test', '-p', 'mvvm-coordinator', '--locked', '--test', 'sessions', '--test', 'persistence', '--test', 'analysis_jobs', '--test', 'transcription',
     'convex_', '--', '--ignored', '--test-threads=1'], {
     env: { ...env, MVVM_TEST_CONVEX_URL: url, MVVM_TEST_CONVEX_ADMIN_KEY: admin }, stdio: 'inherit',
   });

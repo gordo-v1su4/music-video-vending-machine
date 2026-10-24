@@ -1,0 +1,19 @@
+{
+  "model": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+  "turbo": false,
+  "sampler": "er_sde",
+  "steps": 50,
+  "denoise": 1,
+  "sigma_shift": [
+    12,
+    3
+  ],
+  "size": [
+    2560,
+    1440
+  ],
+  "seed": 4102,
+  "reference_size": "max",
+  "prompt_row": 3,
+  "nodes_retained": 317
+}

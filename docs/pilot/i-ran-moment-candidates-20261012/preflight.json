@@ -1,0 +1,11 @@
+{
+  "status": "offline parser and artifact checks pass",
+  "prompt_count": 120,
+  "unique_prompt_count": 120,
+  "manifest_alignment": true,
+  "installed_CR_PromptList_full_and_slice_checked": true,
+  "referenced_paths_exist": true,
+  "multi_row_render_tested": false,
+  "workflow_mutated": false,
+  "renders_submitted": 0
+}

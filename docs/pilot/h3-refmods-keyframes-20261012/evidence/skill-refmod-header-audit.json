@@ -1,0 +1,437 @@
+[
+  {
+    "path": "D:\\ComfyUI-Easy-Install_v3122\\ComfyUI-Easy-Install\\ComfyUI\\models\\refmods\\Rafa_IdentityEncode_v1.safetensors",
+    "bytes": 2455368,
+    "metadata": {
+      "refmod_meta": {
+        "_format_version": 5,
+        "kind": "bundle",
+        "name": "Rafa_IdentityEncode_v1",
+        "members": [
+          {
+            "name": "Rafa_view_01",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_01.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_02",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_02.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_03",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_03.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_04",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_04.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_05",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_05.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_07",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_07.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Rafa_view_08",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Rafa_Rafa_view_08.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          }
+        ]
+      }
+    },
+    "tensors": {
+      "ref_0": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_1": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_2": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_3": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_4": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_5": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_6": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      }
+    },
+    "scope": "header inspection only; no tensor payload loaded"
+  },
+  {
+    "path": "D:\\ComfyUI-Easy-Install_v3122\\ComfyUI-Easy-Install\\ComfyUI\\models\\refmods\\Lune_IdentityEncode_v1.safetensors",
+    "bytes": 2104616,
+    "metadata": {
+      "refmod_meta": {
+        "_format_version": 5,
+        "kind": "bundle",
+        "name": "Lune_IdentityEncode_v1",
+        "members": [
+          {
+            "name": "Lune_view_01",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_01.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Lune_view_02",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_02.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Lune_view_03",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_03.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Lune_view_04",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_04.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Lune_view_06",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_06.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          },
+          {
+            "name": "Lune_view_08",
+            "kind": "image",
+            "latent_h": 64,
+            "latent_w": 114,
+            "latent_t": 1,
+            "mode": "encode",
+            "source": "image",
+            "source_shape": "1x64x114",
+            "pool": "full-res 1824x1024px (short-edge cap 1024px)",
+            "optimize_steps": 0,
+            "tags": [
+              "identity_encode",
+              "independent still",
+              "refmod_Lune_Lune_view_08.png"
+            ],
+            "description": "",
+            "concept_type": "identity",
+            "_format_version": 4,
+            "sample_rate": 32000
+          }
+        ]
+      }
+    },
+    "tensors": {
+      "ref_0": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_1": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_2": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_3": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_4": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      },
+      "ref_5": {
+        "dtype": "F16",
+        "shape": [
+          1,
+          24,
+          1,
+          64,
+          114
+        ]
+      }
+    },
+    "scope": "header inspection only; no tensor payload loaded"
+  }
+]

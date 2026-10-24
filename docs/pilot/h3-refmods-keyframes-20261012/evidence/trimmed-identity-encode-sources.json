@@ -1,0 +1,93 @@
+{
+  "counts": {
+    "Rafa": 7,
+    "Lune": 6
+  },
+  "excluded_nodes": [
+    15,
+    44,
+    46
+  ],
+  "images": [
+    {
+      "id": 10,
+      "image": "refmod_Rafa_Rafa_view_01.png",
+      "included": true
+    },
+    {
+      "id": 11,
+      "image": "refmod_Rafa_Rafa_view_02.png",
+      "included": true
+    },
+    {
+      "id": 12,
+      "image": "refmod_Rafa_Rafa_view_03.png",
+      "included": true
+    },
+    {
+      "id": 13,
+      "image": "refmod_Rafa_Rafa_view_04.png",
+      "included": true
+    },
+    {
+      "id": 14,
+      "image": "refmod_Rafa_Rafa_view_05.png",
+      "included": true
+    },
+    {
+      "id": 15,
+      "image": "refmod_Rafa_Rafa_view_06.png",
+      "included": false
+    },
+    {
+      "id": 16,
+      "image": "refmod_Rafa_Rafa_view_07.png",
+      "included": true
+    },
+    {
+      "id": 17,
+      "image": "refmod_Rafa_Rafa_view_08.png",
+      "included": true
+    },
+    {
+      "id": 40,
+      "image": "refmod_Lune_Lune_view_01.png",
+      "included": true
+    },
+    {
+      "id": 41,
+      "image": "refmod_Lune_Lune_view_02.png",
+      "included": true
+    },
+    {
+      "id": 42,
+      "image": "refmod_Lune_Lune_view_03.png",
+      "included": true
+    },
+    {
+      "id": 43,
+      "image": "refmod_Lune_Lune_view_04.png",
+      "included": true
+    },
+    {
+      "id": 44,
+      "image": "refmod_Lune_Lune_view_05.png",
+      "included": false
+    },
+    {
+      "id": 45,
+      "image": "refmod_Lune_Lune_view_06.png",
+      "included": true
+    },
+    {
+      "id": 46,
+      "image": "refmod_Lune_Lune_view_07.png",
+      "included": false
+    },
+    {
+      "id": 47,
+      "image": "refmod_Lune_Lune_view_08.png",
+      "included": true
+    }
+  ]
+}

@@ -14,7 +14,9 @@ Turn a song and a story into an editable narrative music video.
 
 Under construction. Not production-ready.
 
-The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Greptile must award the current implementation PR head 5/5 before merge, with checks green.
+The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Implementation PRs merge only with required CI green and review findings addressed.
+
+![Music Video Vending Machine song treatment and analysis](docs/images/music-video-workspace.png)
 
 ## Development
 
@@ -25,8 +27,8 @@ The `convex/` schema and internal functions live in this repository. Self-hosted
 Install backend dependencies with `bun install --frozen-lockfile`. Copy `.env.example` to `.env.local` for local values, or inject the same variable names through your private secret manager, then run:
 
 ```powershell
-$env:MVM_DEV_LOCAL = '1'
-cargo run -p mvm-coordinator --locked
+$env:MVVM_DEV_LOCAL = '1'
+cargo run -p mvvm-coordinator --locked
 ```
 
 Convex URL/admin credentials and RustFS configuration are required in both modes. The coordinator never falls back to PostgreSQL or local asset files. It does not load `.env` automatically. Local mode permits only loopback binding; private deployment requires an operator bootstrap token and bounded operator sessions.
@@ -58,7 +60,7 @@ bun run test
 bun run build
 ```
 
-Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvm-coordinator -- --openapi` without service credentials.
+Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvvm-coordinator -- --openapi` without service credentials.
 
 No generation or final export is presented as available until its real integration gates pass. Current intake caps each request at 128 MiB; aligned audio stems and lyric wording references are supported; MIDI intake remains unavailable.
 

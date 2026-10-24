@@ -6,7 +6,7 @@ use axum::{
     routing::post,
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{
+use mvvm_coordinator::{
     AppState, Asset, router,
     transcription::{Service, tick},
 };
@@ -65,7 +65,7 @@ async fn convex_transcription_survives_restart_and_never_repeats_paid_submission
         ..support::state()
     };
     let client = state.convex.as_ref().unwrap();
-    let auth = mvm_coordinator::convex_sessions::Auth {
+    let auth = mvvm_coordinator::convex_sessions::Auth {
         session_id: None,
         issuer_hash: None,
         development: true,
@@ -349,7 +349,7 @@ async fn convex_sparse_vocals_trigger_bounded_fallback_and_timed_tail() {
         ..support::state()
     };
     let client = state.convex.as_ref().unwrap();
-    let auth = mvm_coordinator::convex_sessions::Auth {
+    let auth = mvvm_coordinator::convex_sessions::Auth {
         session_id: None,
         issuer_hash: None,
         development: true,

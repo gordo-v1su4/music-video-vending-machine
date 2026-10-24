@@ -1,0 +1,31 @@
+{
+  "Rafa": {
+    "file": "D:\\ComfyUI-Easy-Install_v3122\\ComfyUI-Easy-Install\\ComfyUI\\models\\refmods\\Rafa_IdentityEncode_v1.safetensors",
+    "image_members": 7,
+    "video_members": 0,
+    "source_images": [
+      "refmod_Rafa_Rafa_view_01.png",
+      "refmod_Rafa_Rafa_view_02.png",
+      "refmod_Rafa_Rafa_view_03.png",
+      "refmod_Rafa_Rafa_view_04.png",
+      "refmod_Rafa_Rafa_view_05.png",
+      "refmod_Rafa_Rafa_view_07.png",
+      "refmod_Rafa_Rafa_view_08.png"
+    ],
+    "latents_unchanged": true
+  },
+  "Lune": {
+    "file": "D:\\ComfyUI-Easy-Install_v3122\\ComfyUI-Easy-Install\\ComfyUI\\models\\refmods\\Lune_IdentityEncode_v1.safetensors",
+    "image_members": 6,
+    "video_members": 0,
+    "source_images": [
+      "refmod_Lune_Lune_view_01.png",
+      "refmod_Lune_Lune_view_02.png",
+      "refmod_Lune_Lune_view_03.png",
+      "refmod_Lune_Lune_view_04.png",
+      "refmod_Lune_Lune_view_06.png",
+      "refmod_Lune_Lune_view_08.png"
+    ],
+    "latents_unchanged": true
+  }
+}

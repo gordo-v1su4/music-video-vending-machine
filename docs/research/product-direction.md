@@ -1,6 +1,6 @@
-# Music Vending Machine: current product direction
+# Music Vending Machine: product direction (superseded)
 
-Status: active discovery interview. User decisions are recorded below; this is not an approved implementation plan. No application implementation or paid generation has started.
+Status: **superseded research snapshot.** This was the discovery-interview record before the approved [PRD](../PRD.md) and [implementation plan](../implementation-plan.md); those documents and [CONTEXT.md](../../CONTEXT.md) now govern. Kept as evidence of how decisions were reached. Statements below about open decisions, current capability or implementation status are out of date.
 
 ## Intended result
 
@@ -84,4 +84,4 @@ Source audits do not establish runtime correctness. Preserve unrelated work in d
 - Final export formats, resolution/aspect ratio, and what remains editable.
 - Pilot acceptance criteria and sample song/section.
 
-See [discovery history](research/music-video-discovery.md) and the source-cited assessments under `docs/research/` for evidence, rejected assumptions, and unresolved integration details.
+See [discovery history](music-video-discovery.md) and the source-cited assessments in this directory for evidence, rejected assumptions, and unresolved integration details.

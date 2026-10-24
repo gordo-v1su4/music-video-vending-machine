@@ -1,4 +1,4 @@
-use mvm_coordinator::{AppState, convex::Client};
+use mvvm_coordinator::{AppState, convex::Client};
 use object_store::memory::InMemory;
 use std::sync::Arc;
 

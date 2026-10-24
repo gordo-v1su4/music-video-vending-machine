@@ -9,7 +9,7 @@ mkdirSync(runtime, { recursive: true });
 const schemaFile = resolve(runtime, 'openapi.json');
 const output = resolve(runtime, 'api.generated.d.ts');
 const target = resolve(root, 'apps/web/src/lib/generated/api.d.ts');
-const schema = execFileSync('cargo', ['run', '--locked', '--quiet', '-p', 'mvm-coordinator', '--', '--openapi'], { cwd: root, encoding: 'utf8' });
+const schema = execFileSync('cargo', ['run', '--locked', '--quiet', '-p', 'mvvm-coordinator', '--', '--openapi'], { cwd: root, encoding: 'utf8' });
 const operations = new Set();
 for (const path of Object.values(JSON.parse(schema).paths)) {
   for (const [method, operation] of Object.entries(path)) {

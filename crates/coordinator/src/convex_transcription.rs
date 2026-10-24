@@ -147,10 +147,12 @@ pub async fn recover(
         .ok_or(Error::InvalidResponse)?;
     if row["id"] != request.job_id.to_string()
         || updated != request.expected_updated_at
-        || !matches!(
+        || !(matches!(
             row["status"].as_str(),
             Some("failed" | "reconciliation_required")
-        )
+        ) || (request.replace_completed
+            && request.provider_response.is_some()
+            && row["status"].as_str() == Some("completed")))
     {
         return Err(Error::Conflict.into());
     }
@@ -185,7 +187,7 @@ pub async fn recover(
     client
         .mutation::<()>(
             "transcription:recover",
-            json!({"auth":auth,"expectedUpdatedAt":request.expected_updated_at,"data":row}),
+            json!({"auth":auth,"expectedUpdatedAt":request.expected_updated_at,"allowCompleted":request.replace_completed,"data":row}),
         )
         .await?;
     load(state, client, auth, project, asset_id).await

@@ -1,10 +1,10 @@
 # Music Vending Machine — build checklist
 
-Updated September 26, 2026. This tracks the approved [product requirements](PRD.md) and [implementation plan](implementation-plan.md).
+Updated September 28, 2026. This tracks the approved [product requirements](PRD.md) and [implementation plan](implementation-plan.md).
 
 **Where we are:** the current 5:53 master is imported and analyzed. Revision 7 saves the supplied lyric wording, explicitly aligned vocal timing, a director-proposed interpretation and 22 editable story beats. Recovered words appear on 10 of the 22 cards; other cards identify missing timing without claiming silence. These are creative drafts awaiting review. Automatic in-app direction, finished video and the installed desktop release remain unfinished.
 
-**Current task: scheduled backups, then private deployment.** PR #7 migrated PostgreSQL to home Convex/RustFS and PR #8 added explicit same-bucket recovery; both merged after exact-head Greptile 5/5, green CI and resolved findings. Local cutover, source preservation, fresh current-backup restore/restart and browser playback passed. Scheduled runner implementation is under review; task execution is not yet verified.
+**Current task: local end-to-end production pilot (Linear V1S-102/105/106/107).** A local pipeline (`scripts/mvvm_gen`) drives the running SwarmUI-managed ComfyUI backend on the RTX 5090: Qwen Image 2.1 builds panel character sheets and MiniMax H3 reference-to-video renders each shot straight from those sheets, then FFmpeg cuts the clips to the 137 BPM grid against the 5:53 master. The user chose reference-to-video over composited keyframes on September 28 and delegated creative choices; the first 16-shot, 32-bar pilot passage is rendering. Earlier: scheduled backups and private deployment packaging merged in PRs #9–#11.
 
 **Song context.** The user confirmed the 5:53 stem package at a locked 137 BPM as the only source for this song. A 5:53.154 stereo 48 kHz / 24-bit master has been built from all 12 aligned stems, preserving relative levels with a uniform -0.5 dB adjustment (measured -1.1 dBTP). The earlier MP3, separate lyrics file, and earlier analysis are superseded and must not be used. Files in the package's reference-only folder may drift and are not timing authorities. The current trimmed master is connected to durable analysis, visible progress and a saved editable timeline.
 
@@ -56,27 +56,36 @@ Checked means the stated scope has evidence. A service experiment does not mean 
 - [x] Provide reference intake and exact-versus-inspiration roles.
 - [x] Provide timed audio preview and insertion/cutout timing primitives.
 - [ ] Integrate the director to propose story parts grounded in the song and treatment.
-- [ ] Keep stable character/location identities and reference constraints.
+- [ ] Keep stable Character, location and visual-style anchors and reference constraints.
+- [ ] Approve each Character's Looks: every hair/costume combination gets its own Character sheet. Domain rules and API actions exist (a changed Look loses approval; approval needs an exact-match reference); the UI is not built.
+- [ ] Assign an approved Look to every scene or sequence before generation, favoring fewer changes. Production approval now requires an explicit per-section assignment of approved Looks and its fingerprint covers them; the UI is not built.
 - [ ] Show the whole song as timed story parts with stills or clearly marked placeholders.
-- [ ] Let the user revise and approve master, treatment, references, breaks, route, and attempt allowance.
-- [ ] Verify the complete-song preview before starting video production.
+- [ ] Let the user revise and approve master, treatment, references, Looks and their assignments, breaks, route, and attempt allowance; any change invalidates that approval.
+- [ ] Verify the complete-song preview against the production master before starting video production.
 
 ## 4. Generate and assemble video — service experiments only (M1, M3, M6)
 
-- [x] Generate and inspect one local Qwen still and one H3 clip outside the app.
-- [ ] Validate Qwen edit preservation; current experiment did not preserve the scene adequately.
+- [x] Generate and inspect exploratory stills and clips through standalone ComfyUI outside the app. These probes do not count as production workflows.
+- [ ] Validate candidate image and video workflows submitted through SwarmUI, with pinned model/workflow hashes and measured resources.
+- [ ] Validate image-edit preservation and Look identity; the exploratory edit did not preserve the scene adequately.
 - [ ] Connect dedicated Trigger jobs and the Windows GPU worker.
 - [ ] Implement leases, cancellation, recovery, provider receipts, and duplicate-submission protection.
+- [ ] Add a Generate action, separate from production approval, that starts one unattended run.
 - [ ] Generate from approved story parts with an initial attempt plus at most two replacements per shot.
-- [ ] Apply musical cut controls, protected sections, seeds, and pinned shots.
+- [ ] Run the production self-check on each shot: prompt/reference fit, assigned Look, timing, and media health.
+- [ ] Apply musical cut controls, protected sections, seeds, and pinned shots, then assemble the musical edit automatically.
 - [ ] Rank acceptable candidates and keep unresolved coverage visibly empty.
 - [ ] Integrate candidate comparison, Keep/Reject, and restoration without replacing the active cut automatically.
 
 ## 5. Review the moving result — unfinished (M7)
 
-- [ ] Run technical checks and directed temporal visual review on actual clips and transitions.
-- [ ] Record findings with artifact, time range, observation, uncertainty, and proposed action.
-- [ ] Verify bounded repairs, intentional creative choices, and exhausted-attempt behavior.
+- [ ] Compare candidate reviewer models on the same shared clips; Gemini Flash only under a separately approved quote.
+- [ ] Run multi-reviewer Review on the whole musical edit: story coherence, musical fit, continuity, Characters and Looks, cuts and timing, and technical errors.
+- [ ] Record findings with revision or artifact, time range, evidence, uncertainty, reviewer, and proposed action; mark reviewer disagreement.
+- [ ] Separate blocking findings (objective failures) from advisory story and style judgments.
+- [ ] Propose repairs scoped to a shot or a chunk with neighboring context; each approved repair gets a fresh attempt allowance.
+- [ ] Put an approved repair chunk in a new candidate revision, recheck it locally, re-review the full cut, then offer Keep.
+- [ ] Verify intentional creative choices, supplied performance footage (no lip-sync scoring in v1), and exhausted-repair behavior.
 
 ## 6. Export and editable archive — unfinished (M8)
 
@@ -112,7 +121,7 @@ The dark zinc workspace is implemented. Browser testing must stay in the user's 
 
 ## Rules that stay in force
 
-- Every implementation PR needs exact-head Greptile 5/5, green CI, and addressed findings before merge and the next implementation PR.
+- Every implementation PR needs green CI on its current head and addressed findings before merge and the next implementation PR. Greptile is no longer used (2026-09-28).
 - Creative approval belongs to the user. Paid calls require a separately approved quote.
 - Update this checklist at each completed work item or changed blocker, and keep the current and next task at the top accurate.
 - Full completion means both the private pilot and the complete-song acceptance pass. A fixture, passing unit tests, or a working service alone is not completion.

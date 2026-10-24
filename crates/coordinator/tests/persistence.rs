@@ -4,7 +4,7 @@ use axum::{
     http::{Request, StatusCode},
 };
 use http_body_util::BodyExt;
-use mvm_coordinator::{AppState, Asset, reconcile_uploads, router};
+use mvvm_coordinator::{AppState, Asset, reconcile_uploads, router};
 use object_store::memory::InMemory;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -124,7 +124,7 @@ async fn anonymous_local_reads_require_loopback_host_even_without_origin() {
 #[test]
 fn openapi_matches_camel_case_action_wire_contract() {
     use utoipa::OpenApi;
-    let schema = serde_json::to_value(mvm_coordinator::ApiDoc::openapi()).unwrap();
+    let schema = serde_json::to_value(mvvm_coordinator::ApiDoc::openapi()).unwrap();
     let alternatives = schema["components"]["schemas"]["Action"]["oneOf"]
         .as_array()
         .unwrap();
@@ -157,7 +157,7 @@ fn openapi_matches_camel_case_action_wire_contract() {
 async fn convex_concurrent_writes_restart_and_asset_ownership() {
     let state = support::state();
     let client = state.convex.as_ref().unwrap();
-    let auth = mvm_coordinator::convex_sessions::Auth {
+    let auth = mvvm_coordinator::convex_sessions::Auth {
         session_id: None,
         issuer_hash: None,
         development: true,

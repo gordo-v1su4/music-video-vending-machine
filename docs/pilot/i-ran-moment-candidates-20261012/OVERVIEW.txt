@@ -1,0 +1,61 @@
+I RAN — MOMENT BANK FOR DISCUSSION, 2026-10-12
+
+120 candidate still moments, one physical line each in prompts.txt. IDs, proposed story phases, location bindings and output names are separate in shot-manifest.json. These are shot bodies for the existing Ref2VA prompt structure, not a tested unattended workflow export. No renders are authorized by this packet.
+
+BASIC STORY
+Rafa and Lune are adult first/second-year college students. They meet at a jungle festival and share intense happiness. Afterwards he travels a long way to see her and repeatedly waits. She enjoys him but withdraws, sometimes choosing someone else. Eventually she is ready to reach for him and he is no longer available. Her reasons remain open. The other student is an optional branch, not an established character design.
+
+Rafa jogs through the place where they once met, and falls from the cliff. This supersedes the earlier interpretation of that run as a frantic pursuit. The familiar place ties the fall to his memories.
+
+The living separation ending, the delayed gravestone reveal, and the dream/uncertain-existence ending are separate options. They are not simultaneous canon. Every phase contains 12 independent still moments; each should depict one image, not execute an entire scene. The manifest order is a review order, not a locked music edit.
+
+PROPOSED COVERAGE
+1. Festival meeting and memories: rows 1–12.
+2. Ordinary college closeness: rows 13–24.
+3. Long drives and waiting: rows 25–36.
+4. Closeness followed by withdrawal: rows 37–48.
+5. Other student, optional: rows 49–60.
+6. Separate solitary moments: rows 61–72.
+7. Jogging, familiar overlook and fall: rows 73–84.
+8. Too-late return, living separation option: rows 85–96.
+9. Gravestone ending option: rows 97–108.
+10. Waking / uncertain existence option: rows 109–120.
+
+Use matching compositions with both together, each alone, and the space empty. This allows multiple edits from the same coverage. Realistic close-ups, medium two-shots, wide geography and hand/foot/prop details are included. Final song placements are intentionally null. The verified master is 353 seconds, locked at 137 BPM; the saved edit map provides musical accents when the edit is assembled.
+
+LOCATION SOURCES
+The user selected C:/Users/Gordo/Documents/Github/super-seed2/projects/bloodrush/output/lora-plates/br-style as the main borrowing source. The live folder contains 19 PNGs; the older QC note lists 20, including the currently absent br-style-07-lockers.png. No missing image was assumed to exist.
+
+Direct visual inspection confirmed useful empty plates for parking, bathroom, cafeteria, rooftop, courtyard, library and covered walkway. The house-living-day-angles board and house-living-day-autumn single were also visually inspected at the user's request. Use individual scene images rather than full multi-panel boards. locations.json labels other inventoried plates whose pictures were not inspected in this session.
+
+Architecture and environment only are borrowed. Donor identities, vampires, old story directions, chronology, QC rules and LoRA trigger words are not creative instructions for this song. Some campus-daynight boards in the earlier desktop folder contain prominent unrelated faces; they are not the selected empty location library. The older desk plate has explicit October 2008 props; no year has been chosen for I Ran.
+
+Additional locations can be prompted directly. locations-to-prompt.txt lists cinematic candidates. Freeze a location plate later if repeated shots need tighter continuity. A bedroom, the exact job entrance, the car, and the cemetery are not established approved locations. Everyday college and jogging Looks still need selection; the current identity sheets retain the accepted faces and adult proportions. Do not silently change identities or treat proposed clothing as approved.
+
+COMFY BATCH PREPARATION
+The live installed CR Prompt List source was inspected. It uses multiline_text.split('\n'), selects start_index through start_index + max_rows, and constructs every prompt as prepend_text + line + append_text. start_index is zero-based. Blank lines and a trailing newline become extra rows. prompts.txt is UTF-8 without a BOM, with no blank lines or trailing newline. It contains no titles, IDs, comments or timing labels.
+
+For the current CR Prompt List, load the complete prompts.txt into multiline_text only after the list is reviewed; freeze a Ref2VA prefix and suffix around it. Keep the prefix free of a fixed jungle location for campus shots. The currently saved prefix, suffix and Picture 1 input all describe the jungle and cannot serve every new location unchanged.
+
+CR Load Text List is also installed and its schema/source were inspected: it reads a txt file line by line and emits a STRING list. It preserves the newline read from each row. This output is already a list. Feeding it into a list-producing CR Prompt List without checking the mapping can produce unintended nested or repeated processing. Choose either one multiline list path, or a file-list path with per-item text concatenation; do not add redundant list iteration.
+
+Comfy's local execution source maps list inputs over individual node calls in order. That verifies the node-level list mechanism, not that the complete two-pass graph finishes and saves one full shot before beginning the next. List results can remain cached between downstream nodes. The future unattended setup must verify memory use and full-shot sequencing with the three existing keyframes 4/5/6 before a long bank is started. Avoid extrapolating single-row success to overnight acceptance.
+
+For multiple locations in one launch, freeze an aligned environment-image sequence and prompt sequence, or independent fixed-reference location groups. Reference order and counts must be checked: the current snapshot is Picture 1 environment, Picture 2 Rafa, Picture 3 Lune. Removing a reference changes numbering. Do not leave the jungle image conditioning bathroom, house, road or campus rows. Every row needs a unique output name, the actual executed graph and its reference bindings. The manifest contains intended output prefixes, but these are not yet wired to a saver.
+
+Keep RandomNoise fixed at the chosen 4102 unless a reviewed seed list is deliberately supplied. Fixed prompts, references and seeds make runs reproducible in configuration; bit-identical output is not guaranteed across runtime/GPU changes. Runtime Qwen VL prompt writing is optional preparation, not needed for this bank. If used, save and review its outputs first, then batch the frozen text.
+
+CHOSEN STILL ROUTE
+Original H3 Ref2VA, no Turbo/LoRA; first pass 2560x1440, 50 steps; learned latent upscale multiplier 2 to 5120x2880; second pass er_sde/simple, 10 steps, denoise 0.20; Lanczos final 2048x1152. Z-image/FaceUp and its preview/compare remain disabled and retained. Krea2 was not adopted. The final handoff addition supersedes the earlier 1.6 / 0.10 comparison configuration.
+
+RENDER STATUS
+The only live queue inspection in this preparation session observed 0 running and 0 pending jobs. That is a snapshot, not permission to render. No workflow, browser, prompt settings, queue or custom node was changed. Existing keyframes 4/5/6 remain pending with the chosen route. Reconcile the queue again immediately before future generation and retain the discussion-before-bulk-render boundary.
+
+NOTION RECOVERY
+The retrieved March 26 prompt pages contain older exploratory I Ran imagery. The strongest saved user direction says she returns after running from him, finally finds him in the rain, and arriving is still not enough. The other pages include apartments, empty cafe/bench memories, night drives, train-window separation and distorted or absent reflections. These inform options, not current casting, singing, wardrobe, lighting approval or exact song timing.
+https://app.notion.com/p/3cb8a006765081f0b10cc1f9ee70c1b2
+https://app.notion.com/p/3cb8a0067650813480c8ce00d0ea353c
+https://app.notion.com/p/3cb8a00676508189a865c0fbcf25beec
+The original lyric-writing conversation is also present; drafts there are not a timing authority for the current master.
+https://app.notion.com/p/2f68a006765081e7b4d2c5a06930bd9a
+No fuller verified treatment matching the new college, parking-lot and cliff/grave directions was recovered in this search. Today's direct user directions take precedence.

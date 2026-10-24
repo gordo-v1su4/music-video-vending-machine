@@ -1,9 +1,9 @@
-//! Project persistence; pure domain action validation stays in mvm-domain.
+//! Project persistence; pure domain action validation stays in mvvm-domain.
 use crate::{
     convex::{Client, Error},
     convex_sessions::Auth,
 };
-use mvm_domain::Project;
+use mvvm_domain::Project;
 use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
