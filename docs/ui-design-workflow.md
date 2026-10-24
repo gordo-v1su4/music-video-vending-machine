@@ -22,4 +22,4 @@ User decisions (2026-09-25): use [Impeccable](https://impeccable.style/docs/) fo
 
 Dark mode must retain readable secondary text, visible focus, distinct disabled states and usable touch targets. A passing static scan does not establish accessibility conformance, touch-device behavior, media quality or Windows desktop acceptance.
 
-UI changes use the same GitHub gate as other implementation work: current-head Greptile 5/5, passing CI and addressed findings before merge.
+UI changes use the same GitHub gate as other implementation work: passing CI on the current head and addressed findings before merge.

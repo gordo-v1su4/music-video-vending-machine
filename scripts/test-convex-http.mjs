@@ -48,7 +48,7 @@ try {
   writeFileSync(join(stage, '.env.local'), `CONVEX_SELF_HOSTED_URL=${url}\nCONVEX_SELF_HOSTED_ADMIN_KEY=${admin}\n`, { mode: 0o600 });
   run('node', [join(root, 'node_modules/convex/bin/main.js'), 'dev', '--once', '--typecheck', 'enable'], { cwd: stage });
   console.log('Disposable Convex schema deployed; running HTTP acceptance with fake providers.');
-  run('cargo', ['test', '-p', 'mvm-coordinator', '--locked', '--test', 'sessions', '--test', 'persistence', '--test', 'analysis_jobs', '--test', 'transcription',
+  run('cargo', ['test', '-p', 'mvvm-coordinator', '--locked', '--test', 'sessions', '--test', 'persistence', '--test', 'analysis_jobs', '--test', 'transcription',
     'convex_', '--', '--ignored', '--test-threads=1'], {
     env: { ...env, MVVM_TEST_CONVEX_URL: url, MVVM_TEST_CONVEX_ADMIN_KEY: admin }, stdio: 'inherit',
   });

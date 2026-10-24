@@ -6,7 +6,7 @@ Inspected 2026-09-25 at `donor-repo/beatsmaxxer-pro`, branch `codex/playback-and
 
 This is the strongest inspected reference for the user's clarified editing model: **change musical behavior and compare variations, while the timeline explains the result**. The relevant building blocks already use Svelte and WebGPU. Prioritize its Timing workspace and musical trigger controls over copying conventional clip dragging as the primary workflow.
 
-Preserve music-vending-machine's independent story, character continuity, approvals, providers, and homelab production coordinator. Beatsmaxxer supplies a promising interactive timing/rendering layer, not the whole automated narrative generator.
+Preserve music-video-vending-machine's independent story, character continuity, approvals, providers, and homelab production coordinator. Beatsmaxxer supplies a promising interactive timing/rendering layer, not the whole automated narrative generator.
 
 ## What the operator changes, and what it changes
 

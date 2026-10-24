@@ -14,7 +14,7 @@ Turn a song and a story into an editable narrative music video.
 
 Under construction. Not production-ready.
 
-The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Greptile must award the current implementation PR head 5/5 before merge, with checks green.
+The approved [PRD](docs/PRD.md), [implementation backlog](docs/implementation-plan.md), and [build status](docs/build-status.md) define acceptance. Existing research is preserved under docs/research. Implementation PRs merge only with required CI green and review findings addressed.
 
 ![Music Video Vending Machine song treatment and analysis](docs/images/music-video-workspace.png)
 
