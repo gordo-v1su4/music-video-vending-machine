@@ -1,9 +1,11 @@
 # Canonical template: docs/opencode-review-github-actions.md
+# Mention-only: reviews run when a repo owner, member or collaborator comments
+# `@open-code-review` or `/open-code-review` on a PR (or via the manual dispatch).
 name: OpenCodeReview PR Review
 
 on:
-  pull_request_target:
-    types: [opened]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -16,20 +18,31 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ocr-${{ github.repository }}-${{ github.event.pull_request.number || inputs.pr_number }}
+  # Non-matching comments get a unique group so they never cancel a running review.
+  group: ${{ (github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && (startsWith(github.event.comment.body, '@open-code-review') || startsWith(github.event.comment.body, '/open-code-review')))) && format('ocr-{0}-{1}', github.repository, github.event.issue.number || inputs.pr_number) || format('noop-{0}', github.run_id) }}
   cancel-in-progress: true
 
 jobs:
   review:
+    if: |
+      github.event_name == 'workflow_dispatch'
+      || (
+        github.event.issue.pull_request
+        && github.event.comment.user.type != 'Bot'
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+        && (
+          startsWith(github.event.comment.body, '@open-code-review')
+          || startsWith(github.event.comment.body, '/open-code-review')
+        )
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Resolve manually selected PR
-        if: github.event_name == 'workflow_dispatch'
+      - name: Resolve PR
         id: context
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.issue.number || inputs.pr_number }}
         with:
           script: |
             const number = Number(process.env.PR_NUMBER);
@@ -42,6 +55,7 @@ jobs:
             if (pr.state !== 'open') throw new Error('The selected PR must be open');
             core.setOutput('base_ref', pr.base.ref);
             core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('pr_number', String(number));
 
       - name: Review with Qwen 3.8 Flash
         id: primary
@@ -60,7 +74,7 @@ jobs:
           sticky_summary: 'true'
           base_ref: ${{ steps.context.outputs.base_ref }}
           head_sha: ${{ steps.context.outputs.head_sha }}
-          pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          pr_number: ${{ steps.context.outputs.pr_number }}
 
       - name: Retry with GLM 5.3 Flash
         if: ${{ !cancelled() && steps.primary.outcome == 'failure' }}
@@ -80,4 +94,4 @@ jobs:
           upload_artifacts: 'false'
           base_ref: ${{ steps.context.outputs.base_ref }}
           head_sha: ${{ steps.context.outputs.head_sha }}
-          pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+          pr_number: ${{ steps.context.outputs.pr_number }}

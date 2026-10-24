@@ -8,7 +8,7 @@ import { join, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const stage = mkdtempSync(join(tmpdir(), 'mvvm-convex-test-'));
 const name = `mvvm-test-${randomUUID()}`;
-const image = 'ghcr.io/get-convex/convex-backend@sha256:d9b46c8a7f4ed7724dc9325b7a215d6818953bf8b951c884eb916ae890e0e3c9';
+const image = 'ghcr.io/convex/convex-backend@sha256:d9b46c8a7f4ed7724dc9325b7a215d6818953bf8b951c884eb916ae890e0e3c9';
 const env = { ...process.env };
 const privateValues = [];
 for (const key of Object.keys(env)) {
