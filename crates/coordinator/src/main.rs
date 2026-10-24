@@ -1,5 +1,5 @@
 use anyhow::Context;
-use mvm_coordinator::{ApiDoc, AppState, reconcile_uploads, router};
+use mvvm_coordinator::{ApiDoc, AppState, reconcile_uploads, router};
 use object_store::{ObjectStore, aws::AmazonS3Builder};
 use sha2::{Digest, Sha256};
 use std::{env, net::SocketAddr, sync::Arc, time::Duration};
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
         "Production requires an operator token with at least 32 bytes"
     );
     let token_hash = token.map(|v| Sha256::digest(v.as_bytes()).into());
-    let convex_client = mvm_coordinator::convex::Client::new(
+    let convex_client = mvvm_coordinator::convex::Client::new(
         &env::var("CONVEX_SELF_HOSTED_URL")
             .context("CONVEX_SELF_HOSTED_URL is required; PostgreSQL fallback is disabled")?,
         &env::var("MVVM_CONVEX_SELF_HOSTED_ADMIN_KEY")?,
@@ -78,8 +78,8 @@ async fn main() -> anyhow::Result<()> {
         .collect::<Result<Vec<_>, _>>()?;
     let state = AppState {
         convex,
-        transcription: mvm_coordinator::transcription::Service::from_env()?,
-        analysis: mvm_coordinator::analysis_jobs::Service::from_env()?,
+        transcription: mvvm_coordinator::transcription::Service::from_env()?,
+        analysis: mvvm_coordinator::analysis_jobs::Service::from_env()?,
         objects,
         token_hash,
         development,
@@ -127,8 +127,8 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     });
-    let analysis_worker = tokio::spawn(mvm_coordinator::analysis_jobs::run(state.clone()));
-    let transcription_worker = tokio::spawn(mvm_coordinator::transcription::run(state.clone()));
+    let analysis_worker = tokio::spawn(mvvm_coordinator::analysis_jobs::run(state.clone()));
+    let transcription_worker = tokio::spawn(mvvm_coordinator::transcription::run(state.clone()));
     let app = router(state, origins);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, development, "Music Video Vending Machine coordinator listening");

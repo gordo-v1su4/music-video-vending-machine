@@ -2,13 +2,13 @@ FROM rust:1.95-bookworm@sha256:6258907abe69656e41cd992e0b705cdcfabcbbe3db374f92e
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
-RUN cargo build --locked --release -p mvm-coordinator
+RUN cargo build --locked --release -p mvvm-coordinator
 
 FROM debian:bookworm-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS coordinator
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates ffmpeg curl \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 mvvm && useradd --uid 10001 --gid mvvm --no-create-home mvvm
-COPY --from=rust-build /src/target/release/mvm-coordinator /usr/local/bin/mvvm-coordinator
+COPY --from=rust-build /src/target/release/mvvm-coordinator /usr/local/bin/mvvm-coordinator
 USER 10001:10001
 ENV MVVM_BIND=0.0.0.0:5199
 EXPOSE 5199

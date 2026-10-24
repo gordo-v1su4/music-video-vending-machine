@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@mvm/web",
+      "name": "@mvvm/web",
       "dependencies": {
         "@fontsource/dm-sans": "^5.3.0",
         "@fontsource/manrope": "^5.3.0",

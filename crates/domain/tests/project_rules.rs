@@ -1,4 +1,4 @@
-use mvm_domain::*;
+use mvvm_domain::*;
 use uuid::Uuid;
 
 fn step(p: Project, action: Action) -> Project {

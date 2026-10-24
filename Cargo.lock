@@ -945,7 +945,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
-name = "mvm-coordinator"
+name = "mvvm-coordinator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -956,7 +956,7 @@ dependencies = [
  "futures",
  "http-body-util",
  "infer",
- "mvm-domain",
+ "mvvm-domain",
  "object_store",
  "reqwest",
  "serde",
@@ -974,7 +974,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mvm-domain"
+name = "mvvm-domain"
 version = "0.1.0"
 dependencies = [
  "chrono",

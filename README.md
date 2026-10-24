@@ -16,7 +16,7 @@ Install backend dependencies with `bun install --frozen-lockfile`. Inject the va
 
 ```powershell
 $env:MVVM_DEV_LOCAL = '1'
-cargo run -p mvm-coordinator --locked
+cargo run -p mvvm-coordinator --locked
 ```
 
 Convex URL/admin credentials and RustFS configuration are required in both modes. The coordinator never falls back to PostgreSQL or local asset files. It does not load `.env` automatically. Local mode permits only loopback binding; private deployment requires an operator bootstrap token and bounded operator sessions.
@@ -48,7 +48,7 @@ bun run test
 bun run build
 ```
 
-Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvm-coordinator -- --openapi` without service credentials.
+Health: /api/v1/health. OpenAPI: /api/v1/openapi.json, or `cargo run -p mvvm-coordinator -- --openapi` without service credentials.
 
 No generation or final export is presented as available until its real integration gates pass. Current intake caps each request at 128 MiB; aligned audio stems and lyric wording references are supported; MIDI intake remains unavailable.
 

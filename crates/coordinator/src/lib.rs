@@ -25,7 +25,7 @@ use axum::{
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::StreamExt;
-use mvm_domain::{Action, DomainError, Project};
+use mvvm_domain::{Action, DomainError, Project};
 use object_store::{ObjectStore, path::Path as ObjectPath};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};

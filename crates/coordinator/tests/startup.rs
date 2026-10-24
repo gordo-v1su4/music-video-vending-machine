@@ -2,7 +2,7 @@ use std::process::Command;
 
 #[test]
 fn missing_convex_configuration_never_falls_back_to_postgres() {
-    let output = Command::new(env!("CARGO_BIN_EXE_mvm-coordinator"))
+    let output = Command::new(env!("CARGO_BIN_EXE_mvvm-coordinator"))
         .env("MVVM_DEV_LOCAL", "1")
         .env("MVVM_BIND", "127.0.0.1:0")
         .env_remove("CONVEX_SELF_HOSTED_URL")
@@ -21,7 +21,7 @@ fn missing_convex_configuration_never_falls_back_to_postgres() {
 fn missing_rustfs_configuration_never_creates_local_asset_storage() {
     let temporary = tempfile::tempdir().unwrap();
     let assets = temporary.path().join("must-not-be-created");
-    let output = Command::new(env!("CARGO_BIN_EXE_mvm-coordinator"))
+    let output = Command::new(env!("CARGO_BIN_EXE_mvvm-coordinator"))
         .env("MVVM_DEV_LOCAL", "1")
         .env("MVVM_BIND", "127.0.0.1:0")
         .env_remove("MVVM_OPERATOR_TOKEN")
