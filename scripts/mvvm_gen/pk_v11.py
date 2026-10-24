@@ -18,6 +18,7 @@ WORKFLOWS = ("pk_v11_t2v", "pk_v11_fl2v", "pk_v11_ref2v", "pk_v11_fl2v_refs")
 
 SEED, SAVE, TARGET, DURATION = "5445", "5480", "5612", "5479:5476"
 COMBINED, REF_SWITCH, BUNDLE = "5479:5961", "5479:5881", "5556:5570"
+LORA_STACK = "5511"  # his LTX_lora_loader stack, feeding H3AdaLNLoRAFix
 SAMPLER = "5479:5472"
 
 
@@ -27,7 +28,7 @@ def template():
 
 
 def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, images=(), unet=None, overrides=None,
-          song_audio=None, reference_audio=None):
+          song_audio=None, reference_audio=None, loras=()):
     """Return an API prompt for one of WORKFLOWS.
 
     song_audio: (uploaded audio name, start seconds) to condition on real music. The node pack's
@@ -41,6 +42,8 @@ def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, i
         [first] or [first, last]; ref2v takes up to 9 refs; fl2v_refs takes [first, last-or-None,
         ref, ...] with up to 7 refs in slots 3-9, which stay references in first/last-frame mode.
     overrides: {node_id: {input: value}} for deliberate deviations from his settings (e.g. identity).
+    loras: [(name as the loader lists it, e.g. "h3\better_motion_h3_lora_v1_500.safetensors", strength)] go into
+        his LoRA stack (node 5511, ahead of the H3AdaLNLoRAFix), replacing its two disabled turbo entries.
     """
     if workflow not in WORKFLOWS:
         raise ValueError(f"unknown workflow {workflow}; expected one of {WORKFLOWS}")
@@ -54,6 +57,9 @@ def build(workflow, prompt, seed, prefix, width=1344, height=768, seconds=5.0, i
     g[COMBINED]["inputs"]["prompt"] = prompt
     if unet:
         g["5310:5008"]["inputs"]["unet_name"] = unet
+    if loras:
+        g[LORA_STACK]["inputs"]["stack_data"] = json.dumps(
+            [{"on": True, "lora": name, "str": strength, "v": 1, "a": 1, "t": 1} for name, strength in loras])
     for node_id, values in (overrides or {}).items():
         g[node_id]["inputs"].update(values)
 

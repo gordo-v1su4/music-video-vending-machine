@@ -17,17 +17,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import unquote, urlparse
 
 from . import review, timing
+from .boards_api import Boards
+from .production_api import MAX_BODY as MAX_PRODUCTION_BODY, ProductionAPI
 from .run import Run
 
 PORT = 5197
 MAX_BODY = 64 * 1024
 MAX_PLAN_BODY = 8 * 1024 * 1024
+MAX_UPLOAD = 40 * 1024 * 1024
+IMAGE_MIME = {".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
 
 
 class ReviewApp:
     def __init__(self, plan_path):
         self.plan_path = plan_path
         self.lock = threading.Lock()
+        self.production = ProductionAPI(self.run)
 
     def run(self):
         return Run(self.plan_path)  # Re-read per request so new renders and plan edits show up.
@@ -110,6 +115,9 @@ class ReviewApp:
             os.replace(path + ".part", path)
         return {"saved": path, "chunks": len(body["chunks"])}
 
+    def boards(self):
+        return Boards(self.run().root)
+
     def build_cut(self):
         with self.lock:
             run = self.run()
@@ -163,8 +171,23 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def production(self, result):
+        """Send a ProductionAPI result: (status, json) | ("file", image path) | ("media", video path)."""
+        kind, value = result
+        if kind == "file":
+            return self.send_image(value)
+        if kind == "media":
+            return self.send_media(value)
+        return self.send_json(kind, value)
+
     def do_GET(self):
         path = urlparse(self.path).path
+        if path.startswith("/pilot-api/production"):
+            try:
+                result = self.app.production.get(path)
+            except LookupError as exc:
+                return self.send_json(404, {"error": str(exc)})
+            return self.production(result) if result else self.send_json(404, {"error": "not found"})
         if path == "/pilot-api/review":
             return self.send_json(200, self.app.payload())
         if path == "/pilot-api/cut":
@@ -175,9 +198,41 @@ class Handler(BaseHTTPRequestHandler):
         match = re.fullmatch(r"/pilot-api/media/([A-Za-z0-9_-]+\.mp4)", path)
         if match:
             return self.send_media(os.path.join(self.app.run().root, "clips", unquote(match.group(1))))
+        if path == "/pilot-api/boards":
+            return self.send_json(200, self.app.boards().payload())
+        match = re.fullmatch(r"/pilot-api/board-image/(board[0-9a-z]+)/([a-z0-9]+)(/source)?", path)
+        if match:
+            boards, key = self.app.boards(), f"{match.group(1)}/{match.group(2)}"
+            return self.send_image(boards.source(key) if match.group(3) else boards.image(key))
+        match = re.fullmatch(r"/pilot-api/board-source/(board[0-9a-z]+)", path)
+        if match:
+            return self.send_image(self.app.boards().source_grid(match.group(1)))
         self.send_json(404, {"error": "not found"})
 
+    def send_image(self, path):
+        if not path or not os.path.isfile(path):
+            return self.send_json(404, {"error": "image not found"})
+        with open(path, "rb") as fh:
+            data = fh.read()
+        self.send_response(200)
+        self.send_header("Content-Type", IMAGE_MIME.get(os.path.splitext(path)[1].lower(), "application/octet-stream"))
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_POST(self):
+        if self.path.startswith("/pilot-api/production/"):
+            length = int(self.headers.get("Content-Length") or 0)
+            if length > MAX_PRODUCTION_BODY:
+                return self.send_json(413, {"error": "request too large"})
+            try:
+                body = json.loads(self.rfile.read(length) or b"{}")
+            except ValueError:
+                return self.send_json(400, {"error": "invalid JSON"})
+            with self.app.lock:
+                result = self.app.production.post(self.path, body)
+            return self.production(result) if result else self.send_json(404, {"error": "not found"})
         if self.path == "/pilot-api/edit-plan":
             length = int(self.headers.get("Content-Length") or 0)
             if length > MAX_PLAN_BODY:
@@ -191,6 +246,24 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(200, self.app.build_cut())
             except Exception as exc:  # ffmpeg or missing clips: report, keep serving
                 return self.send_json(500, {"error": f"Cut failed: {exc}"})
+        if self.path.startswith("/pilot-api/boards/upload"):
+            return self.upload()
+        match = re.fullmatch(r"/pilot-api/(images|boards)/(board[0-9a-z]+)/([a-z0-9]+)/(decide|use-as)", self.path)
+        if match:
+            length = int(self.headers.get("Content-Length") or 0)
+            if length > MAX_BODY:
+                return self.send_json(413, {"error": "request too large"})
+            try:
+                body = json.loads(self.rfile.read(length) or b"{}")
+                boards, key = self.app.boards(), f"{match.group(2)}/{match.group(3)}"
+                with self.app.lock:
+                    if match.group(4) == "decide":
+                        return self.send_json(200, boards.decide(key, body.get("decision"), body.get("note")))
+                    return self.send_json(200, boards.use_as(key, body.get("useAs")))
+            except LookupError as exc:
+                return self.send_json(404, {"error": str(exc)})
+            except (ValueError, TypeError) as exc:
+                return self.send_json(409, {"error": str(exc)})
         match = re.fullmatch(r"/pilot-api/review/([A-Za-z0-9_-]+)/(decide|undo|redo|reset)", self.path)
         if not match:
             return self.send_json(404, {"error": "not found"})
@@ -203,6 +276,24 @@ class Handler(BaseHTTPRequestHandler):
         except LookupError as exc:
             return self.send_json(404, {"error": str(exc)})
         except (ValueError, TypeError) as exc:
+            return self.send_json(409, {"error": str(exc)})
+
+    def upload(self):
+        """POST /pilot-api/boards/upload?name=10&grid=3x3 with the image as the raw body."""
+        from urllib.parse import parse_qs
+        query = parse_qs(urlparse(self.path).query)
+        length = int(self.headers.get("Content-Length") or 0)
+        if not length:
+            return self.send_json(400, {"error": "No image received."})
+        if length > MAX_UPLOAD:
+            return self.send_json(413, {"error": "Images up to 40 MB."})
+        data = self.rfile.read(length)
+        try:
+            with self.app.lock:
+                out = self.app.boards().upload(query.get("name", [""])[0], query.get("grid", ["3x3"])[0],
+                                               (self.headers.get("Content-Type") or "").split(";")[0].strip(), data)
+            return self.send_json(200, out)
+        except (ValueError, OSError) as exc:
             return self.send_json(409, {"error": str(exc)})
 
     def send_media(self, path):

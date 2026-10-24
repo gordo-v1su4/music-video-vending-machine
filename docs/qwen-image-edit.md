@@ -67,6 +67,19 @@ Output: `out.png` (always 1344x768) and `out.json`. The JSON records:
 6. **Scoring:** face-check each result with `face_check.py` or `board_fix.face` (ArcFace, same person ≥ 0.45). Then
    look at it: the score does not see anatomy, eyes or framing.
 
+## Upscaling split panels: use the creative upscale, not an edit
+
+For panels cut out of a grid, use **`qwen_edit.upscale(src, out)`**, which is `graphs.qwen21_creative_upscale`, the
+user's `swarm-safe-creative-upscale.json`:
+
+1. **4xNomos8kDAT** model upscale.
+2. A **Qwen 2.1 detail pass at denoise 0.33**.
+3. It writes a 2x master (2688×1536) and a 1344×768 frame.
+
+Measured on board9 p12: the mean colour stayed within 1 point of the original, and the face was not redrawn. The
+earlier "Keep colors exactly the same, upscale the image" edit (denoise 1.0) came out about 10% darker and changed
+the expression. Use the edit call only when something in the frame should change.
+
 ## Character references
 
 Use each character's **master**: the named sheet close-up `sheets/<cid>/closeup-named.png` (plan `master_ref`), with
@@ -115,5 +128,22 @@ Lessons:
   image.
 - Worth testing next (from research): cfg 3–3.5 with a negative prompt for limbs and fingers; one character per pass
   for two-person shots; a crop-edit-stitch pass for hands and small faces.
+
+## Building a multi-angle reference set (2026-10-10)
+
+- **Asking for a new angle from the master alone drifts.** "Show the woman from `<image1>` in a three-quarter
+  view / profile / glancing back…" with only the master gave six on-Look images, but the user judged that only the
+  one that kept the master's frontal pose (night blue/green, eyes to the lens) still looked like Lune. 2.1 redraws the
+  face when it has to invent the pose (research doc: a single ref pulls toward its own angle).
+- **Face swap into a frame that already has the angle holds identity.** Take frames from existing renders or stills
+  where she is already turned (3/4, over the shoulder, look-back), conform to 1344x768 as `<image1>`, the named
+  master as `<image2>`, and the measured short instruction: "Replace the woman in `<image1>` with Lune from
+  `<image2>`, same face, smooth clear skin." Output: `.runtime/gen/i-ran-pilot/sheets/lune/set2/` with the pose
+  sources in `set2/pose/`.
+- **Stills as bases:** the same recipe puts Lune into the user's exported ShotDeck anamorphic stills
+  (`refs/shotdeck/lune/`); use "Put Lune from `<image2>` into the scene of `<image1>`, in the same position and pose…"
+  when the face in the still is not visible.
+- Route every job through SwarmUI (`scripts/mvvm_gen/swarm_raw.py`, `comfyworkflowraw`), not straight to 7821.
+  `scripts/mvvm_gen/qwen_edit.py` still posts to the backend directly and should be moved onto `swarm_raw`.
 
 Research sources: [docs/research/qwen-image-edit-formulas.md](research/qwen-image-edit-formulas.md).

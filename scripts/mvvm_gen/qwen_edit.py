@@ -73,6 +73,24 @@ def edit(scene, refs, instruction, out, seed=42, pe=True, resolution=1024, steps
     return meta
 
 
+def upscale(src, out, seed=42, size=SIZE):
+    """The user's creative upscale (graphs.qwen21_creative_upscale): 4xNomos8kDAT, then a Qwen 2.1 detail pass at
+    denoise 0.33. Writes the 2x master to `out` and a frame-size copy next to it (`*-frame.png`, 1344x768) for video.
+    Use this, not an edit, for panels split out of a grid: it keeps the composition and grade."""
+    name = comfy.upload_image(src)
+    graph = graphs.qwen21_creative_upscale(name, seed, "mvvm/qwen-upscale/" + os.path.splitext(os.path.basename(out))[0],
+                                           size[0], size[1])
+    record = comfy.wait(comfy.submit(graph), timeout=1800)
+    files = [f for f in comfy.output_files(record) if f["filename"].lower().endswith(".png")]
+    if not files:
+        raise comfy.ComfyError("upscale finished without an image")
+    comfy.download(files[0], out)
+    frame = os.path.splitext(out)[0] + "-frame.png"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", out, "-vf",
+                    f"scale={size[0]}:{size[1]}:flags=lanczos", frame], check=True)
+    return out, frame
+
+
 def export_api(path=API_EXPORT):
     """Write the API-format graph with placeholder file names (scene.png, ref1.png, ref2.png)."""
     graph = graphs.qwen21_edit("Replace the woman in <image1> with the woman from <image2>, same face.",

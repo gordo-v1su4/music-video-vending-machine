@@ -111,6 +111,41 @@ def qwen21_edit(instruction, refs, seed, prefix, steps=40, resolution=1024, unet
     return g
 
 
+UPSCALE_PROMPT = ("Keep composition and colors exactly the same. Sharp, clean, photographic detail, fine film grain. "
+                  "No purple, no cyan.")
+UPSCALE_NEGATIVE = ("purple, violet, cyan, teal, neon, magenta, beauty filter, airbrushed, plastic, soft focus, watermark, "
+                    "blur, glowing moon")
+
+
+def qwen21_creative_upscale(source, seed, prefix, width=1344, height=768, denoise=0.33, model="4x_NMKD-Siax_200k.pth"):
+    """The user's upscale workflow (SwarmUI kim-ho-qwen/swarm-safe-creative-upscale.json), node for node: scale to the
+    frame, halve, 4x model upscale (2x the frame; 4x_NMKD-Siax_200k, the user's pick 2026-09-29, in place of the
+    workflow's 4xNomos8kDAT), then a Qwen 2.1 detail pass at denoise 0.33 with that image as
+    both the latent and the reference. The model upscale carries the pixels, so composition and grade hold; the low
+    denoise only adds detail. Output is 2x the frame (2688x1536 for the 1344x768 frame)."""
+    return {
+        "load": {"class_type": "LoadImage", "inputs": {"image": source}},
+        "fit": {"class_type": "ImageScale", "inputs": {"image": ["load", 0], "upscale_method": "area",
+                                                       "width": snap32(width), "height": snap32(height), "crop": "disabled"}},
+        "half": {"class_type": "ImageScaleBy", "inputs": {"image": ["fit", 0], "upscale_method": "area", "scale_by": 0.5}},
+        "umodel": {"class_type": "UpscaleModelLoader", "inputs": {"model_name": model}},
+        "up": {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": ["umodel", 0], "image": ["half", 0]}},
+        "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": QWEN_EDIT_UNET, "weight_dtype": "default"}},
+        "cache": {"class_type": "QwenImage21Cache", "inputs": {"model": ["unet", 0], "device": "auto", "dtype": "default"}},
+        "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": QWEN["clip"], "type": "qwen_image", "device": "default"}},
+        "vae": {"class_type": "VAELoader", "inputs": {"vae_name": QWEN["vae"]}},
+        "latent": {"class_type": "VAEEncode", "inputs": {"pixels": ["up", 0], "vae": ["vae", 0]}},
+        "encode": {"class_type": "TextEncodeQwenImage21", "inputs": {
+            "clip": ["clip", 0], "prompt": UPSCALE_PROMPT, "negative_prompt": UPSCALE_NEGATIVE, "resolution": 0,
+            "images.image_1": ["up", 0], "vae": ["vae", 0]}},
+        "sample": {"class_type": "KSampler", "inputs": {
+            "model": ["cache", 0], "positive": ["encode", 0], "negative": ["encode", 1], "latent_image": ["latent", 0],
+            "seed": seed, "steps": 40, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": denoise}},
+        "decode": {"class_type": "VAEDecode", "inputs": {"samples": ["sample", 0], "vae": ["vae", 0]}},
+        "save": {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}},
+    }
+
+
 def qwen21_upsample(source, width, height, seed, prefix, steps=30):
     """Detail-preserving Qwen 2.1 re-render of `source` at a larger canvas."""
     prompt = ("<image1> Preserve every element of the image exactly: identity, faces, hair, clothing, pose, layout "

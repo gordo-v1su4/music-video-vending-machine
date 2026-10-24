@@ -101,12 +101,15 @@ class Run:
                               "models": models, "gpu_mib_after": gpu_memory_mib(), "backend": comfy.BASE,
                               "output": dest, "status": "generated_unverified"}
         self.save_manifest()
-        mirror = os.path.join(SWARM_HISTORY, self.name, os.path.basename(os.path.dirname(dest)))
-        try:
-            os.makedirs(mirror, exist_ok=True)
-            shutil.copy2(dest, os.path.join(mirror, os.path.basename(dest)))
-        except OSError as err:
-            print(f"[{key}] Swarm history copy skipped: {err}", flush=True)
+        # The run folder itself lives in the user's output space (.runtime/gen is a junction to D:\output\local\MVVM,
+        # 2026-09-29), so a separate history copy would only duplicate files. Mirror only when it is elsewhere.
+        if not os.path.realpath(self.root).lower().startswith(os.path.realpath(SWARM_HISTORY).lower()):
+            mirror = os.path.join(SWARM_HISTORY, self.name, os.path.basename(os.path.dirname(dest)))
+            try:
+                os.makedirs(mirror, exist_ok=True)
+                shutil.copy2(dest, os.path.join(mirror, os.path.basename(dest)))
+            except OSError as err:
+                print(f"[{key}] Swarm history copy skipped: {err}", flush=True)
         print(f"[{key}] done in {elapsed}s -> {dest}", flush=True)
         return dest
 
@@ -468,7 +471,14 @@ class Run:
             segments.append({"song_s": at, "len_s": length, "path": self.take_path(shot["id"], take), "src_s": 0.0,
                              "label": f"{shot['id']} t{take}"})
             at += length
-        splices = sorted(self.manifest.get("splices", {}).values(), key=lambda x: x["song_s"])
+        splices = []
+        for sp in self.manifest.get("splices", {}).values():
+            if sp.get("fill"):  # each fill piece replaces only its own span, never the gaps between pieces
+                splices += [{"song_s": x["song_s"], "len_s": x["len_s"], "render": sp["render"], "shots": [x]}
+                            for x in sp["shots"]]
+            else:
+                splices.append(sp)
+        splices.sort(key=lambda x: x["song_s"])
         for sp in splices:
             a, b = sp["song_s"], sp["song_s"] + sp["len_s"]
             kept = []
@@ -506,6 +516,21 @@ class Run:
                                 "status": "assembled_unverified"}
         self.save_manifest()
         print(f"[cut] {dest} ({total:.2f}s from {start:.2f}s, {n} segments, {len(splices)} spliced chunks)", flush=True)
+
+    def fill(self, key, clip, placements, rebuild=True):
+        """Drop pieces of any clip (e.g. the user's own footage) onto exact song spans, like splice() but with the
+        source offsets chosen by hand. placements: [(song_s, len_s, src_s, label)]. The clip's own audio is never
+        used; the cut always plays the song. Re-running with the same key replaces that fill."""
+        shots = [{"song_s": round(a, 4), "len_s": round(n, 4), "src_s": round(s, 4), "label": label}
+                 for a, n, s, label in placements]
+        self.manifest.setdefault("splices", {})[f"fill:{key}"] = {
+            "render": clip, "song_s": min(x["song_s"] for x in shots),
+            "len_s": max(x["song_s"] + x["len_s"] for x in shots) - min(x["song_s"] for x in shots),
+            "fill": True, "shots": shots}
+        self.save_manifest()
+        print(f"[fill] {key}: {len(shots)} pieces of {clip}", flush=True)
+        if rebuild:
+            self.cut()
 
     def splice(self, chunk_index, render):
         """Place one chunk render from the studio's edit plan into the cut: split it at its real hard cuts
