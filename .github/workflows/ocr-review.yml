@@ -1,6 +1,5 @@
 # Canonical template: docs/opencode-review-github-actions.md
-# Mention-only: reviews run when a repo owner, member or collaborator comments
-# `@open-code-review` or `/open-code-review` on a PR (or via the manual dispatch).
+# Runs on request only: comment `@hyper-reviewer` (or `/hyper-reviewer`) on a pull request, or use Run workflow.
 name: OpenCodeReview PR Review
 
 on:
@@ -18,22 +17,21 @@ permissions:
   pull-requests: write
 
 concurrency:
-  # Non-matching comments get a unique group so they never cancel a running review.
-  group: ${{ (github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && (startsWith(github.event.comment.body, '@open-code-review') || startsWith(github.event.comment.body, '/open-code-review')))) && format('ocr-{0}-{1}', github.repository, github.event.issue.number || inputs.pr_number) || format('noop-{0}', github.run_id) }}
+  # Comments that don't ask for a review get their own group, so they never cancel a running one.
+  group: ${{ (github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request && (contains(github.event.comment.body, '@hyper-reviewer') || contains(github.event.comment.body, '/hyper-reviewer')))) && format('ocr-{0}-{1}', github.repository, github.event.issue.number || inputs.pr_number) || format('noop-{0}', github.run_id) }}
   cancel-in-progress: true
 
 jobs:
   review:
+    # Runs only on request: a PR comment containing @hyper-reviewer (or /hyper-reviewer)
+    # from the owner, a member or a collaborator, or Run workflow.
     if: |
       github.event_name == 'workflow_dispatch'
       || (
         github.event.issue.pull_request
         && github.event.comment.user.type != 'Bot'
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
-        && (
-          startsWith(github.event.comment.body, '@open-code-review')
-          || startsWith(github.event.comment.body, '/open-code-review')
-        )
+        && (contains(github.event.comment.body, '@hyper-reviewer') || contains(github.event.comment.body, '/hyper-reviewer'))
       )
     runs-on: ubuntu-latest
     timeout-minutes: 45
